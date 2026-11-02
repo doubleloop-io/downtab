@@ -1,0 +1,21 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  build-and-test:
+    runs-on: macos-26
+    steps:
+      - uses: actions/checkout@v4
+      # Runners lack standalone Command Line Tools: pick the Xcode matching the local toolchain (Swift 6.4).
+      - uses: maxim-lobanov/setup-xcode@v1
+        with:
+          xcode-version: "27.0"
+      - name: Verify Swift version
+        run: swift --version | tee /dev/stderr | grep -q "Swift version 6.4"
+      - name: Build
+        run: ./scripts/downtab.sh build
+      - name: Test
+        run: ./scripts/downtab.sh test
