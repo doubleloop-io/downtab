@@ -22,3 +22,16 @@ Checks run by hand on the real app. No Swift knowledge needed: every step is a t
 
 1. Run `make bundle` twice. The `designated => ...` line is identical both times.
 2. Once the app asks for Accessibility (later issues): grant it in System Settings › Privacy & Security › Accessibility, rebuild with `make run`, and check Downtab is still enabled there without granting again.
+
+## Switcher: open and Cancel
+
+Before starting: `make run`, then open TextEdit, Safari and Notes in this order, clicking each to bring it to the front.
+
+1. In Notes, press ⌥Tab once and release: the Switcher appears in the middle of the screen with the icons of Notes, Safari, TextEdit (most recently used first), Safari highlighted, and `Safari` written under the icons.
+2. The menu bar still shows `Notes` as the active app while the Switcher is open.
+3. Press `Esc`: the Switcher disappears. Type a few letters: they appear in Notes, without clicking anywhere first.
+4. With two displays: move the pointer to the other display and press ⌥Tab: the Switcher appears on the display under the pointer. Press `Esc`.
+5. Make Safari full screen (green button), press ⌥Tab: the Switcher appears above the full-screen Safari. Press `Esc`: Safari is still full screen and frontmost.
+6. Switch to another Space (⌃→) and press ⌥Tab: the Switcher appears there too. Press `Esc`.
+7. With the Switcher open, press ⌥Tab again: the icons stay in the same order. Press `Esc`.
+8. Opening shows no delay: the Switcher appears as soon as ⌥Tab is pressed, even right after launching a new app.

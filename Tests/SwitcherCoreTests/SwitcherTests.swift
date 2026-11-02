@@ -6,3 +6,69 @@ import Testing
 
     #expect(switcher.state == .closed)
 }
+
+@Test func appShortcutOpensAppRowInMRUOrderWithSecondAppSelected() {
+    var switcher = Switcher()
+    let desktop = DesktopSnapshot.with(mru: ["Mail", "Safari", "Notes"])
+
+    switcher.handle(.appShortcutPressed, desktop: desktop)
+
+    #expect(switcher.state.appRowNames == ["Mail", "Safari", "Notes"])
+    #expect(switcher.state.selectedName == "Safari")
+}
+
+@Test func escapeCancelsLeavingFocusUnchanged() {
+    var switcher = Switcher()
+    let desktop = DesktopSnapshot.with(mru: ["Mail", "Safari"])
+    switcher.handle(.appShortcutPressed, desktop: desktop)
+
+    let effect = switcher.handle(.escapePressed, desktop: desktop)
+
+    #expect(switcher.state == .closed)
+    #expect(effect == .noChange)
+}
+
+@Test func appRowKeepsItsOrderWhenMRUChangesWhileOpen() {
+    var switcher = Switcher()
+    switcher.handle(.appShortcutPressed, desktop: .with(mru: ["Mail", "Safari", "Notes"]))
+
+    switcher.handle(.appShortcutPressed, desktop: .with(mru: ["Notes", "Mail", "Safari"]))
+
+    #expect(switcher.state.appRowNames == ["Mail", "Safari", "Notes"])
+}
+
+@Test func appShortcutWithASingleAppSelectsIt() {
+    var switcher = Switcher()
+
+    switcher.handle(.appShortcutPressed, desktop: .with(mru: ["Finder"]))
+
+    #expect(switcher.state.selectedName == "Finder")
+}
+
+@Test func appShortcutWithNoAppsLeavesTheSwitcherClosed() {
+    var switcher = Switcher()
+
+    switcher.handle(.appShortcutPressed, desktop: .with(mru: []))
+
+    #expect(switcher.state == .closed)
+}
+
+@Test func escapeWhileClosedDoesNothing() {
+    var switcher = Switcher()
+
+    let effect = switcher.handle(.escapePressed, desktop: .with(mru: ["Mail"]))
+
+    #expect(effect == nil)
+}
+
+@Test func appRowLeavesOutAppsThatAreNotRegular() {
+    var switcher = Switcher()
+    let mail = DesktopApp.regular("Mail", processIdentifier: 1)
+    let agent = DesktopApp(id: AppID(processIdentifier: 2), name: "Menu bar agent", isRegular: false)
+    let notes = DesktopApp.regular("Notes", processIdentifier: 3)
+    let desktop = DesktopSnapshot(apps: [mail, agent, notes], mruOrder: [mail.id, agent.id, notes.id])
+
+    switcher.handle(.appShortcutPressed, desktop: desktop)
+
+    #expect(switcher.state.appRowNames == ["Mail", "Notes"])
+}
