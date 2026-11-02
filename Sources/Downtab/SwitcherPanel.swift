@@ -38,7 +38,9 @@ final class SwitcherPanel: NSPanel {
         )
         nameLabel.stringValue = displayed.selectedEntry.name
         contentView?.layoutSubtreeIfNeeded()
-        centerOnPointerScreen(size: contentView?.fittingSize ?? .zero)
+        // The display is chosen at opening: moving the selection never moves the panel to another display.
+        let target = isVisible ? screen : Self.pointerScreen()
+        center(on: target, size: contentView?.fittingSize ?? .zero)
         makeKeyAndOrderFront(nil)
     }
 
@@ -103,9 +105,12 @@ final class SwitcherPanel: NSPanel {
         return tile
     }
 
-    private func centerOnPointerScreen(size: NSSize) {
+    private static func pointerScreen() -> NSScreen? {
         let pointer = NSEvent.mouseLocation
-        let screen = NSScreen.screens.first { NSMouseInRect(pointer, $0.frame, false) } ?? NSScreen.main
+        return NSScreen.screens.first { NSMouseInRect(pointer, $0.frame, false) } ?? NSScreen.main
+    }
+
+    private func center(on screen: NSScreen?, size: NSSize) {
         guard let frame = screen?.frame else { return }
         setFrame(
             NSRect(

@@ -1,5 +1,9 @@
 public enum SwitcherEvent: Equatable, Sendable {
     case appShortcutPressed
+    /// ⇧ with the App shortcut key: moves the selection back.
+    case shiftAppShortcutPressed
+    case modifierReleased
+    case enterPressed
     case escapePressed
 }
 
@@ -7,6 +11,8 @@ public enum SwitcherEvent: Equatable, Sendable {
 public enum FinalEffect: Equatable, Sendable {
     /// Cancel: focus stays where it was.
     case noChange
+    /// Confirm at App level: bring the app forward like the native switcher.
+    case activateApp(AppID)
 }
 
 public struct AppRowEntry: Equatable, Sendable {
@@ -19,6 +25,12 @@ public struct DisplayedState: Equatable, Sendable {
     public let selectedIndex: Int
 
     public var selectedEntry: AppRowEntry { appRow[selectedIndex] }
+
+    /// Wraps around at both ends of the App row.
+    func movingSelection(by step: Int) -> DisplayedState {
+        let count = appRow.count
+        return DisplayedState(appRow: appRow, selectedIndex: ((selectedIndex + step) % count + count) % count)
+    }
 }
 
 public enum SwitcherState: Equatable, Sendable {
@@ -36,17 +48,32 @@ public struct Switcher: Sendable {
     public mutating func handle(_ event: SwitcherEvent, desktop: DesktopSnapshot) -> FinalEffect? {
         switch event {
         case .appShortcutPressed:
-            // The App row is fixed at opening: it never moves while the Switcher is open.
-            guard state == .closed else { return nil }
-            let appRow = Self.appRow(of: desktop)
-            guard !appRow.isEmpty else { return nil }
-            // The first app is the one being left, so the second is the likely target.
-            state = .open(DisplayedState(appRow: appRow, selectedIndex: min(1, appRow.count - 1)))
+            moveSelection(by: 1, desktop: desktop)
             return nil
+        case .shiftAppShortcutPressed:
+            moveSelection(by: -1, desktop: desktop)
+            return nil
+        case .modifierReleased, .enterPressed:
+            guard case .open(let displayed) = state else { return nil }
+            state = .closed
+            return .activateApp(displayed.selectedEntry.id)
         case .escapePressed:
             guard state != .closed else { return nil }
             state = .closed
             return .noChange
+        }
+    }
+
+    private mutating func moveSelection(by step: Int, desktop: DesktopSnapshot) {
+        switch state {
+        case .open(let displayed):
+            state = .open(displayed.movingSelection(by: step))
+        case .closed:
+            // The App row is fixed at opening: it never moves while the Switcher is open.
+            let appRow = Self.appRow(of: desktop)
+            guard !appRow.isEmpty else { return }
+            // Opening starts on the app being left, so the first step lands on the previous app.
+            state = .open(DisplayedState(appRow: appRow, selectedIndex: 0).movingSelection(by: step))
         }
     }
 

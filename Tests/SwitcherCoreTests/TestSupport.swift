@@ -28,3 +28,12 @@ extension SwitcherState {
         return displayed.selectedEntry.name
     }
 }
+
+extension DesktopSnapshot {
+    func app(named name: String) -> AppID {
+        guard let app = apps.first(where: { $0.name == name }) else {
+            preconditionFailure("no app named \(name) in the snapshot")
+        }
+        return app.id
+    }
+}

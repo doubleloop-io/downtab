@@ -21,13 +21,13 @@ Checks run by hand on the real app. No Swift knowledge needed: every step is a t
 ## Signing survives rebuilds
 
 1. Run `make bundle` twice. The `designated => ...` line is identical both times.
-2. Once the app asks for Accessibility (later issues): grant it in System Settings › Privacy & Security › Accessibility, rebuild with `make run`, and check Downtab is still enabled there without granting again.
+2. Grant Accessibility (needed from now on to detect the ⌥ release) in System Settings › Privacy & Security › Accessibility, rebuild with `make run`, and check Downtab is still enabled there without granting again.
 
 ## Switcher: open and Cancel
 
-Before starting: `make run`, then open TextEdit, Safari and Notes in this order, clicking each to bring it to the front.
+Before starting: `make run`, then open TextEdit, Safari and Notes in this order, clicking each to bring it to the front. In this section keep ⌥ held until `Esc`: releasing it confirms.
 
-1. In Notes, press ⌥Tab once and release: the Switcher appears in the middle of the screen with the icons of Notes, Safari, TextEdit (most recently used first), Safari highlighted, and `Safari` written under the icons.
+1. In Notes, press ⌥Tab and keep ⌥ held: the Switcher appears in the middle of the screen with the icons of Notes, Safari, TextEdit (most recently used first), Safari highlighted, and `Safari` written under the icons.
 2. The menu bar still shows `Notes` as the active app while the Switcher is open.
 3. Press `Esc`: the Switcher disappears. Type a few letters: they appear in Notes, without clicking anywhere first.
 4. With two displays: move the pointer to the other display and press ⌥Tab: the Switcher appears on the display under the pointer. Press `Esc`.
@@ -35,3 +35,17 @@ Before starting: `make run`, then open TextEdit, Safari and Notes in this order,
 6. Switch to another Space (⌃→) and press ⌥Tab: the Switcher appears there too. Press `Esc`.
 7. With the Switcher open, press ⌥Tab again: the icons stay in the same order. Press `Esc`.
 8. Opening shows no delay: the Switcher appears as soon as ⌥Tab is pressed, even right after launching a new app.
+
+## Switcher: cycle and Confirm at App level
+
+Before starting: `make run`, Accessibility granted to Downtab, then open TextEdit, Safari and Notes in this order, clicking each to bring it to the front.
+
+1. In Notes, press ⌥Tab once and release both keys quickly: Safari comes to the front (menu bar shows `Safari`).
+2. Press ⌥Tab once and release again: Notes comes back to the front.
+3. Hold ⌥, press Tab twice: TextEdit is highlighted. Release ⌥: TextEdit comes to the front with its windows.
+4. Hold ⌥, press Tab until the highlight passes the last icon: it wraps to the first icon. Release ⌥: that app comes to the front.
+5. Hold ⌥, press Tab, then ⇧Tab: the highlight moves back to the first icon. Press ⇧Tab again: it wraps to the last icon. Press `Esc`: nothing changes.
+6. Hold ⌥ and ⇧, press Tab: the Switcher opens on the last icon. Press `Esc`.
+7. Hold ⌥, press Tab, then press `Enter` without releasing ⌥: the highlighted app comes to the front and the Switcher closes. Releasing ⌥ afterwards does nothing more.
+8. Hide Safari (⌘H), then hold ⌥, select Safari and release: Safari comes back to the front.
+9. `log stream --predicate 'subsystem == "local.downtab"'` shows `modifier release tap started` at launch and an `activate pid=... ok=true` line for each Confirm.
