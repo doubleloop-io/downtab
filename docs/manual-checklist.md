@@ -58,13 +58,14 @@ Before starting: `make run`, Accessibility granted to Downtab, then open TextEdi
 
 ## Switcher: look
 
-Before starting: `make run`, then open TextEdit, Safari and Notes in this order. Open `docs/prototype-switcher.html` in a browser, press `L` until the help box shows `cerchio`, and hold ⌥ + Tab to open its panel. Ignore the prototype's Window count badges and Italian texts: they are not part of this check.
+Before starting: `make run`, then open TextEdit, Safari and Notes in this order. Open `docs/prototype-switcher.html?names=below` in a browser (the bar at the bottom shows `E · name below the row, icon-only highlight`) and hold ⌥ + Tab to open its panel. Ignore the prototype's Window count badges and Italian texts: they are not part of this check.
 
 1. In Notes, hold ⌥ and press Tab: the Switcher is a dark, rounded, translucent panel with a thin light border, like the prototype's, even in Light Mode and over a bright window.
-2. Each app is a large icon in its own tile. The selected app's tile has a lighter rounded background with a thin border; the others have none.
-3. Only the selected app shows its name, under its icon. A long name (e.g. `Visual Studio Code`) may extend past the tile's edges before it is cut with `…`.
+2. Each app is a large icon. The selected app's icon sits in a lighter rounded tile with a thin border and an even margin on every side; the others have none.
+3. Only the selected app shows its name, on its own line below the icons, centered under the selected tile and never cut by it: a long name (e.g. `ChatGPT Classic`) extends past the tile's edges without touching its highlight.
 4. Press Tab a few times: the highlight and the name move, the icons do not move. Press `Esc`.
 5. With many apps open (15 or more), the Switcher still fits the screen width: icons get smaller instead of overflowing.
+6. With many apps open, select the first and then the last app: a name wider than its tile stays inside the panel, pushed against its left or right edge instead of centered. Press `Esc`.
 
 ## Switcher: accessibility
 
