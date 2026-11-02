@@ -109,6 +109,41 @@
   .win.sel .t { color: #fff; }
   .win.sel .tag { color: #fff; border-color: rgba(255, 255, 255, 0.5); }
 
+
+  /* PROTOTYPE, long app names: N cycles how the selected app's name fits its tile (?names= in the URL). */
+  [data-names="truncate"] .name { width: calc(var(--tile) - 12px); }
+  [data-names="two-lines"] .name {
+    width: calc(var(--tile) - 8px); height: 32px; line-height: 16px; white-space: normal; text-wrap: balance;
+    display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;
+  }
+  [data-names="grow"] .tile.current { background: none; box-shadow: none; }
+  [data-names="grow"] .tile.current::before {
+    content: ""; position: absolute; z-index: -1; top: 0; bottom: 0; border-radius: 20px;
+    left: calc(-1 * var(--grow, 0px)); right: calc(-1 * var(--grow, 0px));
+    background: rgba(255, 255, 255, 0.2); box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.12);
+  }
+  [data-names="grow"] .panel { isolation: isolate; }
+  [data-names="grow"] .name { width: max-content; max-width: 260px; }
+  /* E: the tile wraps only the icon, so it gets more room and the badge sits further in to keep a margin. */
+  [data-names="below"] .tile { --tile: calc(var(--icon) + 28px); padding: 14px 0; }
+  [data-names="below"][data-layout="cerchio"] .slot {
+    left: calc(14px + var(--icon) * 0.86); top: calc(14px + var(--icon) * 0.86);
+  }
+  [data-names="below"] .panel { padding-bottom: 40px; }
+  [data-names="below"] .name {
+    position: absolute; top: calc(100% + 8px); left: 50%; transform: translateX(-50%);
+    width: max-content; max-width: 260px; margin: 0; font-size: 13px;
+  }
+  #names-bar {
+    position: fixed; left: 50%; bottom: 16px; transform: translateX(-50%); display: flex; align-items: center; gap: 4px;
+    padding: 4px; border-radius: 999px; background: #fde047; color: #111; font-size: 12px; font-weight: 600;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+  }
+  #names-bar button {
+    border: 0; border-radius: 999px; width: 26px; height: 26px; background: rgba(0, 0, 0, 0.1); color: inherit;
+    font: inherit; cursor: pointer;
+  }
+  #names-bar span { min-width: 250px; text-align: center; }
   #hint { position: absolute; top: 24vh; left: 0; right: 0; text-align: center; font-size: 16px; text-shadow: 0 1px 8px rgba(0, 0, 0, 0.7); }
   #hint small { display: block; margin-top: 6px; font-size: 12px; opacity: 0.8; }
   #help {
@@ -124,11 +159,20 @@
 <body>
 <div id="stage"></div>
 <div id="help"></div>
+<div id="names-bar"><button data-step="-1" aria-label="Previous">‹</button><span></span><button data-step="1" aria-label="Next">›</button></div>
 
 <script>
 const CHEVRON = `<svg viewBox="0 0 9 6" aria-hidden="true"><path d="M1 1.2 4.5 4.7 8 1.2" fill="none"
   stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" /></svg>`;
 const LAYOUTS = ["pill sotto l'icona", "ovale", "cerchio"];
+const NAME_FITS = [
+  { key: "overhang", label: "A · overhang the tile (current app)" },
+  { key: "truncate", label: "B · truncate inside the tile" },
+  { key: "two-lines", label: "C · wrap on two lines" },
+  { key: "grow", label: "D · highlight grows to fit the name" },
+  { key: "below", label: "E · name below the row, icon-only highlight" },
+];
+const initialNames = new URLSearchParams(location.search).get("names");
 
 // Apps in MRU order: index 0 is the frontmost one.
 const apps = [
@@ -149,7 +193,10 @@ const apps = [
   { name: "Finder", icon: "finder", windows: [] },
 ];
 
-const s = { open: false, level: "app", a: 0, w: 0, heldOption: false, layout: LAYOUTS[0], last: "—" };
+const s = {
+  open: false, level: "app", a: 0, w: 0, heldOption: false, layout: "cerchio", last: "—",
+  names: NAME_FITS.some((f) => f.key === initialNames) ? initialNames : NAME_FITS[0].key,
+};
 
 const stage = document.getElementById("stage");
 const help = document.getElementById("help");
@@ -219,12 +266,37 @@ function renderHelp() {
     <kbd>↑</kbd> dalla prima finestra torna alle app<br />
     <kbd>Esc</kbd> annulla tutto<br />
     <kbd>⌥ \`</kbd> finestre dell'app attiva (anche <kbd>⌥ \\</kbd>)<br />
-    <kbd>L</kbd> numero finestre: <b>${s.layout}</b>
+    <kbd>L</kbd> numero finestre: <b>${s.layout}</b><br />
+    <kbd>N</kbd> nomi lunghi: <b>${s.names}</b>
     <div class="last">ultimo: ${escapeHtml(s.last.slice(0, 90))}</div>`;
+}
+
+function cycleNames(step) {
+  const i = NAME_FITS.findIndex((f) => f.key === s.names);
+  s.names = NAME_FITS[wrap(i + step, NAME_FITS.length)].key;
+  const url = new URL(location.href);
+  url.searchParams.set("names", s.names);
+  history.replaceState(null, "", url);
+}
+
+function renderNamesBar() {
+  document.querySelector("#names-bar span").textContent = NAME_FITS.find((f) => f.key === s.names).label;
+}
+
+// Variant D: widen the highlight just enough to wrap the name, without moving the icons.
+function growHighlight(panel) {
+  panel.querySelectorAll(".tile").forEach((el) => el.style.removeProperty("--grow"));
+  if (s.names !== "grow") return;
+  const tileEl = panel.querySelector(".tile.current");
+  const name = tileEl.querySelector(".name");
+  const extra = Math.max(0, (name.offsetWidth + 20 - tileEl.offsetWidth) / 2);
+  tileEl.style.setProperty("--grow", `${extra}px`);
 }
 
 function render() {
   document.body.dataset.layout = s.layout;
+  document.body.dataset.names = s.names;
+  renderNamesBar();
   renderHelp();
   if (!s.open) {
     stage.innerHTML = `<div id="hint">Tieni premuto <b>⌥</b> e premi <b>Tab</b>
@@ -236,6 +308,7 @@ function render() {
     el.classList.toggle("current", i === s.a);
     el.classList.toggle("parent", i === s.a && s.level === "window");
   });
+  growHighlight(panel);
   const pop = ensurePopover();
   if (!pop) return;
   pop.querySelectorAll(".win").forEach((el, i) => el.classList.toggle("sel", i === s.w));
@@ -314,7 +387,9 @@ const isWindowCycleKey = (e) => e.code === "Backquote" || e.code === "IntlBacksl
 
 addEventListener("keydown", (e) => {
   const step = e.shiftKey ? -1 : 1;
-  if (e.code === "KeyL" && !e.altKey && !e.metaKey) {
+  if (e.code === "KeyN" && !e.altKey && !e.metaKey) {
+    cycleNames(step);
+  } else if (e.code === "KeyL" && !e.altKey && !e.metaKey) {
     s.layout = LAYOUTS[wrap(LAYOUTS.indexOf(s.layout) + 1, LAYOUTS.length)];
   } else if (isWindowCycleKey(e) && e.altKey) {
     onWindowCycleKey(step);
@@ -342,6 +417,13 @@ addEventListener("blur", () => {
 });
 
 addEventListener("resize", () => { if (s.open) render(); });
+
+document.getElementById("names-bar").addEventListener("click", (e) => {
+  const step = Number(e.target.closest("button")?.dataset.step);
+  if (!step) return;
+  cycleNames(step);
+  render();
+});
 
 render();
 </script>
