@@ -1,0 +1,27 @@
+# macOS
+.DS_Store
+
+# Build output (swiftc, SwiftPM, Xcode)
+build/
+.build/
+DerivedData/
+*.dSYM/
+*.dSYM.zip
+
+# SwiftPM
+.swiftpm/
+Packages/
+
+# Xcode user state
+xcuserdata/
+*.xcuserstate
+*.xcscmblueprint
+
+# Signing material
+.signing/
+*.p12
+*.key
+*.cer
+*.keychain-db
+*.mobileprovision
+*.provisionprofile
