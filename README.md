@@ -8,23 +8,24 @@ A personal macOS app switcher. Product decisions: `docs/GOAL.md`. Terms: `GLOSSA
 
 ## Commands
 
-All commands go through `./scripts/downtab.sh` (run it with no arguments for the list). Prefer it over bare `swift build` / `swift test`: it works around a Swift 6.4 issue where a `swift build` breaks the next `swift test`.
+All commands go through `make` (run it with no target for the list). Prefer it over bare `swift build` / `swift test`: it works around a Swift 6.4 issue where a `swift build` breaks the next `swift test`.
 
 | Command | What it does |
 | --- | --- |
-| `./scripts/downtab.sh setup-signing` | Once per clone: creates a self-signed certificate in a dedicated keychain under `.signing/` (git-ignored). The login keychain is not touched. |
-| `./scripts/downtab.sh build` | Debug build (`swift build`). |
-| `./scripts/downtab.sh test` | Checks the Switcher core stays free of AppKit, AX and private APIs, then runs the tests (`swift test`, Swift Testing). |
-| `./scripts/downtab.sh check-core` | Fails if the Switcher core imports anything but Foundation, or loads private APIs. |
-| `./scripts/downtab.sh bundle` | Release build, assembles `build/Downtab.app` and signs it with the local certificate. |
-| `./scripts/downtab.sh run` | Bundles, then launches the app (quitting a running instance first). |
-| `./scripts/downtab.sh stop` | Quits the running app. |
+| `make setup-signing` | Once per clone: creates a self-signed certificate in a dedicated keychain under `.signing/` (git-ignored). The login keychain is not touched. |
+| `make build` | Debug build. |
+| `make test` | Runs `make check-core`, then the tests (Swift Testing). |
+| `make check-core` | Fails if the Switcher core imports anything but Foundation, or loads private APIs. |
+| `make bundle` | Release build, assembles `build/Downtab.app` and signs it with the local certificate. |
+| `make run` | Quits a running instance, bundles, then launches the app. |
+| `make stop` | Quits the running app. |
 
 ## Layout
 
 - `Sources/SwitcherCore`: pure Switcher logic, no AppKit, AX or private APIs. Tested in `Tests/SwitcherCoreTests`.
 - `Sources/Downtab`: the app (menu bar item, AppKit adapters).
 - `App/Info.plist`: bundle metadata (`LSUIElement`, no Dock icon).
+- `Makefile`, `scripts/`: developer commands; `scripts/` holds the steps too long for a Makefile recipe.
 - `docs/manual-checklist.md`: checks to run by hand on the real app.
 - `spike/`: the throwaway spike, kept as a reference.
 

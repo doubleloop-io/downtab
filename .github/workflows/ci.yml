@@ -16,6 +16,6 @@ jobs:
       - name: Verify Swift version
         run: swift --version | tee /dev/stderr | grep -q "Swift version 6.4"
       - name: Build
-        run: ./scripts/downtab.sh build
+        run: make build
       - name: Test
-        run: ./scripts/downtab.sh test
+        run: make test
