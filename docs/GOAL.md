@@ -11,7 +11,7 @@ I termini sono definiti in `GLOSSARY.md`.
 ## Comportamento
 
 - App row: app in ordine MRU, come il nativo.
-- Le app con almeno 2 finestre mostrano il Window count badge (`3 ▾`), che suggerisce il gesto.
+- Le app con almeno 2 finestre mostrano il Window count badge: un cerchio con il numero nell'angolo in basso a destra dell'icona (variante `cerchio` di `prototype-switcher.html`).
 - `↓` su un'app con almeno 2 finestre apre la sua Window list; frecce + `Enter` (o rilascio del Modifier) portano in primo piano solo quella finestra. Con 0 o 1 finestra `↓` non fa niente.
 - Si passa solo fra finestre del Current Space.
 - La Window shortcut sostituisce il ciclo nativo fra finestre dell'app attiva: apre lo Switcher sul Frontmost app con la Window list già aperta sotto.
