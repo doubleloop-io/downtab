@@ -1,14 +1,15 @@
 #!/usr/bin/env bash
-# Creates the self-signed code signing certificate in a dedicated keychain, once per clone.
+# Creates the self-signed code signing certificate in a dedicated keychain, once per clone (worktrees share it).
 # A stable certificate keeps the designated requirement stable, so macOS keeps the Accessibility grant across rebuilds.
 set -euo pipefail
 SIGNING_DIR=$1
-KEYCHAIN="$PWD/$SIGNING_DIR/downtab.keychain-db"
+# security(1) needs an absolute keychain path, and the Makefile may pass a relative directory.
+SIGNING_DIR=$(mkdir -p "$SIGNING_DIR" && cd "$SIGNING_DIR" && pwd)
+KEYCHAIN="$SIGNING_DIR/downtab.keychain-db"
 KEYCHAIN_PASSWORD=$2
 
 identity() { openssl x509 -in "$SIGNING_DIR/cert.crt" -noout -fingerprint -sha1 | cut -d= -f2 | tr -d :; }
 [ -f "$KEYCHAIN" ] && { echo "already done: $KEYCHAIN"; exit; }
-mkdir -p "$SIGNING_DIR"
 cat > "$SIGNING_DIR/cert.conf" <<CERT_CONF
 [ req ]
 distinguished_name = dn

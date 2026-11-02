@@ -12,7 +12,7 @@ All commands go through `make` (run it with no target for the list). Prefer it o
 
 | Command | What it does |
 | --- | --- |
-| `make setup-signing` | Once per clone: creates a self-signed certificate in a dedicated keychain under `.signing/` (git-ignored). The login keychain is not touched. |
+| `make setup-signing` | Once per clone: creates a self-signed certificate in a dedicated keychain under `.signing/` (git-ignored) of the main checkout; git worktrees use that one too. The login keychain is not touched. |
 | `make build` | Debug build. |
 | `make test` | Runs `make check-core` and `make lint`, then the tests (Swift Testing). |
 | `make check-core` | Fails if the Switcher core imports anything but Foundation, or loads private APIs. |

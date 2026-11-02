@@ -4,8 +4,11 @@
 
 EXE := Downtab
 APP := build/$(EXE).app
-SIGNING_DIR := .signing
-KEYCHAIN := $(CURDIR)/$(SIGNING_DIR)/downtab.keychain-db
+# Signing material lives in the main checkout, shared by its worktrees: one certificate, one Accessibility grant.
+MAIN_CHECKOUT := $(shell common=$$(git rev-parse --path-format=absolute --git-common-dir 2>/dev/null) \
+	&& dirname "$$common" || pwd)
+SIGNING_DIR := $(MAIN_CHECKOUT)/.signing
+KEYCHAIN := $(SIGNING_DIR)/downtab.keychain-db
 KEYCHAIN_PASSWORD := downtab
 
 # Workaround: with Swift 6.4's default build system, any `swift build` before `swift test` drops the
