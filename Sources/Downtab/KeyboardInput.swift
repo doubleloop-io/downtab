@@ -92,9 +92,9 @@ final class KeyboardInput {
                 &ref
             )
             if status == noErr {
-                logger.info("app shortcut \(shortcut.name) registered")
+                logger.info("app shortcut \(shortcut.name, privacy: .public) registered")
             } else {
-                logger.error("app shortcut \(shortcut.name) failed: \(status)")
+                logger.error("app shortcut \(shortcut.name, privacy: .public) failed: \(status)")
             }
             return ref
         }

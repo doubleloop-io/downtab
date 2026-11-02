@@ -8,7 +8,7 @@ import os
 /// Listen-only and on its own thread, so a busy main thread can neither delay events nor get the tap disabled.
 final class ModifierReleaseTap {
     /// Hands tap callbacks, which run on the tap thread, over to the main actor.
-    private final class Relay: Sendable {
+    nonisolated fileprivate final class Relay: Sendable {
         let onRelease: @MainActor @Sendable () -> Void
         let onDisabled: @MainActor @Sendable () -> Void
 
@@ -21,7 +21,7 @@ final class ModifierReleaseTap {
     }
 
     /// ⌥, the only Modifier until shortcuts are configurable.
-    nonisolated private static let modifier = CGEventFlags.maskAlternate
+    nonisolated fileprivate static let modifier = CGEventFlags.maskAlternate
 
     static var isModifierDown: Bool {
         CGEventSource.flagsState(.combinedSessionState).contains(modifier)
@@ -40,19 +40,7 @@ final class ModifierReleaseTap {
                 place: .headInsertEventTap,
                 options: .listenOnly,
                 eventsOfInterest: mask,
-                callback: { _, type, event, context in
-                    guard let context else { return nil }
-                    let relay = Unmanaged<Relay>.fromOpaque(context).takeUnretainedValue()
-                    switch type {
-                    case .tapDisabledByTimeout, .tapDisabledByUserInput:
-                        Task { @MainActor in relay.onDisabled() }
-                    case .flagsChanged where !event.flags.contains(ModifierReleaseTap.modifier):
-                        Task { @MainActor in relay.onRelease() }
-                    default:
-                        break
-                    }
-                    return nil
-                },
+                callback: handleTapEvent,
                 userInfo: Unmanaged.passUnretained(relay).toOpaque()
             )
         else {
@@ -77,4 +65,25 @@ final class ModifierReleaseTap {
         CGEvent.tapEnable(tap: port, enable: true)
         logger.info("modifier release tap re-enabled")
     }
+}
+
+/// Runs on the tap thread: nonisolated, because the target's default main-actor isolation
+/// would make the runtime trap on the first event.
+nonisolated private func handleTapEvent(
+    proxy: CGEventTapProxy,
+    type: CGEventType,
+    event: CGEvent,
+    context: UnsafeMutableRawPointer?
+) -> Unmanaged<CGEvent>? {
+    guard let context else { return nil }
+    let relay = Unmanaged<ModifierReleaseTap.Relay>.fromOpaque(context).takeUnretainedValue()
+    switch type {
+    case .tapDisabledByTimeout, .tapDisabledByUserInput:
+        Task { @MainActor in relay.onDisabled() }
+    case .flagsChanged where !event.flags.contains(ModifierReleaseTap.modifier):
+        Task { @MainActor in relay.onRelease() }
+    default:
+        break
+    }
+    return nil
 }
