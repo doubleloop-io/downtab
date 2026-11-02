@@ -1,6 +1,6 @@
 # Developer commands. CI only runs `build` and `test`: signing material never leaves this Mac.
 .DEFAULT_GOAL := help
-.PHONY: help setup-signing build test check-core lint bundle run stop
+.PHONY: help setup-signing build test check-core lint format bundle run stop
 
 EXE := Downtab
 APP := build/$(EXE).app
@@ -19,7 +19,8 @@ help:
 	@echo "make build           debug build"
 	@echo "make test            check the core boundary and lint, then run the tests"
 	@echo "make check-core      fail if the Switcher core imports anything but Foundation or loads private APIs"
-	@echo "make lint            SwiftLint (pinned in Package.swift, rules in .swiftlint.yml); any violation fails"
+	@echo "make lint            swift-format check (.swift-format) and SwiftLint (.swiftlint.yml); any violation fails"
+	@echo "make format          rewrite sources with swift-format"
 	@echo "make bundle          release build, assemble and sign $(APP)"
 	@echo "make run             bundle, then launch the app (quitting a running instance first)"
 	@echo "make stop            quit the running app"
@@ -36,8 +37,14 @@ test: check-core lint
 check-core:
 	@scripts/check-core.sh
 
+FORMAT_PATHS := Sources Tests Package.swift
+
+format:
+	swift format --in-place --recursive $(FORMAT_PATHS)
+
 # SwiftLint's SourceKit lookup misses the Command Line Tools: point it at the active toolchain.
 lint:
+	swift format lint --strict --recursive $(FORMAT_PATHS)
 	TOOLCHAIN_DIR="$$(cd "$$(dirname "$$(xcrun -f swift)")/../.." && pwd)" swift package plugin --allow-writing-to-package-directory swiftlint --strict --quiet
 
 bundle:

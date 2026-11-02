@@ -16,7 +16,8 @@ All commands go through `make` (run it with no target for the list). Prefer it o
 | `make build` | Debug build. |
 | `make test` | Runs `make check-core` and `make lint`, then the tests (Swift Testing). |
 | `make check-core` | Fails if the Switcher core imports anything but Foundation, or loads private APIs. |
-| `make lint` | SwiftLint, pinned in `Package.swift`, rules in `.swiftlint.yml`. Any violation fails. |
+| `make lint` | Format check with swift-format (`.swift-format`), then SwiftLint (pinned in `Package.swift`, rules in `.swiftlint.yml`). Any violation fails. |
+| `make format` | Rewrites sources with swift-format. |
 | `make bundle` | Release build, assembles `build/Downtab.app` and signs it with the local certificate. |
 | `make run` | Quits a running instance, bundles, then launches the app. |
 | `make stop` | Quits the running app. |
