@@ -24,13 +24,14 @@ Scelta la variante A di `prototype-ui-variants.html`: lista sotto l'icona. La gr
 
 - Le app senza finestre nel Current Space, ma con finestre in altri Space, non compaiono: attivarle farebbe cambiare Space. Le app senza alcuna finestra restano, come nel nativo.
 - Eccezione: un'app la cui unica finestra è a schermo intero compare, come nel nativo, e attivarla porta al suo Space.
-- Una finestra a schermo intero compare nella Window list con l'etichetta "schermo intero"; sceglierla cambia Space.
+- Una finestra a schermo intero compare nella Window list con l'etichetta "Full screen"; sceglierla cambia Space.
 - Da un'app a schermo intero compaiono tutte le app, come nel nativo, ma senza Window list: solo App level. Da rivedere con l'uso.
-- Le finestre minimizzate del Current Space compaiono nella lista con un'etichetta. Quelle di altri Space no: il ripristino le riporta nel loro Space, senza effetti visibili.
-- Le app nascoste (⌘H) compaiono con le loro finestre e l'etichetta "nascosta"; scegliere una finestra la mostra.
+- Le finestre minimizzate del Current Space compaiono nella lista con l'etichetta "Minimized". Quelle di altri Space no: il ripristino le riporta nel loro Space, senza effetti visibili.
+- Le app nascoste (⌘H) compaiono con le loro finestre e l'etichetta "Hidden"; scegliere una finestra la mostra.
 - Con più monitor il Current Space è l'insieme degli Space correnti di tutti i display. Lo Switcher appare sullo schermo del puntatore.
 - Ogni processo è una voce a sé, come nel nativo: due istanze della stessa app (es. Chrome dell'utente e Chrome di un agente) restano indistinguibili.
-- Solo titoli, niente thumbnail: evita il permesso Screen Recording e la latenza di cattura. Finestra senza titolo: "Senza titolo". I titoli doppi restano come sono.
+- Solo titoli, niente thumbnail: evita il permesso Screen Recording e la latenza di cattura. Finestra senza titolo: "Untitled". I titoli doppi restano come sono.
+- Tutta la UI è in inglese.
 
 ### Ordine
 

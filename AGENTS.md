@@ -1,3 +1,9 @@
+## Language
+
+- The app UI, including every label and message, is in English.
+- Issues, docs, glossary and ADRs are written in English. Existing Italian docs are translated only when asked.
+- Chat with the user follows their language.
+
 ## Agent skills
 
 ### Issue tracker
