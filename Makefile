@@ -1,6 +1,6 @@
 # Developer commands. CI only runs `build` and `test`: signing material never leaves this Mac.
 .DEFAULT_GOAL := help
-.PHONY: help setup-signing build test check-core lint format bundle run stop
+.PHONY: help setup-signing build test check-core lint format bundle run stop smoke
 
 EXE := Downtab
 APP := build/$(EXE).app
@@ -27,6 +27,7 @@ help:
 	@echo "make bundle          release build, assemble and sign $(APP)"
 	@echo "make run             bundle, then launch the app (quitting a running instance first)"
 	@echo "make stop            quit the running app"
+	@echo "make smoke           bundle, launch, post ⌥/⌥Tab/⌥⇧Tab/Esc, fail on a crash; must pass before closing an issue that touches the app"
 
 setup-signing:
 	@scripts/setup-signing.sh $(SIGNING_DIR) $(KEYCHAIN_PASSWORD)
@@ -71,3 +72,7 @@ stop:
 	@if pkill -x $(EXE); then \
 		while pgrep -x $(EXE) >/dev/null; do sleep 0.1; done; echo stopped; \
 	else echo "not running"; fi
+
+# Local only: posting synthetic events needs the Accessibility permission for the terminal.
+smoke: stop bundle
+	@scripts/smoke.sh "$(APP)"

@@ -1,4 +1,5 @@
 import AppKit
+import BackgroundAdapters
 import Carbon
 import SwitcherCore
 import os

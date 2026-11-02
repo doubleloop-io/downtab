@@ -19,10 +19,14 @@ let package = Package(
     targets: [
         // Pure Switcher logic: must not import AppKit, ApplicationServices (AX) or private APIs.
         .target(name: "SwitcherCore", swiftSettings: strictSettings),
-        // The app is AppKit glue: main-actor by default, so only background work needs annotating.
+        // Adapters that receive callbacks or run on other threads. Nonisolated by default, so a closure
+        // handed to a C API cannot silently become main-actor and trap at run time: touching main-actor
+        // state from it is a compile error.
+        .target(name: "BackgroundAdapters", dependencies: ["SwitcherCore"], swiftSettings: strictSettings),
+        // The app is AppKit glue: main-actor by default. Thread-crossing code belongs in BackgroundAdapters.
         .executableTarget(
             name: "Downtab",
-            dependencies: ["SwitcherCore"],
+            dependencies: ["SwitcherCore", "BackgroundAdapters"],
             swiftSettings: strictSettings + [.defaultIsolation(MainActor.self)]
         ),
         .testTarget(name: "SwitcherCoreTests", dependencies: ["SwitcherCore"], swiftSettings: strictSettings),

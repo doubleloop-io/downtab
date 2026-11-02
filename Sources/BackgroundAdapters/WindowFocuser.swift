@@ -1,13 +1,15 @@
 import AppKit
-import SwitcherCore
+public import SwitcherCore
 import os
 
 /// Executes the final effect off the main thread, so a slow target app never stalls the Switcher.
 /// An actor, so effects never overlap.
-actor WindowFocuser {
+public actor WindowFocuser {
     private let logger = Logger(subsystem: "local.downtab", category: "focus")
 
-    func perform(_ effect: FinalEffect) {
+    public init() {}
+
+    public func perform(_ effect: FinalEffect) {
         switch effect {
         case .noChange:
             break

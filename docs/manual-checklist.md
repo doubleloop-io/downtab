@@ -10,6 +10,12 @@ Checks run by hand on the real app. No Swift knowledge needed: every step is a t
 
 1. `make test` ends with `core boundary ok` and `Test run with N tests ... passed`.
 
+## Smoke
+
+Before starting: grant Accessibility to the terminal (System Settings › Privacy & Security › Accessibility), so it can post keystrokes. Must pass before closing an issue that touches the app.
+
+1. `make smoke` ends with `smoke ok`. It launches the app, presses ⌥, ⌥Tab, ⌥⇧Tab and `Esc` by itself (the front app may change), and quits the app at the end.
+
 ## App launch
 
 1. `make run` ends with a line `designated => identifier "local.downtab" and certificate leaf = H"..."` and `running: ...`.

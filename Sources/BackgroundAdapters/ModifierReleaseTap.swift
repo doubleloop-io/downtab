@@ -2,37 +2,46 @@
 @preconcurrency import CoreFoundation
 import CoreGraphics
 import Foundation
+import Synchronization
 import os
 
 /// Detects the Modifier (⌥) going up anywhere in the session.
 /// Listen-only and on its own thread, so a busy main thread can neither delay events nor get the tap disabled.
-final class ModifierReleaseTap {
-    /// Hands tap callbacks, which run on the tap thread, over to the main actor.
-    nonisolated fileprivate final class Relay: Sendable {
+public final class ModifierReleaseTap {
+    /// Shared with the tap thread through the callback's context pointer.
+    fileprivate final class Relay: Sendable {
         let onRelease: @MainActor @Sendable () -> Void
-        let onDisabled: @MainActor @Sendable () -> Void
+        let port = Mutex<CFMachPort?>(nil)
+        let logger = Logger(subsystem: "local.downtab", category: "keyboard")
 
-        init(
-            onRelease: @escaping @MainActor @Sendable () -> Void, onDisabled: @escaping @MainActor @Sendable () -> Void
-        ) {
+        init(onRelease: @escaping @MainActor @Sendable () -> Void) {
             self.onRelease = onRelease
-            self.onDisabled = onDisabled
+        }
+
+        /// The system disables a tap it deems slow; re-enabling from the tap thread needs no main-actor hop.
+        func reenable() {
+            let reenabled = port.withLock { port in
+                guard let port else { return false }
+                CGEvent.tapEnable(tap: port, enable: true)
+                return true
+            }
+            if reenabled { logger.info("modifier release tap re-enabled") }
         }
     }
 
     /// ⌥, the only Modifier until shortcuts are configurable.
-    nonisolated fileprivate static let modifier = CGEventFlags.maskAlternate
+    fileprivate static let modifier = CGEventFlags.maskAlternate
 
-    static var isModifierDown: Bool {
+    public static var isModifierDown: Bool {
         CGEventSource.flagsState(.combinedSessionState).contains(modifier)
     }
 
-    private let logger = Logger(subsystem: "local.downtab", category: "keyboard")
-    private var port: CFMachPort?
     private var relay: Relay?
 
-    func start(onRelease: @escaping @MainActor @Sendable () -> Void) {
-        let relay = Relay(onRelease: onRelease, onDisabled: { [weak self] in self?.reenable() })
+    public init() {}
+
+    public func start(onRelease: @escaping @MainActor @Sendable () -> Void) {
+        let relay = Relay(onRelease: onRelease)
         let mask = CGEventMask(1 << CGEventType.flagsChanged.rawValue)
         guard
             let port = CGEvent.tapCreate(
@@ -44,11 +53,11 @@ final class ModifierReleaseTap {
                 userInfo: Unmanaged.passUnretained(relay).toOpaque()
             )
         else {
-            logger.error("modifier release tap failed: is the Accessibility permission granted?")
+            relay.logger.error("modifier release tap failed: is the Accessibility permission granted?")
             return
         }
+        relay.port.withLock { $0 = port }
         self.relay = relay
-        self.port = port
         let source = CFMachPortCreateRunLoopSource(nil, port, 0)
         let thread = Thread {
             CFRunLoopAddSource(CFRunLoopGetCurrent(), source, .commonModes)
@@ -57,19 +66,14 @@ final class ModifierReleaseTap {
         thread.name = "modifier-release-tap"
         thread.qualityOfService = .userInteractive
         thread.start()
-        logger.info("modifier release tap started")
-    }
-
-    private func reenable() {
-        guard let port else { return }
-        CGEvent.tapEnable(tap: port, enable: true)
-        logger.info("modifier release tap re-enabled")
+        // `make smoke` waits for this exact line before posting events.
+        relay.logger.info("modifier release tap started")
     }
 }
 
-/// Runs on the tap thread: nonisolated, because the target's default main-actor isolation
-/// would make the runtime trap on the first event.
-nonisolated private func handleTapEvent(
+/// Runs on the tap thread. A named function, not an inline closure: CoreGraphics is not concurrency-audited,
+/// so an inline closure touching main-actor state only gets a warning that escapes warnings-as-errors.
+private func handleTapEvent(
     proxy: CGEventTapProxy,
     type: CGEventType,
     event: CGEvent,
@@ -79,7 +83,7 @@ nonisolated private func handleTapEvent(
     let relay = Unmanaged<ModifierReleaseTap.Relay>.fromOpaque(context).takeUnretainedValue()
     switch type {
     case .tapDisabledByTimeout, .tapDisabledByUserInput:
-        Task { @MainActor in relay.onDisabled() }
+        relay.reenable()
     case .flagsChanged where !event.flags.contains(ModifierReleaseTap.modifier):
         Task { @MainActor in relay.onRelease() }
     default:

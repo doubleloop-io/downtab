@@ -1,4 +1,5 @@
 import AppKit
+import BackgroundAdapters
 import SwitcherCore
 
 final class SwitcherController {
