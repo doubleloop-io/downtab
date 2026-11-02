@@ -14,8 +14,9 @@ All commands go through `make` (run it with no target for the list). Prefer it o
 | --- | --- |
 | `make setup-signing` | Once per clone: creates a self-signed certificate in a dedicated keychain under `.signing/` (git-ignored). The login keychain is not touched. |
 | `make build` | Debug build. |
-| `make test` | Runs `make check-core`, then the tests (Swift Testing). |
+| `make test` | Runs `make check-core` and `make lint`, then the tests (Swift Testing). |
 | `make check-core` | Fails if the Switcher core imports anything but Foundation, or loads private APIs. |
+| `make lint` | SwiftLint, pinned in `Package.swift`, rules in `.swiftlint.yml`. Any violation fails. |
 | `make bundle` | Release build, assembles `build/Downtab.app` and signs it with the local certificate. |
 | `make run` | Quits a running instance, bundles, then launches the app. |
 | `make stop` | Quits the running app. |

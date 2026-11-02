@@ -1,6 +1,6 @@
 # Developer commands. CI only runs `build` and `test`: signing material never leaves this Mac.
 .DEFAULT_GOAL := help
-.PHONY: help setup-signing build test check-core bundle run stop
+.PHONY: help setup-signing build test check-core lint bundle run stop
 
 EXE := Downtab
 APP := build/$(EXE).app
@@ -17,8 +17,9 @@ SWIFT_FLAGS = -Xswiftc -plugin-path -Xswiftc "$(TESTING_PLUGINS)"
 help:
 	@echo "make setup-signing   once per clone: create the self-signed certificate in a dedicated keychain"
 	@echo "make build           debug build"
-	@echo "make test            check the core boundary, then run the tests"
+	@echo "make test            check the core boundary and lint, then run the tests"
 	@echo "make check-core      fail if the Switcher core imports anything but Foundation or loads private APIs"
+	@echo "make lint            SwiftLint (pinned in Package.swift, rules in .swiftlint.yml); any violation fails"
 	@echo "make bundle          release build, assemble and sign $(APP)"
 	@echo "make run             bundle, then launch the app (quitting a running instance first)"
 	@echo "make stop            quit the running app"
@@ -29,11 +30,15 @@ setup-signing:
 build:
 	swift build $(SWIFT_FLAGS)
 
-test: check-core
+test: check-core lint
 	swift test $(SWIFT_FLAGS)
 
 check-core:
 	@scripts/check-core.sh
+
+# SwiftLint's SourceKit lookup misses the Command Line Tools: point it at the active toolchain.
+lint:
+	TOOLCHAIN_DIR="$$(cd "$$(dirname "$$(xcrun -f swift)")/../.." && pwd)" swift package plugin --allow-writing-to-package-directory swiftlint --strict --quiet
 
 bundle:
 	@test -f "$(KEYCHAIN)" || { echo "signing missing: run make setup-signing"; exit 1; }

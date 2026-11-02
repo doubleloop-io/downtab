@@ -1,0 +1,51 @@
+# Only rules that catch unsafe or sloppy code. Formatting is left to a formatter, so no style rules here.
+only_rules:
+  - force_unwrapping
+  - force_try
+  - force_cast
+  - implicitly_unwrapped_optional
+  - function_body_length
+  - type_body_length
+  - file_length
+  - cyclomatic_complexity
+  - custom_rules
+
+included:
+  - Sources
+  - Tests
+excluded:
+  - spike
+
+# `make lint` runs with --strict, so every threshold here fails the build.
+function_body_length:
+  warning: 60
+type_body_length:
+  warning: 250
+file_length:
+  warning: 400
+  ignore_comment_only_lines: true
+cyclomatic_complexity:
+  warning: 10
+
+custom_rules:
+  unchecked_sendable:
+    name: Unchecked Sendable
+    regex: '@unchecked\s+Sendable'
+    message: "Make the type Sendable for real (value type, actor, Mutex) instead of silencing the checker"
+    severity: error
+  nonisolated_unsafe:
+    name: nonisolated(unsafe)
+    regex: 'nonisolated\s*\(\s*unsafe\s*\)'
+    message: "Isolate the state (actor, @MainActor, Mutex) instead of opting out of concurrency checking"
+    severity: error
+  no_dispatch:
+    name: Grand Central Dispatch
+    regex: '\b(DispatchQueue|DispatchGroup|DispatchSemaphore)\b'
+    message: "Use async/await, actors or @MainActor; justify a GCD-only adapter API with swiftlint:disable:next"
+    severity: error
+  no_print:
+    name: Print
+    regex: '(?<!\w)(print|debugPrint|NSLog)\s*\('
+    match_kinds: identifier
+    message: "Use os.Logger"
+    severity: error
