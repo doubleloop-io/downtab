@@ -49,3 +49,19 @@ custom_rules:
     match_kinds: identifier
     message: "Use os.Logger"
     severity: error
+  no_xctest:
+    name: XCTest
+    regex: '\bimport\s+XCTest\b'
+    message: "Write tests with Swift Testing (`import Testing`, @Test, #expect)"
+    severity: error
+  no_observable_object:
+    name: ObservableObject
+    regex: '\bObservableObject\b|@Published\b'
+    message: "Use the @Observable macro (Observation) instead of Combine-based ObservableObject"
+    severity: error
+  core_no_static_var:
+    name: Global state in core
+    included: 'Sources/SwitcherCore/.*\.swift'
+    regex: '\bstatic\s+var\b'
+    message: "Keep the Switcher core free of global mutable state: pass state through values"
+    severity: error
