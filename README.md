@@ -33,4 +33,4 @@ All commands go through `make` (run it with no target for the list). Prefer it o
 
 The bundle is signed with the same certificate on every build, so the Accessibility permission survives rebuilds. Deleting `.signing/` (or a fresh clone) creates a new certificate: run `setup-signing` again and re-grant Accessibility.
 
-CI (`.github/workflows/ci.yml`) only builds and tests; it never signs or bundles. GitHub runners have no standalone Command Line Tools, so CI selects the Xcode whose toolchain matches the local one (Swift 6.4, macOS 27 SDK) and fails if the Swift version differs. Update both together.
+CI (`.github/workflows/ci.yml`) only builds and tests; it never signs or bundles. It uses the runner's default Xcode, which can be older than the local toolchain (no hosted runner ships Swift 6.4 / the macOS 27 SDK yet); the `Versions` step logs what it ran with. Code must therefore also build with that older toolchain.
