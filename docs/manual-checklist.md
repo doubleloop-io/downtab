@@ -55,3 +55,22 @@ Before starting: `make run`, Accessibility granted to Downtab, then open TextEdi
 7. Hold ⌥, press Tab, then press `Enter` without releasing ⌥: the highlighted app comes to the front and the Switcher closes. Releasing ⌥ afterwards does nothing more.
 8. Hide Safari (⌘H), then hold ⌥, select Safari and release: Safari comes back to the front.
 9. `log stream --predicate 'subsystem == "local.downtab"'` shows `modifier release tap started` at launch and an `activate pid=... ok=true` line for each Confirm.
+
+## Switcher: look
+
+Before starting: `make run`, then open TextEdit, Safari and Notes in this order. Open `docs/prototype-switcher.html` in a browser, press `L` until the help box shows `cerchio`, and hold ⌥ + Tab to open its panel. Ignore the prototype's Window count badges and Italian texts: they are not part of this check.
+
+1. In Notes, hold ⌥ and press Tab: the Switcher is a dark, rounded, translucent panel with a thin light border, like the prototype's, even in Light Mode and over a bright window.
+2. Each app is a large icon in its own tile. The selected app's tile has a lighter rounded background with a thin border; the others have none.
+3. Only the selected app shows its name, under its icon. A long name (e.g. `Visual Studio Code`) may extend past the tile's edges before it is cut with `…`.
+4. Press Tab a few times: the highlight and the name move, the icons do not move. Press `Esc`.
+5. With many apps open (15 or more), the Switcher still fits the screen width: icons get smaller instead of overflowing.
+
+## Switcher: accessibility
+
+Before starting: `make run`. Step 2 needs Accessibility Inspector, which ships with Xcode (`open -a "Accessibility Inspector"`); without Xcode run step 1 only.
+
+1. Run the command below, then within 3 seconds hold ⌥ and press Tab, and keep ⌥ held until it prints:
+   `sleep 3; osascript -e 'tell application "System Events" to tell process "Downtab" to get {role, description} of UI elements of UI element 1 of window 1'`
+   It prints `AXImage` once per app and the app names, in the App row order. Press `Esc`.
+2. With Accessibility Inspector, point at the Switcher: the window is titled `Switcher`, it contains a list `App row`, and each entry is an `app` image labelled with the app name; only the selected entry has `Selected` set to true. Press `Esc`.
