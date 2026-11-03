@@ -213,9 +213,9 @@ Before starting: `make run`. Step 2 needs Accessibility Inspector, which ships w
 
 ## Preferences: shortcuts
 
-Before starting: `make run`, Accessibility granted to Downtab, a few apps open. Open the Preferences from the menu bar icon (`Preferences…`): a `Downtab Preferences` window shows `App shortcut: ⌥Tab` and `` Window shortcut: ⌥` `` (on a non-US layout the Window shortcut shows the character of the key left of `1`, e.g. `\` on Italian), a hint line and a `Restore Defaults` button. In the commands below, `defaults read local.downtab` prints the stored shortcuts.
+Before starting: `make run`, Accessibility granted to Downtab, a few apps open. Open the Preferences from the menu bar icon (`Preferences…`): a `Downtab Preferences` window shows `App shortcut: ⌥Tab` and `` Window shortcut: ⌥` `` (on a non-US layout the Window shortcut shows the character of the key left of `1`, e.g. `\` on Italian), a hint line and a `Restore Defaults` button. Layout: labels trailing-aligned and level with their fields, both fields the same width, the hint and `Restore Defaults` under the fields in the same column, the window sized to its content; no field is focused or recording when the window opens; it reads well in both light and dark mode. In the commands below, `defaults read local.downtab` prints the stored shortcuts.
 
-1. Click the App shortcut field: it gets an accent border and reads `Type shortcut`. Hold ⌃ and ⌥: it reads `⌃⌥`. Press `Esc` with nothing held: it reads `⌥Tab` again, no message.
+1. Click the App shortcut field: it gets an accent border and tint and reads `Type shortcut…`. Hold ⌃ and ⌥: it reads `⌃⌥`. Press `Esc` with nothing held: it reads `⌥Tab` again, no message.
 2. Click the App shortcut field and press ⌥Tab: no Switcher opens (shortcuts are off while recording), the field reads `⌥Tab` again.
 3. Click the App shortcut field and press Tab alone: a red message `Tab: Add a modifier: ⌘, ⌥ or ⌃.` appears under it, the field keeps `⌥Tab`. ⇧Tab gives the same message.
 4. Click it and press ⌥⇧Tab: `⌥⇧Tab: ⇧ is reserved for going back: record the shortcut without it.`

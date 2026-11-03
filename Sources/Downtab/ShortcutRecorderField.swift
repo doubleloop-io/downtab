@@ -26,15 +26,14 @@ final class ShortcutRecorderField: NSView {
         self.shortcut = shortcut
         super.init(frame: .zero)
         wantsLayer = true
-        layer?.cornerRadius = 6
-        layer?.borderWidth = 1
+        layer?.cornerRadius = Self.cornerRadius
         focusRingType = .default
         text.alignment = .center
         text.translatesAutoresizingMaskIntoConstraints = false
         addSubview(text)
         NSLayoutConstraint.activate([
-            widthAnchor.constraint(equalToConstant: 160),
-            heightAnchor.constraint(equalToConstant: 26),
+            widthAnchor.constraint(equalToConstant: 170),
+            heightAnchor.constraint(equalToConstant: 22),
             text.centerYAnchor.constraint(equalTo: centerYAnchor),
             text.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 6),
             text.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -6),
@@ -112,13 +111,30 @@ final class ShortcutRecorderField: NSView {
 
     // MARK: Drawing
 
-    override func updateLayer() {
-        layer?.backgroundColor = NSColor.controlBackgroundColor.cgColor
-        layer?.borderColor = (isRecording ? NSColor.controlAccentColor : NSColor.separatorColor).cgColor
+    private static let cornerRadius: CGFloat = 5
+
+    /// Matches a bezeled text field: white in light mode, a faint lift over the window in dark mode.
+    private static let fieldBackground = NSColor(name: nil) { appearance in
+        appearance.bestMatch(from: [.aqua, .darkAqua]) == .darkAqua
+            ? NSColor.white.withAlphaComponent(0.06) : NSColor.textBackgroundColor
     }
 
+    override func updateLayer() {
+        if isRecording {
+            layer?.backgroundColor = NSColor.controlAccentColor.withAlphaComponent(0.12).cgColor
+            layer?.borderColor = NSColor.controlAccentColor.cgColor
+            layer?.borderWidth = 2
+        } else {
+            layer?.backgroundColor = Self.fieldBackground.cgColor
+            layer?.borderColor = NSColor.tertiaryLabelColor.cgColor
+            layer?.borderWidth = 1
+        }
+    }
+
+    // The accent border already marks recording; the ring only shows keyboard focus on an idle field.
     override func drawFocusRingMask() {
-        NSBezierPath(roundedRect: bounds, xRadius: 6, yRadius: 6).fill()
+        guard !isRecording else { return }
+        NSBezierPath(roundedRect: bounds, xRadius: Self.cornerRadius, yRadius: Self.cornerRadius).fill()
     }
 
     override var focusRingMaskBounds: NSRect { bounds }
@@ -142,11 +158,12 @@ final class ShortcutRecorderField: NSView {
             text.stringValue = ShortcutLabel.text(for: shortcut)
             text.textColor = .labelColor
         case .recording(let held):
-            text.stringValue = held.isEmpty ? "Type shortcut" : ShortcutLabel.modifiersText(held)
-            text.textColor = .secondaryLabelColor
+            text.stringValue = held.isEmpty ? "Type shortcut…" : ShortcutLabel.modifiersText(held)
+            text.textColor = held.isEmpty ? .placeholderTextColor : .labelColor
         }
         setAccessibilityValue(text.stringValue)
         needsDisplay = true
+        noteFocusRingMaskChanged()
     }
 
     private static func modifiers(of flags: NSEvent.ModifierFlags) -> Set<ShortcutModifier> {
