@@ -23,7 +23,7 @@ final class KeyboardInput {
     private let onEvent: (SwitcherEvent) -> Void
     private let logger = Logger(subsystem: "local.downtab", category: "keyboard")
     private let modifierRelease = ModifierReleaseTap()
-    private var carbonHandler: EventHandlerRef?
+    private let hotKeyPresses = HotKeyPressHandler()
     /// Indexed by Carbon hot key id.
     private var registrations: [Registration] = []
     private var shortcutRefs: [EventHotKeyRef?] = []
@@ -34,7 +34,7 @@ final class KeyboardInput {
     }
 
     func start(shortcuts: Shortcuts) {
-        installShortcutHandler()
+        hotKeyPresses.install { [weak self] id in self?.shortcutPressed(id: id) }
         register(shortcuts)
         modifierRelease.start { [weak self] in self?.onEvent(.modifierReleased) }
         // A local monitor sees keys sent to any of Downtab's windows: the Preferences need theirs.
@@ -115,38 +115,5 @@ final class KeyboardInput {
             .control: controlKey, .option: optionKey, .shift: shiftKey, .command: cmdKey,
         ]
         return UInt32(modifiers.reduce(0) { $0 | (carbonFlags[$1] ?? 0) })
-    }
-
-    private func installShortcutHandler() {
-        var spec = EventTypeSpec(eventClass: OSType(kEventClassKeyboard), eventKind: UInt32(kEventHotKeyPressed))
-        let context = Unmanaged.passUnretained(self).toOpaque()
-        let installStatus = InstallEventHandler(
-            GetEventDispatcherTarget(),
-            { _, event, context in
-                guard let context else { return OSStatus(eventNotHandledErr) }
-                var id = EventHotKeyID()
-                let status = GetEventParameter(
-                    event,
-                    EventParamName(kEventParamDirectObject),
-                    EventParamType(typeEventHotKeyID),
-                    nil,
-                    MemoryLayout<EventHotKeyID>.size,
-                    nil,
-                    &id
-                )
-                guard status == noErr else { return status }
-                let input = Unmanaged<KeyboardInput>.fromOpaque(context).takeUnretainedValue()
-                // Carbon dispatches hot key events on the main run loop.
-                MainActor.assumeIsolated { input.shortcutPressed(id: id.id) }
-                return noErr
-            },
-            1,
-            &spec,
-            context,
-            &carbonHandler
-        )
-        if installStatus != noErr {
-            logger.error("shortcut handler failed: \(installStatus)")
-        }
     }
 }
