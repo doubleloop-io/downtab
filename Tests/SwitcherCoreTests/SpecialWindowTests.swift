@@ -48,7 +48,8 @@ import Testing
             .regular("Safari", windows: [.window(in: [7], isFullScreen: true), .window(in: [1])]),
             .regular("TextEdit", windows: [.window(in: [7]), .window(in: [7])]),
         ],
-        currentSpaces: [7]
+        currentSpaces: [7],
+        isActiveSpaceFullScreen: true
     )
     var switcher = opened(on: desktop)
 

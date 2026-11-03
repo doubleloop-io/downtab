@@ -94,12 +94,21 @@ public struct DesktopSnapshot: Equatable, Sendable {
     public let mruOrder: [AppID]
     /// The Space shown on each display.
     public let currentSpaces: Set<SpaceID>
+    /// The Current Space of the display with the keyboard focus is a full-screen Space.
+    public let isActiveSpaceFullScreen: Bool
     public let frontmostApp: AppID?
 
-    public init(apps: [DesktopApp], mruOrder: [AppID], currentSpaces: Set<SpaceID>, frontmostApp: AppID?) {
+    public init(
+        apps: [DesktopApp],
+        mruOrder: [AppID],
+        currentSpaces: Set<SpaceID>,
+        isActiveSpaceFullScreen: Bool,
+        frontmostApp: AppID?
+    ) {
         self.apps = apps
         self.mruOrder = mruOrder
         self.currentSpaces = currentSpaces
+        self.isActiveSpaceFullScreen = isActiveSpaceFullScreen
         self.frontmostApp = frontmostApp
     }
 }

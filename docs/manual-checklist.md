@@ -171,7 +171,8 @@ Before starting: `make run`, Accessibility granted to Downtab, two Spaces (Missi
 
 1. Full-screen detection first (open risk in #1): make TextEdit's `one` window full screen (green button), go back to Space 1 (⌃←), wait one second. Hold ⌥, select TextEdit, press `↓`: `one` is listed with a `Full screen` tag after its title. If it has no tag, the detection failed: stop here and note it in the issue.
 2. Release ⌥ on `one`: macOS moves to its full-screen Space and `one` is frontmost with the keyboard focus (type a few letters: they land in it). If it does not move Space, or another TextEdit window comes forward instead, note it in the issue.
-3. From the full-screen `one`, hold ⌥ and press Tab: every running app with a Dock icon is in the App row, none has a Window count badge, and `↓` opens no Window list on any app. Press `Esc`, leave full screen (green button) and go back to Space 1.
+3. From the full-screen `one`, hold ⌥ and press Tab: every running app with a Dock icon is in the App row, none has a Window count badge, and `↓` opens no Window list on any app. Press `Esc`.
+   Select Notes and release ⌥. If macOS stays in the full-screen Space (note it in the issue, with the `focus` log lines), wait one second and ⌥Tab again: the App row still lists every running app with a Dock icon, not only TextEdit. Leave full screen (green button) and go back to Space 1.
 4. Minimize `two` (⌘M). Hold ⌥, select TextEdit, `↓`: `two` is last, its title greyed, with a `Minimized` tag; the tag turns white on blue when `two` is selected.
 5. Select `two` and release ⌥: it comes back from the Dock and to the front with the keyboard focus, in one gesture. The log shows `unminimize pid=... wid=... ax=0` then `raise pid=... wid=...`.
 6. Minimize `two` again. Move to Space 2 (⌃→), open two TextEdit windows there (⌘N twice). Hold ⌥, select TextEdit, `↓`: only the two windows of Space 2 are listed, no `two`. Close them (⌘W) and go back to Space 1 (⌃←).

@@ -48,6 +48,7 @@ Esito di `SPIKE.md` e tutto ciò che serve per riscrivere l'app senza rileggere 
 | `_SLPSSetFrontProcessWithOptions`, `SLPSPostEventRecordTo`, `GetProcessForPID` | Alzare una sola finestra e darle il focus | Si ripiega su `activate`, che alza l'intera app e perde il valore del progetto. Una modifica della struttura dell'evento può anche far crashare. |
 | `_AXUIElementGetWindow` | Id della finestra, esclusione dei fantasmi | Tutte le finestre vengono scartate: elenchi vuoti, va cambiato il codice. |
 | `CGSMainConnectionID`, `CGSCopyManagedDisplaySpaces`, `CGSCopySpacesForWindows` | Space delle finestre | Si perde il riconoscimento delle app solo in altri Space e delle minimizzate in altri Space. |
+| `CGSGetActiveSpace` | Space attivo (display con il focus), per mostrare tutte le app da uno Space a schermo intero | Da uno Space a schermo intero l'App row filtra per Space come da uno Space normale. |
 
 Tutte sono risolte a runtime con `dlsym`: un simbolo assente produce una riga di log, non un errore all'avvio. `_AXUIElementGetWindow` e `GetProcessForPID` si cercano con `RTLD_DEFAULT`, le altre in `/System/Library/PrivateFrameworks/SkyLight.framework/SkyLight`.
 
@@ -57,6 +58,7 @@ Firme usate:
 CGSMainConnectionID() -> UInt32
 CGSCopyManagedDisplaySpaces(cid) -> CFArray     // ogni display: "Current Space" -> "id64"
 CGSCopySpacesForWindows(cid, 7, [wid]) -> CFArray of UInt64     // 7 = tutti gli Space
+CGSGetActiveSpace(cid) -> UInt64     // 0 se sconosciuto
 _SLPSSetFrontProcessWithOptions(&psn, wid, 0x200) -> Int32
 SLPSPostEventRecordTo(&psn, bytes) -> Int32
 _AXUIElementGetWindow(element, &wid) -> AXError

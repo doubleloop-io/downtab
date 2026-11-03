@@ -165,7 +165,8 @@ func windowShortcutWithFewerThanTwoWindowsLeavesTheSwitcherClosed(shortcut: Swit
 }
 
 @Test func windowShortcutWithNoFrontmostAppLeavesTheSwitcherClosed() {
-    let desktop = DesktopSnapshot(apps: [], mruOrder: [], currentSpaces: [], frontmostApp: nil)
+    let desktop = DesktopSnapshot(
+        apps: [], mruOrder: [], currentSpaces: [], isActiveSpaceFullScreen: false, frontmostApp: nil)
     var switcher = Switcher()
 
     switcher.handle(.windowShortcutPressed, desktop: desktop)

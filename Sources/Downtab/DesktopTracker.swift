@@ -71,6 +71,7 @@ final class DesktopTracker {
             apps: desktopApps,
             mruOrder: mruOrder.apps,
             currentSpaces: scan?.currentSpaces ?? [],
+            isActiveSpaceFullScreen: scan?.isActiveSpaceFullScreen ?? false,
             frontmostApp: NSWorkspace.shared.frontmostApplication.map(AppID.init)
         )
     }
