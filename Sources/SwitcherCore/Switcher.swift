@@ -85,7 +85,8 @@ public struct DisplayedState: Equatable, Sendable {
     public let appRow: [AppRowEntry]
     public private(set) var selectedIndex: Int
     public private(set) var level: SelectionLevel
-    /// False until the show delay elapses: a quick press confirms without the Switcher ever appearing.
+    /// False until the show delay elapses: a quick press confirms without the Switcher ever appearing. Hidden, it
+    /// still takes every key, so none reaches the Frontmost app.
     public private(set) var isVisible = false
     /// Fixed at opening, like the App row.
     let frontmostApp: AppID?

@@ -36,6 +36,36 @@ import Testing
     #expect(switcher.state.selectedName == "Safari")
 }
 
+@Test func escapeBeforeTheShowDelayCancelsWithoutEverShowingTheSwitcher() {
+    let desktop = DesktopSnapshot.with(mru: ["Notes", "Safari"])
+    var switcher = opened(on: desktop)
+
+    let effect = switcher.handle(.escapePressed, desktop: desktop)
+    switcher.handle(.showDelayElapsed, desktop: desktop)
+
+    #expect(effect == .noChange)
+    #expect(switcher.state == .closed)
+}
+
+@Test func enterBeforeTheShowDelayConfirms() {
+    let desktop = DesktopSnapshot.with(mru: ["Notes", "Safari"])
+    var switcher = opened(on: desktop)
+
+    let effect = switcher.handle(.enterPressed, desktop: desktop)
+
+    #expect(effect == .activateApp(desktop.app(named: "Safari")))
+}
+
+@Test func arrowsBeforeTheShowDelayMoveTheSelectionWhileHidden() {
+    let desktop = DesktopSnapshot.with(mru: ["Notes", "Safari", "TextEdit"])
+    var switcher = opened(on: desktop)
+
+    switcher.handle(.rightPressed, desktop: desktop)
+
+    #expect(switcher.state.selectedName == "TextEdit")
+    #expect(!switcher.state.isVisible)
+}
+
 @Test func movingTheSelectionOnceShownKeepsTheSwitcherVisible() {
     let desktop = DesktopSnapshot.with(mru: ["Notes", "Safari", "TextEdit"])
     var switcher = opened(on: desktop)

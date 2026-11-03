@@ -36,11 +36,8 @@ final class SwitcherController {
         switch switcher.state {
         case .closed:
             panel.hide()
-        case .open(let displayed) where displayed.isVisible:
+        case .open(let displayed):
             panel.show(displayed, icon: tracker.icon(for:))
-        case .open:
-            // A quick press confirms before the show delay: the Switcher never appears.
-            break
         }
     }
 
