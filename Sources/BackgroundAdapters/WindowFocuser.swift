@@ -46,12 +46,29 @@ public actor WindowFocuser {
         let pid = app.processIdentifier
         let wid = windowID.rawValue
         let fronted = PrivateWindowFront.bringToFront(wid, of: pid)
-        // Accessibility does not list windows of other Spaces: often there is nothing to raise.
-        let raised = Self.element(of: windowID, in: app).map {
-            AXUIElementPerformAction($0, kAXRaiseAction as CFString).rawValue
+        // Raising is what makes some apps (Orca, Miro, Notion) order the window front themselves, and the
+        // window server switch to its Space with them.
+        let (window, path) = Self.elementAcrossSpaces(of: windowID, in: app)
+        let raised = window.map { window in
+            AXUIElementSetAttributeValue(window, kAXMainAttribute as CFString, kCFBooleanTrue)
+            return AXUIElementPerformAction(window, kAXRaiseAction as CFString).rawValue
         }
         logger.info(
-            "front after activate pid=\(pid) wid=\(wid) private=\(fronted) ax=\(raised.map(String.init) ?? "unlisted", privacy: .public)")
+            """
+            front after activate pid=\(pid) wid=\(wid) private=\(fronted) \
+            ax=\(raised.map(String.init) ?? "unlisted", privacy: .public) via=\(path, privacy: .public)
+            """)
+    }
+
+    /// The found element and how: `listed` (`kAXWindows`), `remote ids=<tried> ms=<elapsed>`, or why not.
+    private static func elementAcrossSpaces(of windowID: WindowID, in app: AppID) -> (AXUIElement?, String) {
+        if let listed = element(of: windowID, in: app) { return (listed, "listed") }
+        guard let search = PrivateRemoteWindow.element(of: windowID.rawValue, of: app.processIdentifier) else {
+            return (nil, "remote-unavailable")
+        }
+        let (seconds, attoseconds) = search.elapsed.components
+        let cost = "ids=\(search.triedIDs) ms=\(seconds * 1000 + attoseconds / 1_000_000_000_000_000)"
+        return (search.element, search.element == nil ? "remote-missed \(cost)" : "remote \(cost)")
     }
 
     /// Diagnosis aid: activation from a full-screen Space sometimes stays there (Miro), sometimes not (Slack).
