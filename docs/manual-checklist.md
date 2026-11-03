@@ -148,6 +148,16 @@ Before starting: `make run`, Accessibility granted to Downtab. Open TextEdit wit
 6. Hold ⌥, press Tab, `↓`, `→` (Safari, no list), press Tab: the Switcher is at App level on TextEdit, no Window list. Press `↓`: TextEdit's Window list opens. Press Tab: the list closes and Finder is selected at App level. Press `Esc`: nothing changes.
 7. Hold ⌥, press Tab, `↓`, `→` (Safari, no list), press `↑`: Safari is selected at App level. Press `↓`: nothing happens. Press `Esc`.
 
+## Switcher: which windows are listed
+
+Before starting: `make run`, Accessibility granted to Downtab, two Spaces (Mission Control, `+`), Notes open so another app is frontmost. Wait one second after each change before pressing ⌥Tab. Keep ⌥ held during each check and press `Esc` after it.
+
+1. Finder with tabs: open 2 Finder windows (⌘N), and in one of them 3 tabs (⌘T). ⌥Tab to Finder: the badge shows `2`. Press `↓`: the Window list holds 2 entries, one per window (the one with tabs is titled after its current tab); the desktop is not listed.
+2. cmux with fake dialogs: with cmux open on one window, ⌥Tab to cmux: no badge. Press `↓`: nothing happens (no `Item-0` or `Item-1` entry anywhere).
+3. TextEdit minimized in another Space: open 2 TextEdit windows in Space 1 and a third one in Space 2, minimize the third one (⌘M) while in Space 2, then go back to Space 1. ⌥Tab to TextEdit: the badge shows `2`; `↓` lists only the 2 windows of Space 1.
+4. Untitled: in iTerm2 (or any app with a window without a title) open 2 windows, one of them untitled (iTerm2: Settings › Profiles › Window title set to empty, or `printf '\e]0;\a'` in it). ⌥Tab to it, `↓`: the window without a title reads `Untitled`.
+5. Duplicate titles: open 2 Safari windows on the same page (e.g. 2 empty Start Pages). ⌥Tab to Safari, `↓`: both entries show the same title, unchanged (no numbering).
+
 ## Switcher: accessibility
 
 Before starting: `make run`. Step 2 needs Accessibility Inspector, which ships with Xcode (`open -a "Accessibility Inspector"`); without Xcode run step 1 only.

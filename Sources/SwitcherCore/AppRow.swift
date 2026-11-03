@@ -28,7 +28,7 @@ extension DesktopSnapshot {
 
     private func windowList(of app: DesktopApp) -> [WindowListEntry] {
         app.windows.filter(isReachable).compactMap { window in
-            window.id.map { WindowListEntry(id: $0, title: window.title) }
+            window.id.map { WindowListEntry(id: $0, title: window.title.isEmpty ? "Untitled" : window.title) }
         }
     }
 
