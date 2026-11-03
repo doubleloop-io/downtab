@@ -6,19 +6,16 @@ final class PreferencesWindow: NSWindow, NSWindowDelegate {
     private let settings: ShortcutSettings
     private var recorders: [ShortcutSlot: ShortcutRecorderField] = [:]
     private var messages: [ShortcutSlot: NSTextField] = [:]
+    private var messageRows: [ShortcutSlot: NSGridRow] = [:]
 
     init(settings: ShortcutSettings) {
         self.settings = settings
-        super.init(
-            contentRect: NSRect(x: 0, y: 0, width: 460, height: 200),
-            styleMask: [.titled, .closable],
-            backing: .buffered,
-            defer: false
-        )
+        super.init(contentRect: .zero, styleMask: [.titled, .closable], backing: .buffered, defer: false)
         title = "Downtab Preferences"
         isReleasedWhenClosed = false
         delegate = self
         contentView = makeContent()
+        fitToContent()
         center()
     }
 
@@ -26,6 +23,8 @@ final class PreferencesWindow: NSWindow, NSWindowDelegate {
         showCurrentShortcuts()
         NSApp.activate()
         makeKeyAndOrderFront(nil)
+        // AppKit focuses the first recorder on open; nothing should look selected until the user picks a field.
+        makeFirstResponder(nil)
     }
 
     // Recording suspends the shortcuts: leaving the window must never leave them off.
@@ -33,28 +32,70 @@ final class PreferencesWindow: NSWindow, NSWindowDelegate {
         cancelRecording()
     }
 
-    private func makeContent() -> NSView {
-        let grid = NSGridView(views: ShortcutSlot.allCases.flatMap(rows(for:)))
-        grid.rowSpacing = 6
-        grid.columnSpacing = 10
-        grid.column(at: 0).xPlacement = .trailing
-        grid.rowAlignment = .firstBaseline
+    private enum Layout {
+        static let margin: CGFloat = 20
+        static let fieldColumnWidth: CGFloat = 240
+        static let rowGap: CGFloat = 10
+        static let messageGap: CGFloat = 4
+        static let hintGap: CGFloat = 14
+        static let buttonGap: CGFloat = 16
+    }
 
+    /// Two columns: trailing-aligned labels, then fields with their messages, the hint and Restore Defaults.
+    private func makeContent() -> NSView {
         let hint = NSTextField(
             wrappingLabelWithString: "Click a field, then type the new shortcut. Esc cancels. "
                 + "The same shortcut with ⇧ goes back."
         )
         hint.font = .systemFont(ofSize: NSFont.smallSystemFontSize)
         hint.textColor = .secondaryLabelColor
+        hint.preferredMaxLayoutWidth = Layout.fieldColumnWidth
         let restore = NSButton(title: "Restore Defaults", target: self, action: #selector(restoreDefaults))
 
-        let stack = NSStackView(views: [grid, hint, restore])
-        stack.orientation = .vertical
-        stack.alignment = .leading
-        stack.spacing = 14
-        stack.edgeInsets = NSEdgeInsets(top: 20, left: 20, bottom: 20, right: 20)
-        hint.widthAnchor.constraint(equalToConstant: 420).isActive = true
-        return stack
+        let grid = NSGridView(
+            views: ShortcutSlot.allCases.flatMap(rows(for:)) + [
+                [NSGridCell.emptyContentView, hint],
+                [NSGridCell.emptyContentView, restore],
+            ]
+        )
+        grid.translatesAutoresizingMaskIntoConstraints = false
+        grid.rowSpacing = 0
+        grid.columnSpacing = 8
+        grid.yPlacement = .center
+        grid.column(at: 0).xPlacement = .trailing
+        grid.column(at: 1).xPlacement = .leading
+        grid.column(at: 1).width = Layout.fieldColumnWidth
+        for (index, slot) in ShortcutSlot.allCases.enumerated() {
+            grid.row(at: 2 * index).topPadding = index == 0 ? 0 : Layout.rowGap
+            let messageRow = grid.row(at: 2 * index + 1)
+            messageRow.topPadding = Layout.messageGap
+            messageRow.isHidden = true
+            messageRows[slot] = messageRow
+        }
+        grid.row(at: grid.numberOfRows - 2).topPadding = Layout.hintGap
+        grid.row(at: grid.numberOfRows - 1).topPadding = Layout.buttonGap
+
+        let content = NSView()
+        content.addSubview(grid)
+        NSLayoutConstraint.activate([
+            grid.topAnchor.constraint(equalTo: content.topAnchor, constant: Layout.margin),
+            grid.leadingAnchor.constraint(equalTo: content.leadingAnchor, constant: Layout.margin),
+            grid.trailingAnchor.constraint(equalTo: content.trailingAnchor, constant: -Layout.margin),
+            grid.bottomAnchor.constraint(equalTo: content.bottomAnchor, constant: -Layout.margin),
+        ])
+        return content
+    }
+
+    /// Sizes the window to its content, keeping its top edge where it is.
+    private func fitToContent() {
+        guard let contentView else { return }
+        contentView.layoutSubtreeIfNeeded()
+        let size = contentView.fittingSize
+        let newFrame = frameRect(forContentRect: NSRect(origin: .zero, size: size))
+        setFrame(
+            NSRect(x: frame.minX, y: frame.maxY - newFrame.height, width: newFrame.width, height: newFrame.height),
+            display: isVisible
+        )
     }
 
     private func rows(for slot: ShortcutSlot) -> [[NSView]] {
@@ -73,8 +114,7 @@ final class PreferencesWindow: NSWindow, NSWindowDelegate {
         let message = NSTextField(wrappingLabelWithString: "")
         message.font = .systemFont(ofSize: NSFont.smallSystemFontSize)
         message.textColor = .systemRed
-        message.isHidden = true
-        message.preferredMaxLayoutWidth = 280
+        message.preferredMaxLayoutWidth = Layout.fieldColumnWidth
         recorders[slot] = recorder
         messages[slot] = message
         return [
@@ -122,7 +162,8 @@ final class PreferencesWindow: NSWindow, NSWindowDelegate {
     private func show(_ text: String?, for slot: ShortcutSlot) {
         guard let message = messages[slot] else { return }
         message.stringValue = text ?? ""
-        message.isHidden = text == nil
+        messageRows[slot]?.isHidden = text == nil
+        fitToContent()
         guard let text else { return }
         NSAccessibility.post(
             element: message,
