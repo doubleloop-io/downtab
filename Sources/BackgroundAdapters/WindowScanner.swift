@@ -17,7 +17,7 @@ public actor WindowScanner {
     private var windowsByApp: [AppID: [DesktopWindow]] = [:]
     private var latestScan: Task<WindowScan, Never>?
     /// Twice the Accessibility timeout: a responsive app with many windows still answers in time.
-    private static let appDeadline = Duration.milliseconds(500)
+    private static let appDeadline = Duration.seconds(2 * Double(Accessibility.messagingTimeout))
 
     public init() {}
 
@@ -69,8 +69,7 @@ public actor WindowScanner {
         serverWindows: [CGWindowID: ServerWindow],
         spaces: PrivateSpaces.DisplaySpaces
     ) -> [DesktopWindow]? {
-        let element = AXUIElementCreateApplication(app.processIdentifier)
-        AXUIElementSetMessagingTimeout(element, accessibilityTimeout)
+        let element = Accessibility.application(app.processIdentifier)
         var listedWindows: CFTypeRef?
         let listing = AXUIElementCopyAttributeValue(element, kAXWindowsAttribute as CFString, &listedWindows)
         // Timed out: the app is busy or frozen, so what it would answer is unknown, not "no windows".
@@ -141,20 +140,4 @@ public actor WindowScanner {
     }
 
     private static let fullScreenAttribute = "AXFullScreen"
-    private static let accessibilityTimeout: Float = 0.25
-}
-
-private enum AXAttribute {
-    static func copy(of element: AXUIElement, _ attribute: String) -> CFTypeRef? {
-        var value: CFTypeRef?
-        return AXUIElementCopyAttributeValue(element, attribute as CFString, &value) == .success ? value : nil
-    }
-
-    static func string(of element: AXUIElement, _ attribute: String) -> String? {
-        copy(of: element, attribute) as? String
-    }
-
-    static func bool(of element: AXUIElement, _ attribute: String) -> Bool {
-        copy(of: element, attribute) as? Bool ?? false
-    }
 }

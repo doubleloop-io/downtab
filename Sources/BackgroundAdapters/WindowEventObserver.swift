@@ -130,8 +130,7 @@ public final class WindowEventObserver: Sendable {
         guard creation == .success, let observer = created else {
             return .failure(WatchFailure(step: "create", error: creation))
         }
-        let element = AXUIElementCreateApplication(app.processIdentifier)
-        AXUIElementSetMessagingTimeout(element, accessibilityTimeout)
+        let element = Accessibility.application(app.processIdentifier)
         // Registered on the app: one registration catches every window it opens later.
         let registration = AXObserverAddNotification(
             observer, element, kAXWindowCreatedNotification as CFString, context)
@@ -155,7 +154,7 @@ public final class WindowEventObserver: Sendable {
     fileprivate static func watchWindow(
         _ window: AXUIElement, with observer: AXObserver, context: UnsafeMutableRawPointer
     ) {
-        AXUIElementSetMessagingTimeout(window, accessibilityTimeout)
+        AXUIElementSetMessagingTimeout(window, Accessibility.messagingTimeout)
         for notification in windowNotifications {
             let registration = AXObserverAddNotification(observer, window, notification as CFString, context)
             if registration != .success && registration != .notificationAlreadyRegistered {
@@ -171,7 +170,6 @@ public final class WindowEventObserver: Sendable {
         kAXWindowMiniaturizedNotification,
         kAXWindowDeminiaturizedNotification,
     ]
-    private static let accessibilityTimeout: Float = 0.25
 }
 
 /// Runs on the observer thread. A named function, not an inline closure: Accessibility is not

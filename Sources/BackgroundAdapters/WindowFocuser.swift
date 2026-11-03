@@ -43,7 +43,7 @@ public actor WindowFocuser {
             activate(app)
             return
         }
-        if Self.isMinimized(window) {
+        if AXAttribute.bool(of: window, kAXMinimizedAttribute) {
             AXUIElementSetAttributeValue(window, kAXMinimizedAttribute as CFString, kCFBooleanFalse)
         }
         let fronted = PrivateWindowFront.bringToFront(wid, of: pid)
@@ -66,21 +66,12 @@ public actor WindowFocuser {
     }
 
     private static func element(of windowID: WindowID, in app: AppID) -> AXUIElement? {
-        let element = AXUIElementCreateApplication(app.processIdentifier)
-        AXUIElementSetMessagingTimeout(element, 0.25)
+        let element = Accessibility.application(app.processIdentifier)
         var value: CFTypeRef?
         guard AXUIElementCopyAttributeValue(element, kAXWindowsAttribute as CFString, &value) == .success,
             let windows = value as? [AXUIElement]
         else { return nil }
         return windows.first { PrivateSpaces.windowID(of: $0) == windowID.rawValue }
-    }
-
-    private static func isMinimized(_ window: AXUIElement) -> Bool {
-        var value: CFTypeRef?
-        guard AXUIElementCopyAttributeValue(window, kAXMinimizedAttribute as CFString, &value) == .success else {
-            return false
-        }
-        return value as? Bool ?? false
     }
 
     /// The topmost normal window on screen, whatever its app.
