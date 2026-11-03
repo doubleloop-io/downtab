@@ -5,12 +5,15 @@ import Foundation
 /// Space is unknown: either way no app is hidden for living in another Space (`docs/spike-results.md`).
 enum PrivateSpaces {
     private typealias MainConnection = @convention(c) () -> UInt32
+    private typealias GetActiveSpace = @convention(c) (UInt32) -> UInt64
     private typealias CopyManagedDisplaySpaces = @convention(c) (UInt32) -> Unmanaged<CFArray>?
     private typealias CopySpacesForWindows = @convention(c) (UInt32, Int32, CFArray) -> Unmanaged<CFArray>?
     private typealias AXGetWindow = @convention(c) (AXUIElement, UnsafeMutablePointer<CGWindowID>) -> AXError
 
     private static let mainConnection = PrivateSymbol.resolve(
         "CGSMainConnectionID", in: .skyLight, as: MainConnection.self)
+    private static let getActiveSpace = PrivateSymbol.resolve(
+        "CGSGetActiveSpace", in: .skyLight, as: GetActiveSpace.self)
     private static let copyManagedDisplaySpaces = PrivateSymbol.resolve(
         "CGSCopyManagedDisplaySpaces", in: .skyLight, as: CopyManagedDisplaySpaces.self)
     private static let copySpacesForWindows = PrivateSymbol.resolve(
@@ -22,6 +25,12 @@ enum PrivateSpaces {
         /// One per display.
         var current: Set<UInt64> = []
         var fullScreen: Set<UInt64> = []
+        /// The Current Space of the display with the keyboard focus.
+        var active: UInt64?
+
+        var isActiveFullScreen: Bool {
+            active.map(fullScreen.contains) ?? false
+        }
     }
 
     static func displaySpaces() -> DisplaySpaces {
@@ -29,6 +38,7 @@ enum PrivateSpaces {
             let displays = copyManagedDisplaySpaces(mainConnection())?.takeRetainedValue() as? [[String: Any]]
         else { return DisplaySpaces() }
         var result = DisplaySpaces()
+        result.active = getActiveSpace.map { $0(mainConnection()) }.flatMap { $0 == 0 ? nil : $0 }
         for display in displays {
             if let current = (display["Current Space"] as? [String: Any])?["id64"] as? UInt64 {
                 result.current.insert(current)

@@ -108,10 +108,26 @@ import Testing
             .regular("Mail", windows: [.unlisted(in: [1])]),
             .regular("Notes", windows: [.unlisted(in: [2])]),
         ],
-        currentSpaces: [7]
+        currentSpaces: [7],
+        isActiveSpaceFullScreen: true
     )
 
     #expect(appRowNames(of: desktop) == ["Safari", "Mail", "Notes"])
+}
+
+/// Activation can bring an app forward without leaving the full-screen Space.
+@Test func inAFullScreenSpaceAllAppsShowEvenWhenTheFrontmostAppIsNotFullScreen() {
+    let desktop = DesktopSnapshot.with(
+        apps: [
+            .regular("Miro", windows: [.unlisted(in: [1])]),
+            .regular("Safari", windows: [.window(in: [7], isFullScreen: true)]),
+            .regular("Notes", windows: [.unlisted(in: [2])]),
+        ],
+        currentSpaces: [7],
+        isActiveSpaceFullScreen: true
+    )
+
+    #expect(appRowNames(of: desktop) == ["Miro", "Safari", "Notes"])
 }
 
 @Test func aFullScreenWindowOfAnotherAppDoesNotShowAllApps() {

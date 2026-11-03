@@ -7,6 +7,7 @@ import os
 public struct WindowScan: Sendable {
     public let windowsByApp: [AppID: [DesktopWindow]]
     public let currentSpaces: Set<SpaceID>
+    public let isActiveSpaceFullScreen: Bool
 }
 
 /// Reads the windows of every app as raw facts, merging what Accessibility and the window server each know.
@@ -42,7 +43,11 @@ public actor WindowScanner {
         }
         log(result, previous: windowsByApp, took: ContinuousClock.now - began)
         windowsByApp = result.answers
-        return WindowScan(windowsByApp: result.answers, currentSpaces: Set(spaces.current.map(SpaceID.init)))
+        return WindowScan(
+            windowsByApp: result.answers,
+            currentSpaces: Set(spaces.current.map(SpaceID.init)),
+            isActiveSpaceFullScreen: spaces.isActiveFullScreen
+        )
     }
 
     /// Changes only at info level: a change logged with no window event just before it is a missed event.

@@ -99,11 +99,14 @@ extension DesktopApp {
 
 extension DesktopSnapshot {
     /// Apps listed most recently used first; the first one is the Frontmost app.
-    static func with(apps: [DesktopApp], currentSpaces: Set<UInt64> = [1]) -> DesktopSnapshot {
+    static func with(
+        apps: [DesktopApp], currentSpaces: Set<UInt64> = [1], isActiveSpaceFullScreen: Bool = false
+    ) -> DesktopSnapshot {
         DesktopSnapshot(
             apps: apps.reversed(),
             mruOrder: apps.map(\.id),
             currentSpaces: spaceIDs(currentSpaces),
+            isActiveSpaceFullScreen: isActiveSpaceFullScreen,
             frontmostApp: apps.first?.id
         )
     }
