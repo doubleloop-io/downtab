@@ -16,8 +16,6 @@ enum PrivateRemoteWindow {
 
     struct Search {
         let element: AXUIElement?
-        let triedIDs: Int
-        let elapsed: Duration
     }
 
     /// Nil when the symbol is missing.
@@ -26,10 +24,8 @@ enum PrivateRemoteWindow {
         let clock = ContinuousClock()
         let start = clock.now
         var token = remoteToken(pid: pid)
-        var tried = 0
         for elementID in elementIDs {
             if clock.now - start > budget { break }
-            tried += 1
             withUnsafeBytes(of: elementID) { token.replaceSubrange(12..<20, with: $0) }
             guard let element = createWithRemoteToken(token as CFData)?.takeRetainedValue() else { continue }
             AXUIElementSetMessagingTimeout(element, Accessibility.messagingTimeout)
@@ -37,10 +33,10 @@ enum PrivateRemoteWindow {
             if PrivateSpaces.windowID(of: element) == windowID,
                 AXAttribute.string(of: element, kAXRoleAttribute) == kAXWindowRole
             {
-                return Search(element: element, triedIDs: tried, elapsed: clock.now - start)
+                return Search(element: element)
             }
         }
-        return Search(element: nil, triedIDs: tried, elapsed: clock.now - start)
+        return Search(element: nil)
     }
 
     /// 20 bytes: pid, 0, the "coco" magic, then the 8-byte element id filled in per attempt.

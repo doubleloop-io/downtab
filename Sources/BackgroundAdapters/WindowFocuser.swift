@@ -30,14 +30,9 @@ public actor WindowFocuser {
             logger.error("activate pid=\(id.processIdentifier): app no longer running")
             return
         }
-        logSpaces(beforeActivating: app)
         // Like the native switcher: the whole app comes forward, unhidden if needed.
         let activated = app.activate()
         logger.info("activate pid=\(id.processIdentifier) ok=\(activated)")
-        Task {
-            try? await Task.sleep(for: .milliseconds(300))
-            logSpaces(afterActivating: app)
-        }
     }
 
     /// After activation, so the whole app still comes forward: the fronted window makes the window server move to
@@ -60,51 +55,13 @@ public actor WindowFocuser {
             """)
     }
 
-    /// The found element and how: `listed` (`kAXWindows`), `remote ids=<tried> ms=<elapsed>`, or why not.
+    /// The found element and how: `listed` (`kAXWindows`), `remote`, or why not.
     private static func elementAcrossSpaces(of windowID: WindowID, in app: AppID) -> (AXUIElement?, String) {
         if let listed = element(of: windowID, in: app) { return (listed, "listed") }
         guard let search = PrivateRemoteWindow.element(of: windowID.rawValue, of: app.processIdentifier) else {
             return (nil, "remote-unavailable")
         }
-        let (seconds, attoseconds) = search.elapsed.components
-        let cost = "ids=\(search.triedIDs) ms=\(seconds * 1000 + attoseconds / 1_000_000_000_000_000)"
-        return (search.element, search.element == nil ? "remote-missed \(cost)" : "remote \(cost)")
-    }
-
-    /// Diagnosis aid: activation from a full-screen Space sometimes stays there (Miro), sometimes not (Slack).
-    private func logSpaces(beforeActivating app: NSRunningApplication) {
-        let pid = app.processIdentifier
-        let spaces = PrivateSpaces.displaySpaces()
-        let appSpaces = WindowServerList.normalWindows(includingOffScreen: true)
-            .filter { $0.ownerPID == pid }
-            .reduce(into: Set<UInt64>()) { $0.formUnion(PrivateSpaces.spaces(of: $1.id)) }
-        let name = app.localizedName ?? "?"
-        let inCurrent = !appSpaces.isDisjoint(with: spaces.current)
-        logger.info(
-            """
-            activate pid=\(pid) name=\(name, privacy: .public) \
-            windowsInCurrentSpace=\(inCurrent) appSpaces=\(Self.ids(appSpaces), privacy: .public) \
-            \(Self.describe(spaces), privacy: .public)
-            """)
-    }
-
-    private func logSpaces(afterActivating app: NSRunningApplication) {
-        let frontmost = NSWorkspace.shared.frontmostApplication?.processIdentifier ?? -1
-        logger.info(
-            """
-            after activate pid=\(app.processIdentifier) frontmost=\(frontmost) \
-            \(Self.describe(PrivateSpaces.displaySpaces()), privacy: .public)
-            """)
-    }
-
-    private static func describe(_ spaces: PrivateSpaces.DisplaySpaces) -> String {
-        let active = spaces.active.map(String.init) ?? "?"
-        let current = ids(spaces.current)
-        return "current=\(current) active=\(active) activeFullScreen=\(spaces.isActiveFullScreen)"
-    }
-
-    private static func ids(_ spaces: Set<UInt64>) -> String {
-        "[" + spaces.sorted().map(String.init).joined(separator: ",") + "]"
+        return (search.element, search.element == nil ? "remote-missed" : "remote")
     }
 
     /// The spike's recipe (`docs/spike-results.md`, "Ricetta: alzare una finestra").
