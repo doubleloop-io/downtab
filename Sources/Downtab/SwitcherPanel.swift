@@ -56,7 +56,7 @@ final class SwitcherPanel: NSPanel {
         if let selectedTile = views.first(where: \.isSelected) {
             placeSelectedName(under: selectedTile)
         }
-        // Before the show delay the panel is key but transparent: keys pressed then reach the Switcher, not the
+        // Before the show delay the Switcher is key but transparent: keys pressed then reach it, not the
         // Frontmost app, and a quick press never flashes it.
         alphaValue = displayed.isVisible ? 1 : 0
         makeKeyAndOrderFront(nil)
