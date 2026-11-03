@@ -35,8 +35,7 @@ private final class FakeSymbolicHotKeys: SymbolicHotKeySwitch {
 
     takeover.turnOff(exactly: [.commandTab])
 
-    #expect(hotKeys.isEnabled(1) == false)
-    #expect(hotKeys.isEnabled(2) == false)
+    #expect(hotKeys.disabled(.commandTab))
     #expect(hotKeys.enabled(.commandGrave))
 }
 
@@ -73,12 +72,12 @@ private final class FakeSymbolicHotKeys: SymbolicHotKeySwitch {
     #expect(hotKeys.enabled(.commandTab))
 }
 
-@Test func aNativeShortcutAlreadyOffBeforeTheTakeoverStaysOffAfterRestore() {
-    let hotKeys = FakeSymbolicHotKeys(off: Set(NativeShortcut.commandGrave.symbolicHotKeyIDs))
+@Test func aNativeShortcutAlreadyOffWhenTakenOverIsTurnedOnByRestore() {
+    let hotKeys = FakeSymbolicHotKeys(off: Set(NativeShortcut.commandTab.symbolicHotKeyIDs))
     let takeover = NativeShortcutTakeover(hotKeys: hotKeys)
-    takeover.turnOff(exactly: [.commandGrave])
+    takeover.turnOff(exactly: [.commandTab])
 
     takeover.restore()
 
-    #expect(hotKeys.disabled(.commandGrave))
+    #expect(hotKeys.enabled(.commandTab))
 }
