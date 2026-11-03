@@ -1,9 +1,10 @@
 # Developer commands. CI only runs `build` and `test`: signing material never leaves this Mac.
 .DEFAULT_GOAL := help
-.PHONY: help setup-signing build test check-core lint format bundle run stop smoke
+.PHONY: help setup-signing build test check-core lint format bundle run stop smoke restore restore-status
 
 EXE := Downtab
 APP := build/$(EXE).app
+RESTORE := build/EmergencyRestore
 # Signing material lives in the main checkout, shared by its worktrees: one certificate, one Accessibility grant.
 MAIN_CHECKOUT := $(shell common=$$(git rev-parse --path-format=absolute --git-common-dir 2>/dev/null) \
 	&& dirname "$$common" || pwd)
@@ -19,15 +20,17 @@ SWIFT_FLAGS = -Xswiftc -plugin-path -Xswiftc "$(TESTING_PLUGINS)"
 
 help:
 	@echo "make setup-signing   once per clone: create the self-signed certificate in a dedicated keychain"
-	@echo "make build           debug build"
+	@echo "make build           debug build of the app and of Emergency restore"
 	@echo "make test            check the core boundary and lint, then run the tests"
 	@echo "make check-core      fail if the Switcher core imports anything but Foundation or loads private APIs"
 	@echo "make lint            swift-format check (.swift-format) and SwiftLint (.swiftlint.yml); any violation fails"
 	@echo "make format          rewrite sources with swift-format"
-	@echo "make bundle          release build, assemble and sign $(APP)"
+	@echo "make bundle          release build, assemble and sign $(APP), copy Emergency restore to $(RESTORE)"
 	@echo "make run             bundle, then launch the app (quitting a running instance first)"
 	@echo "make stop            quit the running app"
-	@echo "make smoke           bundle, launch, post ⌥/⌥Tab/⌥⇧Tab/⌥`/⌥⇧`/Esc, fail on a crash; must pass before closing an issue that touches the app"
+	@echo "make restore         Emergency restore: turn native ⌘Tab and ⌘\` back on, after a forced kill or a crash"
+	@echo "make restore-status  show whether native ⌘Tab and ⌘\` are on, changing nothing"
+	@echo "make smoke         bundle, launch, post ⌥/⌥Tab/⌥⇧Tab/⌥`/⌥⇧`/Esc, fail on a crash; must pass before closing an issue that touches the app"
 
 setup-signing:
 	@scripts/setup-signing.sh $(SIGNING_DIR) $(KEYCHAIN_PASSWORD)
@@ -54,6 +57,9 @@ lint:
 bundle:
 	@test -f "$(KEYCHAIN)" || { echo "signing missing: run make setup-signing"; exit 1; }
 	swift build -c release --product $(EXE) $(SWIFT_FLAGS)
+	swift build -c release --product EmergencyRestore $(SWIFT_FLAGS)
+	mkdir -p build
+	cp "$$(swift build -c release --show-bin-path)/EmergencyRestore" "$(RESTORE)"
 	rm -rf "$(APP)"
 	mkdir -p "$(APP)/Contents/MacOS"
 	cp "$$(swift build -c release --show-bin-path)/$(EXE)" "$(APP)/Contents/MacOS/$(EXE)"
@@ -72,6 +78,18 @@ stop:
 	@if pkill -x $(EXE); then \
 		while pgrep -x $(EXE) >/dev/null; do sleep 0.1; done; echo stopped; \
 	else echo "not running"; fi
+
+# Prefers the copy `make bundle` left: in an emergency it runs at once, without compiling.
+$(RESTORE):
+	swift build --product EmergencyRestore $(SWIFT_FLAGS)
+	mkdir -p build
+	cp "$$(swift build --show-bin-path)/EmergencyRestore" "$(RESTORE)"
+
+restore: $(RESTORE)
+	@"$(RESTORE)"
+
+restore-status: $(RESTORE)
+	@"$(RESTORE)" --status
 
 # Local only: posting synthetic events needs the Accessibility permission for the terminal.
 smoke: stop bundle

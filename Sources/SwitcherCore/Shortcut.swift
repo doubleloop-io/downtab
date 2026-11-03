@@ -78,3 +78,19 @@ public enum KeyCode {
     /// The key left of `1`: `` ` `` on US layouts.
     public static let grave = 50
 }
+
+/// A macOS shortcut that Downtab turns off while one of its own shortcuts takes its place.
+public enum NativeShortcut: CaseIterable, Hashable, Sendable {
+    /// ⌘Tab, with ⌘⇧Tab.
+    case commandTab
+    /// ⌘`, "Move focus to next window".
+    case commandGrave
+
+    /// The exact combination Downtab takes over.
+    public var shortcut: Shortcut {
+        switch self {
+        case .commandTab: Shortcut(keyCode: KeyCode.tab, modifiers: [.command])
+        case .commandGrave: Shortcut(keyCode: KeyCode.grave, modifiers: [.command])
+        }
+    }
+}

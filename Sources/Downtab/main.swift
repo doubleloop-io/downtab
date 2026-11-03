@@ -1,9 +1,12 @@
 import AppKit
+import BackgroundAdapters
 
 final class AppDelegate: NSObject, NSApplicationDelegate {
     private var statusItem: NSStatusItem?
     private let switcher = SwitcherController()
-    private lazy var shortcuts = ShortcutSettings(keyboard: switcher.keyboard)
+    private let takeover = NativeShortcutTakeover()
+    private let terminationSignals = TerminationSignals()
+    private lazy var shortcuts = ShortcutSettings(keyboard: switcher.keyboard, takeover: takeover)
     private lazy var preferences = PreferencesWindow(settings: shortcuts)
 
     func applicationDidFinishLaunching(_ notification: Notification) {
@@ -15,8 +18,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         menu.addItem(withTitle: "Quit Downtab", action: #selector(NSApplication.terminate(_:)), keyEquivalent: "q")
         item.menu = menu
         statusItem = item
+        // Native ⌘Tab and ⌘` stay off after Downtab exits unless it turns them back on.
+        terminationSignals.install(cleanUp: takeover.restore)
         switcher.start()
         shortcuts.registerStored()
+    }
+
+    func applicationWillTerminate(_ notification: Notification) {
+        takeover.restore()
     }
 
     @objc private func openPreferences() {

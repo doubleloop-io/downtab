@@ -49,6 +49,12 @@ _Avoid_: select, commit, switch
 Close the Switcher without changing anything.
 _Avoid_: dismiss, abort
 
+**Native shortcut**:
+macOS's own ⌘Tab (with ⌘⇧Tab) or ⌘`, which Downtab turns off while one of its shortcuts is exactly that combination.
+
+**Emergency restore**:
+The separate executable (`make restore`) that turns the Native shortcuts back on when Downtab could not, after a forced kill or a crash.
+
 ### Context
 
 **Frontmost app**:

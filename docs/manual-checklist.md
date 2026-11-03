@@ -222,7 +222,7 @@ Before starting: `make run`, Accessibility granted to Downtab, a few apps open. 
 3. Click the App shortcut field and press Tab alone: a red message `Tab: Add a modifier: ⌘, ⌥ or ⌃.` appears under it, the field keeps `⌥Tab`. ⇧Tab gives the same message.
 4. Click it and press ⌥⇧Tab: `⌥⇧Tab: ⇧ is reserved for going back: record the shortcut without it.`
 5. Click it and press `` ⌥` ``: `` ⌥`: The other shortcut already uses this combination. ``
-6. Click it and press ⌘Space: `⌘Space: macOS already uses this combination: choose another one.` Same for ⌘Tab and ⌃→. An app shortcut such as ⌘W is accepted: the field reads `⌘W`; press `Restore Defaults` before going on.
+6. Click it and press ⌘Space: `⌘Space: macOS already uses this combination: choose another one.` Same for ⌃→. An app shortcut such as ⌘W is accepted: the field reads `⌘W`; press `Restore Defaults` before going on.
 7. Click it and press ⌃Tab: the message disappears and the field reads `⌃Tab`. Without restarting, switch apps with ⌃Tab (quick press: the previous app comes forward; until the Modifier follows custom shortcuts, a ⌃ shortcut confirms right away instead of keeping the Switcher open). ⌥Tab no longer opens the Switcher.
 8. Click the Window shortcut field and press ⌃`` ` ``: it reads ``⌃` `` (or the layout's character). In an app with 2 windows, ⌃`` ` `` brings its other window forward; ⌃⇧`` ` `` its last one.
 9. `make stop`, then `make run` again and open the Preferences: they still show `⌃Tab` and ``⌃` ``, and ⌃Tab still switches apps.
@@ -232,4 +232,27 @@ Before starting: `make run`, Accessibility granted to Downtab, a few apps open. 
 13. A stored shortcut that fails to register at launch stays stored and is reported in the Preferences, with no fallback to the default: quit the hotkey app of step 12, record its hotkey (`⌥Space`) as the App shortcut, `make stop`, start the hotkey app, `make run`. ⌥Space opens the other app, not the Switcher; the Preferences show `⌥Space: macOS already uses this combination: choose another one.` under the App shortcut, which still reads `⌥Space`. Record another App shortcut: the message disappears. Skip if no such app is installed.
 14. Restore Defaults never stores a pair that fails to register: record `⌃Tab` and ``⌃` ``, then set the hotkey app of step 12 to ⌥Tab and click `Restore Defaults`: the fields keep `⌃Tab` and ``⌃` ``, ⌃Tab still switches apps, the App shortcut shows `⌥Tab: macOS already uses this combination: choose another one.`, and after `make stop` and `make run` the Preferences still show `⌃Tab`. Reset the hotkey app afterwards. Skip if no such app is installed.
 15. With VoiceOver on (⌘F5), move to a recorder field: it reads `App shortcut, ⌥Tab, button`; a rejection is announced. Turn VoiceOver off.
+
+## Native ⌘Tab / ⌘` takeover and Emergency restore
+
+Downtab turns native ⌘Tab (with ⌘⇧Tab) and ⌘`` ` `` off only while one of its shortcuts is exactly that combination, or while a shortcut is being recorded. macOS keeps them off after Downtab exits unless they are turned back on: Emergency restore does that from the terminal, without Downtab.
+
+**Emergency restore, first.** Run this before anything else in the section, and whenever native ⌘Tab stops working:
+
+- `make restore-status` changes nothing and prints three lines, `commandTab id=1 keyCode=48 modifiers=0x100000: on`, `commandTab id=2 keyCode=48 modifiers=0x120000: on`, `commandGrave id=27 keyCode=50 modifiers=0x100000: on`. A different `keyCode` or `modifiers` means macOS renumbered the shortcuts: stop here, the takeover would turn off the wrong ones.
+- `make restore` turns all three on, prints `... -> on` for each and ``restore ok: native ⌘Tab and ⌘` are on``. `make bundle` leaves a prebuilt copy in `build/EmergencyRestore`, so it runs without compiling; it also works as `build/EmergencyRestore` from any terminal.
+- Last resort if both fail: log out and back in.
+
+Before starting: `make run`, Accessibility granted to Downtab, TextEdit, Safari and Notes open, Preferences open, default shortcuts (`Restore Defaults`).
+
+1. `make restore-status`: all `on`.
+2. Click the App shortcut field and press ⌘Tab: no native app switcher appears, the field reads `⌘Tab`, no message. `make restore-status`: `id=1` and `id=2` read `off`, `id=27` `on`.
+3. Close the Preferences. In Notes, quick-press ⌘Tab: the previous app comes forward through Downtab, and the native app switcher never appears. ⌘⇧Tab is not caught by the native switcher either. (Until the Modifier follows custom shortcuts, a ⌘ shortcut confirms right away instead of keeping the Switcher open.) ⌥Tab no longer opens the Switcher.
+4. Record ⌥Tab again as the App shortcut: native ⌘Tab works again right away, `make restore-status` shows all `on`.
+5. Record `` ⌘` `` as the Window shortcut: `id=27` reads `off`. In an app with 2 windows, `` ⌘` `` goes through Downtab. Record `` ⌥` `` again: `id=27` back `on`, native `` ⌘` `` cycles windows again.
+6. Quit restores: record ⌘Tab and `` ⌘` ``, then menu bar icon › `Quit Downtab`: `make restore-status` shows all `on` and native ⌘Tab works.
+7. `make stop` restores too: `make run` (the stored ⌘Tab is taken over at launch: `id=1` `off`), then `make stop`: all `on`.
+8. Recording turns them off only while it lasts (leaving the Preferences stops recording, hence the delay): with ⌥Tab stored, run `sleep 5; make restore-status` and click the App shortcut field within 5 s: all `off`. Press `Esc` in the field, then `make restore-status`: all `on`. Click the field, then click another app's window: all `on`.
+9. Forced kill: record ⌘Tab, then `pkill -9 -x Downtab`. Native ⌘Tab stays off (`id=1` `off`, ⌘Tab shows no native switcher). `make restore`: native ⌘Tab works again. `make run` restarts with ⌘Tab taken over; set the defaults back with `Restore Defaults` and check all `on`.
+10. A native shortcut that was already off stays off after Downtab: in System Settings › Keyboard › Keyboard Shortcuts › Keyboard, turn off `Move focus to next window`; record `` ⌘` ``, then record `` ⌥` ``: `id=27` stays `off`. Turn the setting back on. Skip if the setting does not change `id=27`.
 
