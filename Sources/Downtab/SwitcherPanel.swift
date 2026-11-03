@@ -35,11 +35,11 @@ final class SwitcherPanel: NSPanel {
         // The display is chosen at opening: moving the selection never moves the panel to another display.
         let target = isVisible ? screen : Self.pointerScreen()
         let iconSize = Metrics.iconSize(screenWidth: target?.frame.width, tileCount: displayed.appRow.count)
-        let isAtWindowLevel = displayed.level != .app
+        let selection: AppTile.Selection = displayed.level == .app ? .selected : .parentOfWindowList
         let views = displayed.appRow.enumerated().map { index, entry in
             AppTile(
-                icon: icon(entry.id), entry: entry, iconSize: iconSize, isSelected: index == displayed.selectedIndex,
-                isAtWindowLevel: isAtWindowLevel && index == displayed.selectedIndex
+                icon: icon(entry.id), entry: entry, iconSize: iconSize,
+                selection: index == displayed.selectedIndex ? selection : .unselected
             )
         }
         appRow.setViews(views, in: .leading)
@@ -170,16 +170,24 @@ final class SwitcherPanel: NSPanel {
 
 /// One App row entry: the icon, wrapped by the highlight when selected, with its Window count badge.
 private final class AppTile: NSView {
+    enum Selection {
+        case unselected
+        case selected
+        /// At Window level the selected tile dims, leaving the highlight to the selected window, and its badge
+        /// inverts.
+        case parentOfWindowList
+    }
+
     let isSelected: Bool
 
-    /// At Window level the selected tile dims, leaving the highlight to the selected window, and its badge inverts.
-    init(icon: NSImage?, entry: AppRowEntry, iconSize: CGFloat, isSelected: Bool, isAtWindowLevel: Bool) {
-        self.isSelected = isSelected
+    init(icon: NSImage?, entry: AppRowEntry, iconSize: CGFloat, selection: Selection) {
+        isSelected = selection != .unselected
         super.init(frame: .zero)
         wantsLayer = true
         layer?.cornerRadius = Metrics.tileCornerRadius
         if isSelected {
-            layer?.backgroundColor = (isAtWindowLevel ? Palette.parentTile : Palette.selectedTile).cgColor
+            layer?.backgroundColor =
+                (selection == .parentOfWindowList ? Palette.parentTile : Palette.selectedTile).cgColor
             layer?.borderWidth = 1
             layer?.borderColor = Palette.border.cgColor
         }
@@ -208,7 +216,7 @@ private final class AppTile: NSView {
         ])
         if let count = entry.windowCountBadge {
             setAccessibilityValue("\(count) windows")
-            addBadge(count, iconSize: iconSize, isInverted: isAtWindowLevel)
+            addBadge(count, iconSize: iconSize, isInverted: selection == .parentOfWindowList)
         }
     }
 
