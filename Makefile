@@ -27,7 +27,7 @@ help:
 	@echo "make bundle          release build, assemble and sign $(APP)"
 	@echo "make run             bundle, then launch the app (quitting a running instance first)"
 	@echo "make stop            quit the running app"
-	@echo "make smoke           bundle, launch, post ⌥/⌥Tab/⌥⇧Tab/Esc, fail on a crash; must pass before closing an issue that touches the app"
+	@echo "make smoke           bundle, launch, post ⌥/⌥Tab/⌥⇧Tab/⌥`/⌥⇧`/Esc, fail on a crash; must pass before closing an issue that touches the app"
 
 setup-signing:
 	@scripts/setup-signing.sh $(SIGNING_DIR) $(KEYCHAIN_PASSWORD)

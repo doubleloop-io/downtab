@@ -14,7 +14,7 @@ Checks run by hand on the real app. No Swift knowledge needed: every step is a t
 
 Before starting: grant Accessibility to the terminal (System Settings › Privacy & Security › Accessibility), so it can post keystrokes. Must pass before closing an issue that touches the app.
 
-1. `make smoke` ends with `smoke ok`. It launches the app, presses ⌥, ⌥Tab, ⌥⇧Tab and `Esc` by itself (the front app may change), and quits the app at the end.
+1. `make smoke` ends with `smoke ok`. It launches the app, presses ⌥, ⌥Tab, ⌥⇧Tab, `` ⌥` ``, `` ⌥⇧` `` and `Esc` by itself (the front app may change), and quits the app at the end.
 
 ## App launch
 
@@ -135,6 +135,20 @@ Before starting: `make run`, Accessibility granted to Downtab. Open TextEdit wit
 7. With the Window list open, press Tab: the list closes and the next app is selected. Press `Esc`: nothing changes.
 8. Minimize a TextEdit window (⌘M), wait one second, select it in the Window list and release ⌥: it comes back from the Dock and to the front.
 9. `log stream --predicate 'subsystem == "local.downtab" AND category == "focus"'` shows a `raise pid=... wid=... private=true ax=0` line for each window confirmed. `private=false` means a private API is missing: the window still comes forward, but with all of the app's windows, and `log show --last 1h --predicate 'subsystem == "local.downtab" AND category == "private-api"'` shows one `private symbol missing: <name>, its feature is off` line per missing symbol; the app keeps running.
+
+## Switcher: Window shortcut
+
+Before starting: `make run`, Accessibility granted to Downtab. Open TextEdit with 3 windows told apart by their titles (`one`, `two`, `three`), arranged so each one is partly visible, then Safari with one window, then click TextEdit's `one` window so that TextEdit is frontmost with `one` in front. Keep ⌥ held during each step unless the step says to release it. `` ⌥` `` is ⌥ plus the key left of `1` (on a US layout; on other layouts the key in that position).
+
+1. In TextEdit, hold ⌥ and press `` ` ``: the Switcher opens with TextEdit selected and its Window list open, the second window (`two`) highlighted. Press `Esc`: nothing changes.
+2. Hold ⌥, press `` ` `` twice: `three` is highlighted. Press `` ` `` again: it wraps to `one`. Press `Esc`.
+3. Hold ⌥, press `` ` ``, then ⇧`` ` ``: `one` is highlighted. Press ⇧`` ` `` again: it wraps to `three`. Press `Esc`.
+4. Hold ⌥ and ⇧, press `` ` ``: the Switcher opens on TextEdit's last window (`three`). Press `Esc`.
+5. Press `` ⌥` `` once and release both keys quickly: only `two` comes to the front and gets the keyboard focus (type a few letters: they land in it); TextEdit's other windows stay where they were. Pressing it again brings `one` back.
+6. Hold ⌥, press `` ` ``, then `↓`: `three` is highlighted. Press `↑` three times: the Window list closes and TextEdit is selected at App level. Press Tab: Safari is selected. Press `` ` ``: nothing happens. Press `Esc`.
+7. Hold ⌥, press `` ` ``, then Tab: the Window list closes and Safari is selected. Release ⌥: Safari comes to the front.
+8. In Safari (one window), press `` ⌥` ``: no Switcher appears and nothing changes. Same with `` ⌥⇧` ``, and in an app with no windows (close all TextEdit windows with ⌘W, then press `` ⌥` `` in TextEdit).
+9. `log show --last 1h --predicate 'subsystem == "local.downtab" AND category == "keyboard"'` shows `` shortcut ⌥` registered `` and `` shortcut ⌥⇧` registered `` at launch, next to the ⌥Tab ones.
 
 ## Switcher: accessibility
 

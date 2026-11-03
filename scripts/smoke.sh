@@ -24,7 +24,7 @@ for _ in $(seq 50); do grep -q "$TAP_STARTED" "$WORK/log" && break; sleep 0.1; d
 grep -q "$TAP_STARTED" "$WORK/log" \
   || fail "modifier release tap not started: is the Accessibility permission granted to Downtab?"
 
-# key code 48 = Tab, 53 = Esc. ⌥Tab and ⌥⇧Tab release ⌥ at the end, so each one confirms.
+# key code 48 = Tab, 50 = `, 53 = Esc. ⌥Tab, ⌥⇧Tab, ⌥` and ⌥⇧` release ⌥ at the end, so each one confirms.
 osascript >/dev/null <<'EOF' || fail "cannot post events: grant the Accessibility permission to this terminal"
 tell application "System Events"
     key down option
@@ -34,6 +34,10 @@ tell application "System Events"
     key code 48 using option down
     delay 0.5
     key code 48 using {option down, shift down}
+    delay 0.5
+    key code 50 using option down
+    delay 0.5
+    key code 50 using {option down, shift down}
     delay 0.5
     key down option
     key code 48
