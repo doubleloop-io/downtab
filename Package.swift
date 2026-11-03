@@ -29,8 +29,13 @@ let package = Package(
             dependencies: ["SwitcherCore", "BackgroundAdapters"],
             swiftSettings: strictSettings + [.defaultIsolation(MainActor.self)]
         ),
+        // Separate from the app: it must work when Downtab was killed with native ⌘Tab and ⌘` off.
+        .executableTarget(
+            name: "EmergencyRestore", dependencies: ["SwitcherCore", "BackgroundAdapters"],
+            swiftSettings: strictSettings),
         .testTarget(name: "SwitcherCoreTests", dependencies: ["SwitcherCore"], swiftSettings: strictSettings),
         .testTarget(
-            name: "BackgroundAdaptersTests", dependencies: ["BackgroundAdapters"], swiftSettings: strictSettings),
+            name: "BackgroundAdaptersTests", dependencies: ["BackgroundAdapters", "SwitcherCore"],
+            swiftSettings: strictSettings),
     ]
 )

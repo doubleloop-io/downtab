@@ -60,3 +60,15 @@ extension Shortcuts {
         return failures
     }
 }
+
+extension ShortcutRules {
+    /// The native shortcuts that would swallow Downtab's: only exactly ⌘Tab or ⌘`, and only for shortcuts that
+    /// registered, so a refused shortcut never leaves the native one off.
+    public static func nativeShortcutsToTurnOff(
+        for shortcuts: Shortcuts,
+        failures: [ShortcutSlot: ShortcutRejection] = [:]
+    ) -> Set<NativeShortcut> {
+        let registered = ShortcutSlot.allCases.filter { failures[$0] == nil }.map { shortcuts[$0] }
+        return Set(NativeShortcut.allCases.filter { registered.contains($0.shortcut) })
+    }
+}

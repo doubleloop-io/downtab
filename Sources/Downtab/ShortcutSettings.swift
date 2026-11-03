@@ -1,13 +1,12 @@
+import BackgroundAdapters
 import Carbon
 import SwitcherCore
 
 /// Applies shortcut changes from the Preferences: Shortcut rules first, then registration, then the Settings store.
 final class ShortcutSettings {
     /// Combinations macOS keeps for itself. Shortcuts with ⇧ are left out: the Shortcut rules reject them anyway.
-    /// Native ⌘Tab and ⌘` stay here until Downtab can turn them off.
+    /// Native ⌘Tab and ⌘` are left out: Downtab turns them off when it takes them over.
     private static let knownSystemShortcuts: Set<Shortcut> = [
-        Shortcut(keyCode: kVK_Tab, modifiers: [.command]),
-        Shortcut(keyCode: kVK_ANSI_Grave, modifiers: [.command]),
         Shortcut(keyCode: kVK_Space, modifiers: [.command]),
         Shortcut(keyCode: kVK_Space, modifiers: [.control]),
         Shortcut(keyCode: kVK_Space, modifiers: [.command, .option]),
@@ -22,6 +21,7 @@ final class ShortcutSettings {
 
     private let store = SettingsStore()
     private let keyboard: KeyboardInput
+    private let takeover: NativeShortcutTakeover
     private(set) var current: Shortcuts
     /// Current shortcuts macOS refused to register, with or without ⇧: they do not open the Switcher.
     private(set) var failures: [ShortcutSlot: ShortcutRejection] = [:]
@@ -29,8 +29,9 @@ final class ShortcutSettings {
     /// off: a combination is registered only long enough to learn whether macOS accepts it.
     private var isEnabled = false
 
-    init(keyboard: KeyboardInput) {
+    init(keyboard: KeyboardInput, takeover: NativeShortcutTakeover) {
         self.keyboard = keyboard
+        self.takeover = takeover
         current = store.shortcuts()
     }
 
@@ -45,8 +46,10 @@ final class ShortcutSettings {
         registerCurrent()
     }
 
+    /// Native ⌘Tab and ⌘` go off too: macOS would swallow them before the recorder sees them.
     func suspendWhileRecording() {
         keyboard.suspendShortcuts()
+        takeover.turnOff(exactly: Set(NativeShortcut.allCases))
     }
 
     func resumeAfterRecording() {
@@ -67,6 +70,7 @@ final class ShortcutSettings {
         }
         current = proposed
         failures = current.registrationFailures(refused: refused)
+        takeOverNativeShortcuts()
         store.save(current)
         return .valid
     }
@@ -80,17 +84,25 @@ final class ShortcutSettings {
         }
         current = .defaults
         failures = [:]
+        takeOverNativeShortcuts()
         store.save(current)
         return [:]
     }
 
     private func registerCurrent() {
         failures = current.registrationFailures(refused: register(current))
+        takeOverNativeShortcuts()
     }
 
     private func register(_ shortcuts: Shortcuts) -> Set<Shortcut> {
         let refused = keyboard.register(shortcuts)
         if !isEnabled { keyboard.suspendShortcuts() }
         return refused
+    }
+
+    /// While the shortcuts are off, native ⌘Tab and ⌘` must work: nothing else would answer them.
+    private func takeOverNativeShortcuts() {
+        let natives = isEnabled ? ShortcutRules.nativeShortcutsToTurnOff(for: current, failures: failures) : []
+        takeover.turnOff(exactly: natives)
     }
 }
