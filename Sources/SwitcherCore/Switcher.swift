@@ -21,12 +21,43 @@ public enum FinalEffect: Equatable, Sendable {
     /// Confirm at App level: bring the app forward like the native switcher.
     case activateApp(AppID)
     /// Confirm at Window level: only that window comes forward, the app's other windows stay where they are.
-    case bringWindowToFront(WindowID, of: AppID)
+    case bringWindowToFront(WindowID, of: AppID, restoring: WindowRestoration = [])
+}
+
+/// What must be undone before the window can come forward.
+public struct WindowRestoration: OptionSet, Sendable {
+    public let rawValue: Int
+
+    public init(rawValue: Int) {
+        self.rawValue = rawValue
+    }
+
+    public static let unminimize = WindowRestoration(rawValue: 1 << 0)
+    /// Unhides the whole app: hiding is per app, not per window.
+    public static let unhide = WindowRestoration(rawValue: 1 << 1)
+}
+
+/// What confirming the window will do besides bringing it forward.
+public enum WindowLabel: Equatable, Sendable {
+    /// Restored from the Dock.
+    case minimized
+    /// Lives in a Space of its own: confirming moves there.
+    case fullScreen
+    /// Its app is hidden: confirming unhides the app.
+    case hidden
 }
 
 public struct WindowListEntry: Equatable, Sendable {
     public let id: WindowID
     public let title: String
+    public let labels: [WindowLabel]
+
+    var restoration: WindowRestoration {
+        var restoration: WindowRestoration = []
+        if labels.contains(.minimized) { restoration.insert(.unminimize) }
+        if labels.contains(.hidden) { restoration.insert(.unhide) }
+        return restoration
+    }
 }
 
 public struct AppRowEntry: Equatable, Sendable {
@@ -67,7 +98,10 @@ public struct DisplayedState: Equatable, Sendable {
     var confirmation: FinalEffect {
         switch level {
         case .app, .windowWithoutList: .activateApp(selectedEntry.id)
-        case .window(let index): .bringWindowToFront(selectedEntry.windows[index].id, of: selectedEntry.id)
+        case .window(let index):
+            .bringWindowToFront(
+                selectedEntry.windows[index].id, of: selectedEntry.id,
+                restoring: selectedEntry.windows[index].restoration)
         }
     }
 

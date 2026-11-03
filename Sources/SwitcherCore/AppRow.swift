@@ -3,9 +3,12 @@ extension DesktopSnapshot {
     func appRow() -> [AppRowEntry] {
         let appsByID = Dictionary(apps.map { ($0.id, $0) }, uniquingKeysWith: { first, _ in first })
         let regularApps = mruOrder.compactMap { appsByID[$0] }.filter(\.isRegular)
-        // Like the native switcher, which shows every app from a full-screen app.
-        let admitted = isFrontmostAppFullScreen(among: regularApps) ? regularApps : regularApps.filter(admits)
-        return admitted.map { AppRowEntry(id: $0.id, name: $0.name, windows: windowList(of: $0)) }
+        // Like the native switcher, which shows every app from a full-screen app; App level only, for now
+        // (`docs/GOAL.md`).
+        if isFrontmostAppFullScreen(among: regularApps) {
+            return regularApps.map { AppRowEntry(id: $0.id, name: $0.name, windows: []) }
+        }
+        return regularApps.filter(admits).map { AppRowEntry(id: $0.id, name: $0.name, windows: windowList(of: $0)) }
     }
 
     private func isFrontmostAppFullScreen(among apps: [DesktopApp]) -> Bool {
@@ -27,9 +30,23 @@ extension DesktopSnapshot {
     }
 
     private func windowList(of app: DesktopApp) -> [WindowListEntry] {
-        app.windows.filter(isReachable).compactMap { window in
-            window.id.map { WindowListEntry(id: $0, title: window.title.isEmpty ? "Untitled" : window.title) }
+        let reachable = app.windows.filter(isReachable)
+        let minimizedLast = reachable.filter { !$0.isMinimized } + reachable.filter(\.isMinimized)
+        return minimizedLast.compactMap { window in
+            window.id.map {
+                WindowListEntry(
+                    id: $0, title: window.title.isEmpty ? "Untitled" : window.title,
+                    labels: labels(of: window, in: app))
+            }
         }
+    }
+
+    private func labels(of window: DesktopWindow, in app: DesktopApp) -> [WindowLabel] {
+        [
+            window.isMinimized ? .minimized : nil,
+            window.isFullScreen ? .fullScreen : nil,
+            app.isHidden ? .hidden : nil,
+        ].compactMap(\.self)
     }
 
     /// A window the Switcher can bring forward without leaving the Current Space, or a full-screen one.

@@ -133,7 +133,7 @@ Before starting: `make run`, Accessibility granted to Downtab. Open TextEdit wit
 5. Repeat step 4 with `Enter` instead of releasing ⌥: same result, and releasing ⌥ afterwards does nothing more.
 6. In TextEdit (now frontmost), hold ⌥, press Tab then ⇧Tab to come back to TextEdit, press `↓`: the second window is highlighted, not the one you are in. Release ⌥: that window comes to the front.
 7. With the Window list open, press Tab: the list closes and the next app is selected. Press `Esc`: nothing changes.
-8. Minimize a TextEdit window (⌘M), wait one second, select it in the Window list and release ⌥: it comes back from the Dock and to the front.
+8. Minimize a TextEdit window (⌘M), wait one second, select it in the Window list and release ⌥: it comes back from the Dock and to the front. More in "Switcher: minimized, hidden and full-screen windows".
 9. `log stream --predicate 'subsystem == "local.downtab" AND category == "focus"'` shows a `raise pid=... wid=... private=true ax=0` line for each window confirmed. `private=false` means a private API is missing: the window still comes forward, but with all of the app's windows, and `log show --last 1h --predicate 'subsystem == "local.downtab" AND category == "private-api"'` shows one `private symbol missing: <name>, its feature is off` line per missing symbol; the app keeps running.
 
 ## Switcher: Window shortcut
@@ -150,6 +150,20 @@ Before starting: `make run`, Accessibility granted to Downtab. Open TextEdit wit
 8. Click TextEdit's `one` window. Hold ⌥, press `` ` ``, then `→`: TextEdit's list closes and Safari (one window) is selected without a Window list. Press `←`: TextEdit's Window list reopens. Press `Esc`.
 9. Click the Safari window (one window) and press `` ⌥` ``: no Switcher appears and nothing changes. Same with `` ⌥⇧` ``, and in an app with no windows (close all TextEdit windows with ⌘W, then press `` ⌥` `` in TextEdit).
 10. `log show --last 1h --predicate 'subsystem == "local.downtab" AND category == "keyboard"'` shows `` shortcut ⌥` registered `` and `` shortcut ⌥⇧` registered `` at launch, next to the ⌥Tab ones.
+
+## Switcher: minimized, hidden and full-screen windows
+
+Before starting: `make run`, Accessibility granted to Downtab, two Spaces (Mission Control, `+`). In Space 1 open TextEdit with 3 windows titled apart (`one`, `two`, `three`), then Notes, clicking each to bring it to the front. In a second terminal run `log stream --level info --predicate 'subsystem == "local.downtab" AND (category == "scan" OR category == "focus")'` and keep it open. Wait one second after each change before pressing ⌥Tab. Press `Esc` after each check unless the step says to release ⌥.
+
+1. Full-screen detection first (open risk in #1): make TextEdit's `one` window full screen (green button), go back to Space 1 (⌃←), wait one second. Hold ⌥, select TextEdit, press `↓`: `one` is listed with a `Full screen` tag after its title. If it has no tag, the detection failed: stop here and note it in the issue.
+2. Release ⌥ on `one`: macOS moves to its full-screen Space and `one` is frontmost with the keyboard focus (type a few letters: they land in it). If it does not move Space, or another TextEdit window comes forward instead, note it in the issue.
+3. From the full-screen `one`, hold ⌥ and press Tab: every running app with a Dock icon is in the App row, none has a Window count badge, and `↓` opens no Window list on any app. Press `Esc`, leave full screen (green button) and go back to Space 1.
+4. Minimize `two` (⌘M). Hold ⌥, select TextEdit, `↓`: `two` is last, its title greyed, with a `Minimized` tag; the tag turns white on blue when `two` is selected.
+5. Select `two` and release ⌥: it comes back from the Dock and to the front with the keyboard focus, in one gesture. The log shows `unminimize pid=... wid=... ax=0` then `raise pid=... wid=...`.
+6. Minimize `two` again. Move to Space 2 (⌃→), open two TextEdit windows there (⌘N twice). Hold ⌥, select TextEdit, `↓`: only the two windows of Space 2 are listed, no `two`. Close them (⌘W) and go back to Space 1 (⌃←).
+7. In TextEdit press ⌘H, then click Notes. Hold ⌥, select TextEdit, `↓`: every window has a `Hidden` tag; the minimized `two` has both `Minimized` and `Hidden`.
+8. Select `three` and release ⌥: TextEdit is no longer hidden, `three` comes to the front with the keyboard focus, and TextEdit's other windows reappear behind it, ideally behind Notes too (note in the issue if they come in front of Notes). The log shows `unhide pid=... ok=true` then `raise pid=... wid=...`.
+9. With Accessibility Inspector, point at a labelled entry of the Window list: its label is the title followed by the tags, e.g. `two, Minimized`.
 
 ## Switcher: cross-app navigation
 
