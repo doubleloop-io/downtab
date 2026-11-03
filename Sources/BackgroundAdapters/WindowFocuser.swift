@@ -51,7 +51,7 @@ public actor WindowFocuser {
             AXUIElementPerformAction($0, kAXRaiseAction as CFString).rawValue
         }
         logger.info(
-            "front after activate pid=\(pid) wid=\(wid) private=\(fronted) ax=\(raised.map(String.init) ?? "unlisted")")
+            "front after activate pid=\(pid) wid=\(wid) private=\(fronted) ax=\(raised.map(String.init) ?? "unlisted", privacy: .public)")
     }
 
     /// Diagnosis aid: activation from a full-screen Space sometimes stays there (Miro), sometimes not (Slack).
