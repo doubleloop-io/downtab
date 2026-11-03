@@ -41,20 +41,7 @@ public final class ModifierReleaseTap {
     }
 
     public static var heldModifiers: Set<ShortcutModifier> {
-        held(in: CGEventSource.flagsState(.combinedSessionState))
-    }
-
-    fileprivate static func held(in flags: CGEventFlags) -> Set<ShortcutModifier> {
-        Set(ShortcutModifier.allCases.filter { flags.contains(flag(of: $0)) })
-    }
-
-    private static func flag(of modifier: ShortcutModifier) -> CGEventFlags {
-        switch modifier {
-        case .control: .maskControl
-        case .option: .maskAlternate
-        case .shift: .maskShift
-        case .command: .maskCommand
-        }
+        ShortcutModifier.held(in: CGEventSource.flagsState(.combinedSessionState))
     }
 
     private var relay: Relay?
@@ -123,7 +110,7 @@ private func handleTapEvent(
     case .tapDisabledByUserInput:
         relay.reenable(disabledBy: "user input")
     case .flagsChanged:
-        let held = ModifierReleaseTap.held(in: event.flags)
+        let held = ShortcutModifier.held(in: event.flags)
         Task { @MainActor in relay.onChange(held) }
     default:
         break
