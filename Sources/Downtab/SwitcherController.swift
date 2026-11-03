@@ -20,6 +20,7 @@ final class SwitcherController {
 
     private func handle(_ event: SwitcherEvent) {
         let previous = switcher.state
+        switcher.shortcuts = keyboard.shortcuts
         let effect = switcher.handle(event, desktop: tracker.snapshot())
         // Re-showing an unchanged state would move the panel to the pointer's current display.
         if switcher.state != previous {
@@ -62,14 +63,16 @@ final class SwitcherController {
         case .closed:
             missedReleaseCheck?.cancel()
             missedReleaseCheck = nil
-        case .open:
+        case .open(let displayed):
             guard missedReleaseCheck == nil else { return }
+            let modifier = displayed.modifier
+            let fallback = ModifierReleaseFallback { modifier.isSubset(of: ModifierReleaseTap.heldModifiers) }
             missedReleaseCheck = Task { [weak self] in
-                guard (try? await ModifierReleaseFallback().waitForRelease()) != nil else { return }
+                guard (try? await fallback.waitForRelease()) != nil else { return }
                 // The tap's release may have closed the Switcher while this check was resuming.
                 guard !Task.isCancelled, let self else { return }
                 logger.info("modifier release confirmed by fallback check")
-                handle(.modifierReleased)
+                handle(.modifiersChanged(held: ModifierReleaseTap.heldModifiers))
             }
         }
     }

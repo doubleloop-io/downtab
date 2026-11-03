@@ -1,11 +1,9 @@
 public enum SwitcherEvent: Equatable, Sendable {
-    case appShortcutPressed
-    /// ⇧ with the App shortcut key: moves the selection back.
-    case shiftAppShortcutPressed
-    case windowShortcutPressed
-    /// ⇧ with the Window shortcut key: moves the selection back in the Window list.
-    case shiftWindowShortcutPressed
-    case modifierReleased
+    /// A key pressed with the modifiers held at that moment. Closed, only the App or Window shortcut opens; open,
+    /// only their keys act, pressed with the Modifier. ⇧ added moves the selection back.
+    case keyPressed(Shortcut)
+    /// The modifiers now held. Open, releasing any key of the Modifier confirms.
+    case modifiersChanged(held: Set<ShortcutModifier>)
     case enterPressed
     case escapePressed
     case downPressed
@@ -93,10 +91,16 @@ public struct DisplayedState: Equatable, Sendable {
     public private(set) var isVisible = false
     /// Fixed at opening, like the App row.
     let frontmostApp: AppID?
+    /// The modifiers of the shortcut that opened the Switcher.
+    public let modifier: Set<ShortcutModifier>
 
-    init(appRow: [AppRowEntry], frontmostApp: AppID?, selectedIndex: Int = 0, level: SelectionLevel = .app) {
+    init(
+        appRow: [AppRowEntry], frontmostApp: AppID?, modifier: Set<ShortcutModifier>, selectedIndex: Int = 0,
+        level: SelectionLevel = .app
+    ) {
         self.appRow = appRow
         self.frontmostApp = frontmostApp
+        self.modifier = modifier
         self.selectedIndex = selectedIndex
         self.level = level
     }
@@ -190,27 +194,60 @@ public struct Switcher: Sendable {
     public static let showDelay = Duration.milliseconds(100)
 
     public private(set) var state: SwitcherState = .closed
+    public var shortcuts: Shortcuts
 
-    public init() {}
+    public init(shortcuts: Shortcuts = .defaults) {
+        self.shortcuts = shortcuts
+    }
 
     /// Returns the final effect when the event closes the Switcher, nil while it stays open or closed.
     @discardableResult
     public mutating func handle(_ event: SwitcherEvent, desktop: DesktopSnapshot) -> FinalEffect? {
         switch event {
-        case .modifierReleased, .enterPressed:
+        case .modifiersChanged(let held):
+            guard case .open(let displayed) = state, !displayed.modifier.isSubset(of: held) else { return nil }
+            return confirm()
+        case .enterPressed:
             return confirm()
         case .escapePressed:
             return cancel()
-        case .appShortcutPressed, .shiftAppShortcutPressed:
-            moveSelection(by: event == .appShortcutPressed ? 1 : -1, desktop: desktop)
-        case .windowShortcutPressed, .shiftWindowShortcutPressed:
-            moveWindowSelection(by: event == .windowShortcutPressed ? 1 : -1, desktop: desktop)
+        case .keyPressed(let combination):
+            press(combination, desktop: desktop)
         case .downPressed, .upPressed, .leftPressed, .rightPressed:
             updateWhileOpen { Self.moving($0, by: event) }
         case .showDelayElapsed:
             updateWhileOpen { $0.shown() }
         }
         return nil
+    }
+
+    private mutating func press(_ combination: Shortcut, desktop: DesktopSnapshot) {
+        guard let press = shortcutPress(of: combination) else { return }
+        let step = press.isReversed ? -1 : 1
+        switch press.slot {
+        case .app: moveSelection(by: step, desktop: desktop, modifier: press.modifier)
+        case .window: moveWindowSelection(by: step, desktop: desktop, modifier: press.modifier)
+        }
+    }
+
+    /// Nil unless the combination is, with or without ⇧, a shortcut when closed, or a shortcut key with the
+    /// Modifier when open.
+    private func shortcutPress(of combination: Shortcut) -> ShortcutPress? {
+        let modifier = combination.modifiers.subtracting([.shift])
+        let unshifted = Shortcut(keyCode: combination.keyCode, modifiers: modifier)
+        let exactSlot = ShortcutSlot.allCases.first { shortcuts[$0] == unshifted }
+        let slot: ShortcutSlot?
+        switch state {
+        case .closed:
+            slot = exactSlot
+        case .open(let displayed):
+            guard modifier == displayed.modifier else { return nil }
+            // When both shortcuts share a key, the one held exactly wins.
+            slot = exactSlot ?? ShortcutSlot.allCases.first { shortcuts[$0].keyCode == combination.keyCode }
+        }
+        return slot.map {
+            ShortcutPress(slot: $0, isReversed: combination.modifiers.contains(.shift), modifier: modifier)
+        }
     }
 
     private mutating func confirm() -> FinalEffect? {
@@ -239,7 +276,7 @@ public struct Switcher: Sendable {
         }
     }
 
-    private mutating func moveSelection(by step: Int, desktop: DesktopSnapshot) {
+    private mutating func moveSelection(by step: Int, desktop: DesktopSnapshot, modifier: Set<ShortcutModifier>) {
         switch state {
         case .open(let displayed):
             state = .open(displayed.movingSelection(by: step))
@@ -248,12 +285,14 @@ public struct Switcher: Sendable {
             let appRow = desktop.appRow()
             guard !appRow.isEmpty else { return }
             // Opening starts on the app being left, so the first step lands on the previous app.
-            let opening = DisplayedState(appRow: appRow, frontmostApp: desktop.frontmostApp)
+            let opening = DisplayedState(appRow: appRow, frontmostApp: desktop.frontmostApp, modifier: modifier)
             state = .open(opening.movingSelection(by: step))
         }
     }
 
-    private mutating func moveWindowSelection(by step: Int, desktop: DesktopSnapshot) {
+    private mutating func moveWindowSelection(
+        by step: Int, desktop: DesktopSnapshot, modifier: Set<ShortcutModifier>
+    ) {
         switch state {
         case .open(let displayed):
             state = .open(displayed.movingWindowSelection(by: step))
@@ -264,8 +303,17 @@ public struct Switcher: Sendable {
             else { return }
             // Like App row opening: starts on the window being left, so the first step lands on the next one.
             let opening = DisplayedState(
-                appRow: appRow, frontmostApp: desktop.frontmostApp, selectedIndex: frontmostIndex, level: .window(0))
+                appRow: appRow, frontmostApp: desktop.frontmostApp, modifier: modifier, selectedIndex: frontmostIndex,
+                level: .window(0))
             state = .open(opening.movingWindowSelection(by: step))
         }
     }
+}
+
+/// A shortcut key press the Switcher acts on.
+private struct ShortcutPress {
+    let slot: ShortcutSlot
+    /// Held with ⇧: moves the selection back.
+    let isReversed: Bool
+    let modifier: Set<ShortcutModifier>
 }

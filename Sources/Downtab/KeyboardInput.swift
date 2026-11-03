@@ -5,20 +5,16 @@ import SwitcherCore
 import os
 
 final class KeyboardInput {
-    private struct Registration {
-        /// What is held on the keyboard: the shortcut, plus ⇧ for the reverse registration.
-        let combination: Shortcut
-        let event: SwitcherEvent
-    }
-
     private static let shortcutSignature = OSType(0x4454_4142)  // "DTAB"
 
     private let onEvent: (SwitcherEvent) -> Void
     private let logger = Logger(subsystem: "local.downtab", category: "keyboard")
     private let modifierRelease = ModifierReleaseTap()
     private let hotKeyPresses = HotKeyPressHandler()
-    /// Indexed by Carbon hot key id.
-    private var registrations: [Registration] = []
+    /// The combinations held on the keyboard: each shortcut, plus ⇧ for the reverse. Indexed by Carbon hot key id.
+    private var registrations: [Shortcut] = []
+    /// The last shortcuts registered, whether or not macOS accepted them.
+    private(set) var shortcuts = Shortcuts.defaults
     private var shortcutRefs: [EventHotKeyRef?] = []
     private var keyMonitor: Any?
 
@@ -31,38 +27,37 @@ final class KeyboardInput {
         hotKeyPresses.install { [weak self] id in self?.shortcutPressed(id: id) }
         // A local monitor sees keys sent to any of Downtab's windows: the Preferences need theirs.
         keyMonitor = NSEvent.addLocalMonitorForEvents(matching: .keyDown) { [weak self] event in
-            guard let self, event.window is SwitcherPanel,
-                let switcherEvent = Self.panelEvent(forKeyCode: Int(event.keyCode))
-            else { return event }
-            onEvent(switcherEvent)
+            guard let self, event.window is SwitcherPanel else { return event }
+            onEvent(Self.panelEvent(for: event))
             return nil
         }
     }
 
     /// The Modifier release is detected only once the Accessibility permission is granted; calling again is harmless.
     func startModifierRelease() {
-        modifierRelease.start { [weak self] in self?.onEvent(.modifierReleased) }
+        modifierRelease.start { [weak self] held in self?.onEvent(.modifiersChanged(held: held)) }
     }
 
-    private static func panelEvent(forKeyCode keyCode: Int) -> SwitcherEvent? {
-        switch keyCode {
+    /// A shortcut key the Carbon hot keys do not hold reaches the Switcher here, such as ⌥` opened with ⌥Tab
+    /// while the Window shortcut is ⌃`.
+    private static func panelEvent(for event: NSEvent) -> SwitcherEvent {
+        switch Int(event.keyCode) {
         case kVK_Escape: .escapePressed
         case kVK_Return, kVK_ANSI_KeypadEnter: .enterPressed
         case kVK_DownArrow: .downPressed
         case kVK_UpArrow: .upPressed
         case kVK_LeftArrow: .leftPressed
         case kVK_RightArrow: .rightPressed
-        default: nil
+        case let keyCode:
+            .keyPressed(Shortcut(keyCode: keyCode, modifiers: ShortcutModifier.held(in: event.modifierFlags)))
         }
     }
 
     private func shortcutPressed(id: UInt32) {
         guard registrations.indices.contains(Int(id)) else { return }
-        onEvent(registrations[Int(id)].event)
+        onEvent(.keyPressed(registrations[Int(id)]))
         // The tap may report a quick release before Carbon delivers the press, while the Switcher was still closed.
-        if !ModifierReleaseTap.isModifierDown {
-            onEvent(.modifierReleased)
-        }
+        onEvent(.modifiersChanged(held: ModifierReleaseTap.heldModifiers))
     }
 
     /// Replaces the registered shortcuts, each with and without ⇧.
@@ -70,19 +65,15 @@ final class KeyboardInput {
     @discardableResult
     func register(_ shortcuts: Shortcuts) -> Set<Shortcut> {
         suspendShortcuts()
-        registrations = [
-            Registration(combination: shortcuts.app, event: .appShortcutPressed),
-            Registration(combination: shortcuts.app.withShift, event: .shiftAppShortcutPressed),
-            Registration(combination: shortcuts.window, event: .windowShortcutPressed),
-            Registration(combination: shortcuts.window.withShift, event: .shiftWindowShortcutPressed),
-        ]
+        self.shortcuts = shortcuts
+        registrations = [shortcuts.app, shortcuts.app.withShift, shortcuts.window, shortcuts.window.withShift]
         var refused: Set<Shortcut> = []
-        shortcutRefs = registrations.enumerated().map { index, registration in
-            let name = ShortcutLabel.text(for: registration.combination)
+        shortcutRefs = registrations.enumerated().map { index, combination in
+            let name = ShortcutLabel.text(for: combination)
             var ref: EventHotKeyRef?
             let status = RegisterEventHotKey(
-                UInt32(registration.combination.keyCode),
-                Self.carbonModifiers(registration.combination.modifiers),
+                UInt32(combination.keyCode),
+                Self.carbonModifiers(combination.modifiers),
                 EventHotKeyID(signature: Self.shortcutSignature, id: UInt32(index)),
                 GetEventDispatcherTarget(),
                 0,
@@ -92,7 +83,7 @@ final class KeyboardInput {
                 logger.info("shortcut \(name, privacy: .public) registered")
             } else {
                 logger.error("shortcut \(name, privacy: .public) failed: \(status)")
-                refused.insert(registration.combination)
+                refused.insert(combination)
             }
             return ref
         }

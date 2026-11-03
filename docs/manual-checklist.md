@@ -236,7 +236,7 @@ Before starting: `make run`, Accessibility granted to Downtab, a few apps open. 
 4. Click it and press ⌥⇧Tab: `⌥⇧Tab: ⇧ is reserved for going back: record the shortcut without it.`
 5. Click it and press `` ⌥` ``: `` ⌥`: The other shortcut already uses this combination. ``
 6. Click it and press ⌘Space: `⌘Space: macOS already uses this combination: choose another one.` Same for ⌘Tab and ⌃→. An app shortcut such as ⌘W is accepted: the field reads `⌘W`; press `Restore Defaults` before going on.
-7. Click it and press ⌃Tab: the message disappears and the field reads `⌃Tab`. Without restarting, switch apps with ⌃Tab (quick press: the previous app comes forward; until the Modifier follows custom shortcuts, a ⌃ shortcut confirms right away instead of keeping the Switcher open). ⌥Tab no longer opens the Switcher.
+7. Click it and press ⌃Tab: the message disappears and the field reads `⌃Tab`. Without restarting, switch apps with ⌃Tab (quick press: the previous app comes forward; held, the Switcher stays open until ⌃ is released). ⌥Tab no longer opens the Switcher.
 8. Click the Window shortcut field and press ⌃`` ` ``: it reads ``⌃` `` (or the layout's character). In an app with 2 windows, ⌃`` ` `` brings its other window forward; ⌃⇧`` ` `` its last one.
 9. `make stop`, then `make run` again and open the Preferences: they still show `⌃Tab` and ``⌃` ``, and ⌃Tab still switches apps.
 10. Click the App shortcut field, then click the Window shortcut field: the first one stops recording. Click the App shortcut field, then click another app's window: the field stops recording, and ⌃Tab works again.
@@ -246,6 +246,17 @@ Before starting: `make run`, Accessibility granted to Downtab, a few apps open. 
 14. Restore Defaults never stores a pair that fails to register: record `⌃Tab` and ``⌃` ``, then set the hotkey app of step 12 to ⌥Tab and click `Restore Defaults`: the fields keep `⌃Tab` and ``⌃` ``, ⌃Tab still switches apps, the App shortcut shows `⌥Tab: macOS already uses this combination: choose another one.`, and after `make stop` and `make run` the Preferences still show `⌃Tab`. Reset the hotkey app afterwards. Skip if no such app is installed.
 15. With VoiceOver on (⌘F5), move to a recorder field: it reads `App shortcut, ⌥Tab, button`; a rejection is announced. Turn VoiceOver off.
 
+## Switcher: mixed shortcuts
+
+Before starting: `make run`, Accessibility granted to Downtab. In the Preferences record App shortcut ⌥Tab and Window shortcut ⌃`` ` ``. Open Safari (or any app) with 3 windows and make it frontmost, with a few other apps open.
+
+1. Hold ⌥, press Tab: the Switcher opens at App level. Release ⌥: it confirms (the selected app comes forward).
+2. Hold ⌃, press `` ` ``: the Switcher opens on Safari's Window list on the second window. Release ⌃: that window comes forward.
+3. Hold ⌥, press Tab, `←` back to the frontmost app, `↓`: the Window list opens. Press `` ` `` (still ⌥ only): the selection advances in the Window list; ⇧`` ` `` goes back. Release ⌥: the selected window comes forward.
+4. Hold ⌃, press `` ` ``, then Tab (still ⌃ only): the Switcher goes to App level and advances; ⇧Tab goes back. Release ⌃: the selected app comes forward.
+5. Hold ⌥, press Tab, then add ⌃ and press `` ` `` (⌥⌃`` ` ``): nothing changes. Add and release ⇧: the Switcher stays open. Release ⌃: still open. Release ⌥: it confirms.
+6. Record App shortcut ⌥⌘Tab. Hold ⌥⌘, press Tab: the Switcher opens. Release only ⌘ (keep ⌥): it confirms. Repeat releasing only ⌥: it confirms. Press `Restore Defaults` afterwards.
+7. Kill the release tap (`pkill -USR1 -x Downtab`), then repeat step 2: releasing ⌃ still confirms, within a moment (fallback check); `log show --last 1m --predicate 'subsystem == "local.downtab"'` shows `modifier release confirmed by fallback check`. Relaunch with `make run` afterwards.
 
 ## Launch at login
 
