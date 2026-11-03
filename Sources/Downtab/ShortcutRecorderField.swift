@@ -47,7 +47,9 @@ final class ShortcutRecorderField: NSView {
     }
 
     @available(*, unavailable)
-    required init?(coder: NSCoder) { nil }
+    required init?(coder: NSCoder) {
+        fatalError("not used")
+    }
 
     var isRecording: Bool { state != .showing }
 
