@@ -11,6 +11,9 @@ public final class TerminationSignals {
     public func install(cleanUp: @escaping @Sendable () -> Void) {
         sources = Self.handled.map { number in
             signal(number, SIG_IGN)
+            // Signal handlers may only call async-signal-safe functions, and restoring the native shortcuts is not
+            // one: a dispatch source runs it as normal code. Swift concurrency offers no signal API.
+            // swiftlint:disable:next no_dispatch
             let source = DispatchSource.makeSignalSource(signal: number, queue: .global())
             source.setEventHandler {
                 cleanUp()

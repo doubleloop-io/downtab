@@ -98,6 +98,8 @@ public final class ModifierReleaseTap {
     /// `pkill -USR1 -x Downtab` disables the tap, since macOS disabling it cannot be provoked on demand.
     private func listenForSimulatedDisable(_ relay: Relay) {
         signal(SIGUSR1, SIG_IGN)
+        // Signal handlers may only call async-signal-safe functions; a dispatch source runs this one as normal code.
+        // swiftlint:disable:next no_dispatch
         let source = DispatchSource.makeSignalSource(signal: SIGUSR1, queue: .global())
         source.setEventHandler { relay.simulateDisable() }
         source.resume()
