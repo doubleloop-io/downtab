@@ -136,6 +136,18 @@ Before starting: `make run`, Accessibility granted to Downtab. Open TextEdit wit
 8. Minimize a TextEdit window (⌘M), wait one second, select it in the Window list and release ⌥: it comes back from the Dock and to the front.
 9. `log stream --predicate 'subsystem == "local.downtab" AND category == "focus"'` shows a `raise pid=... wid=... private=true ax=0` line for each window confirmed. `private=false` means a private API is missing: the window still comes forward, but with all of the app's windows, and `log show --last 1h --predicate 'subsystem == "local.downtab" AND category == "private-api"'` shows one `private symbol missing: <name>, its feature is off` line per missing symbol; the app keeps running.
 
+## Switcher: cross-app navigation
+
+Before starting: `make run`, Accessibility granted to Downtab. Open TextEdit with 2 windows, Safari with one window, Notes with 2 windows, then Finder last (any one window), clicking each to bring it to the front, so the App row reads Finder, Notes, Safari, TextEdit. Keep ⌥ held during each step unless the step says to release it.
+
+1. In Finder, hold ⌥, press Tab (Notes selected), press `→`: Safari is selected, its tile highlighted as at App level. Press `→` again: TextEdit is selected. Press `←` twice: Notes, then Finder is selected; `←` once more wraps to TextEdit. No Window list opens. Press `Esc`.
+2. Hold ⌥, press Tab, press `↓`: Notes' Window list opens. Press `→`: Notes' list closes and Safari (one window) is selected without a Window list, its tile highlighted as at App level.
+3. Press `→` again: TextEdit's Window list opens under its icon, first window highlighted. Press `→` again: it wraps to Finder (one window), selected without a list. Press `←`: TextEdit's Window list reopens.
+4. With TextEdit's Window list open, press `←` twice: Safari (no list), then Notes' Window list opens on its first window. Release ⌥: only that Notes window comes to the front.
+5. Hold ⌥, press Tab, `↓`, `→` (Safari, no list), release ⌥: Safari comes to the front.
+6. Hold ⌥, press Tab, `↓`, `→` (Safari, no list), press Tab: the Switcher is at App level on TextEdit, no Window list. Press `↓`: TextEdit's Window list opens. Press Tab: the list closes and Finder is selected at App level. Press `Esc`: nothing changes.
+7. Hold ⌥, press Tab, `↓`, `→` (Safari, no list), press `↑`: Safari is selected at App level. Press `↓`: nothing happens. Press `Esc`.
+
 ## Switcher: accessibility
 
 Before starting: `make run`. Step 2 needs Accessibility Inspector, which ships with Xcode (`open -a "Accessibility Inspector"`); without Xcode run step 1 only.
