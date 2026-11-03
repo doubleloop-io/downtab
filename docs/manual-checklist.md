@@ -65,6 +65,9 @@ Before starting: `make run`, Accessibility granted to Downtab, TextEdit with 2 w
 3. Click Notes. Hold ⌥, press Tab twice quickly and release ⌥ at once: TextEdit comes to the front without the Switcher appearing (if the whole sequence was quicker than the pause).
 4. Click TextEdit's `one` window. Press `` ⌥` `` and release both keys quickly: `two` comes to the front and the Switcher never flashes on screen. Press it again: `one` comes back.
 5. Hold ⌥, press `` ` `` and keep ⌥ held: the Switcher appears after the same pause with TextEdit's Window list open. Press `Esc`.
+6. In TextEdit open the Find bar (⌘F), cursor in it. Hold ⌥, press Tab and at once `Esc` (within a tenth of a second), then release ⌥: the Switcher never appears, TextEdit stays frontmost and its Find bar stays open (an `Esc` reaching TextEdit would close it). Type a few letters: they land in the Find bar, without clicking first.
+7. In TextEdit, hold ⌥, press Tab and at once `→`, then release ⌥: the third app of the App row comes to the front (Tab selected the second, `→` the next); no arrow moved TextEdit's text cursor.
+8. In TextEdit, hold ⌥, press Tab and at once `Enter`: the previously used app comes to the front and no new line is added to the TextEdit document.
 
 ## Switcher: MRU order
 
