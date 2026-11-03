@@ -7,17 +7,20 @@ import os
 /// An actor, so effects start in order.
 public actor WindowFocuser {
     private let logger = Logger(subsystem: "local.downtab", category: "focus")
+    /// Bumped by every focus change: a retry waiting across its sleep must not undo a newer one.
+    private var latestFocusChange = 0
 
     public init() {}
 
     public func perform(_ effect: FinalEffect) async {
+        if effect != .noChange { latestFocusChange += 1 }
         switch effect {
         case .noChange:
             break
         case .activateApp(let id):
             activate(id)
         case .bringWindowToFront(let window, of: let app):
-            await bringToFront(window, of: app)
+            await bringToFront(window, of: app, focusChange: latestFocusChange)
         }
     }
 
@@ -32,7 +35,7 @@ public actor WindowFocuser {
     }
 
     /// The spike's recipe (`docs/spike-results.md`, "Ricetta: alzare una finestra").
-    private func bringToFront(_ windowID: WindowID, of app: AppID) async {
+    private func bringToFront(_ windowID: WindowID, of app: AppID, focusChange: Int) async {
         let pid = app.processIdentifier
         let wid = windowID.rawValue
         guard let window = Self.element(of: windowID, in: app) else {
@@ -52,6 +55,10 @@ public actor WindowFocuser {
         logger.info("raise pid=\(pid) wid=\(wid) private=\(fronted) ax=\(raised.rawValue)")
         // Some apps reorder their windows right after activation, pushing the raised one back.
         try? await Task.sleep(for: .milliseconds(150))
+        guard focusChange == latestFocusChange else {
+            logger.info("raise again skipped pid=\(pid) wid=\(wid): a newer focus change followed")
+            return
+        }
         if Self.frontmostWindowID() != wid {
             let again = AXUIElementPerformAction(window, kAXRaiseAction as CFString)
             logger.info("raise again pid=\(pid) wid=\(wid) ax=\(again.rawValue)")
