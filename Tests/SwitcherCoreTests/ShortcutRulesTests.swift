@@ -11,10 +11,19 @@ import Testing
     #expect(outcome == .rejected(.noModifier))
 }
 
+@Test func aShortcutWhoseOnlyModifierIsShiftIsRejectedForHavingNoModifier() {
+    let outcome = ShortcutRules.check(
+        Shortcut(keyCode: KeyCode.tab, modifiers: [.shift]),
+        other: .defaultWindow,
+        systemShortcuts: []
+    )
+
+    #expect(outcome == .rejected(.noModifier))
+}
+
 @Test(arguments: [
     Set<ShortcutModifier>([.option, .shift]),
     [.command, .control, .shift],
-    [.shift],
 ])
 func aShortcutContainingShiftIsRejected(modifiers: Set<ShortcutModifier>) {
     let outcome = ShortcutRules.check(

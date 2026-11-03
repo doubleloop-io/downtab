@@ -29,8 +29,9 @@ public enum ShortcutRules {
         other: Shortcut,
         systemShortcuts: Set<Shortcut>
     ) -> ShortcutOutcome {
+        // ⇧ alone is no modifier: it only types capitals.
+        if recorded.modifiers.subtracting([.shift]).isEmpty { return .rejected(.noModifier) }
         if recorded.modifiers.contains(.shift) { return .rejected(.containsShift) }
-        if recorded.modifiers.isEmpty { return .rejected(.noModifier) }
         if recorded == other { return .rejected(.sameAsOther) }
         if systemShortcuts.contains(recorded) { return .rejected(.usedBySystem) }
         return .valid

@@ -217,7 +217,7 @@ Before starting: `make run`, Accessibility granted to Downtab, a few apps open. 
 
 1. Click the App shortcut field: it gets an accent border and reads `Type shortcut`. Hold ⌃ and ⌥: it reads `⌃⌥`. Press `Esc` with nothing held: it reads `⌥Tab` again, no message.
 2. Click the App shortcut field and press ⌥Tab: no Switcher opens (shortcuts are off while recording), the field reads `⌥Tab` again.
-3. Click the App shortcut field and press Tab alone: a red message `Tab: Add a modifier: ⌘, ⌥ or ⌃.` appears under it, the field keeps `⌥Tab`.
+3. Click the App shortcut field and press Tab alone: a red message `Tab: Add a modifier: ⌘, ⌥ or ⌃.` appears under it, the field keeps `⌥Tab`. ⇧Tab gives the same message.
 4. Click it and press ⌥⇧Tab: `⌥⇧Tab: ⇧ is reserved for going back: record the shortcut without it.`
 5. Click it and press `` ⌥` ``: `` ⌥`: The other shortcut already uses this combination. ``
 6. Click it and press ⌘Space: `⌘Space: macOS already uses this combination: choose another one.` Same for ⌘Tab and ⌃→. An app shortcut such as ⌘W is accepted: the field reads `⌘W`; press `Restore Defaults` before going on.
