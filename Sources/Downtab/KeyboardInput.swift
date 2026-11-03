@@ -29,7 +29,6 @@ final class KeyboardInput {
     /// Shortcuts open the Switcher once registered with `register(_:)`.
     func start() {
         hotKeyPresses.install { [weak self] id in self?.shortcutPressed(id: id) }
-        modifierRelease.start { [weak self] in self?.onEvent(.modifierReleased) }
         // A local monitor sees keys sent to any of Downtab's windows: the Preferences need theirs.
         keyMonitor = NSEvent.addLocalMonitorForEvents(matching: .keyDown) { [weak self] event in
             guard let self, event.window is SwitcherPanel,
@@ -38,6 +37,11 @@ final class KeyboardInput {
             onEvent(switcherEvent)
             return nil
         }
+    }
+
+    /// The Modifier release is detected only once the Accessibility permission is granted; calling again is harmless.
+    func startModifierRelease() {
+        modifierRelease.start { [weak self] in self?.onEvent(.modifierReleased) }
     }
 
     private static func panelEvent(forKeyCode keyCode: Int) -> SwitcherEvent? {

@@ -1,9 +1,16 @@
 import AppKit
 import SwitcherCore
 
-/// The App shortcut and Window shortcut recorders, with their rejection messages and Restore Defaults.
+/// The Accessibility permission status, the App shortcut and Window shortcut recorders, with their rejection
+/// messages and Restore Defaults.
 final class PreferencesWindow: NSWindow, NSWindowDelegate {
+    private static let accessibilitySettings = URL(
+        string: "x-apple.systempreferences:com.apple.preference.security?Privacy_Accessibility")
+
     private let settings: ShortcutSettings
+    private let permissionBox = NSBox()
+    private let permissionStatus = NSTextField(wrappingLabelWithString: "")
+    private let openSystemSettings = NSButton(title: "Open System Settings", target: nil, action: nil)
     private var recorders: [ShortcutSlot: ShortcutRecorderField] = [:]
     private var messages: [ShortcutSlot: NSTextField] = [:]
     private var messageRows: [ShortcutSlot: NSGridRow] = [:]
@@ -27,6 +34,24 @@ final class PreferencesWindow: NSWindow, NSWindowDelegate {
         makeFirstResponder(nil)
     }
 
+    /// A missing permission is highlighted until granted: the shortcuts do nothing without it.
+    func showPermission(isGranted: Bool) {
+        permissionStatus.stringValue =
+            isGranted
+            ? "Granted"
+            : "Not granted: the shortcuts do nothing until you allow Downtab in System Settings."
+        permissionStatus.textColor = isGranted ? .secondaryLabelColor : .labelColor
+        permissionBox.fillColor = isGranted ? .clear : .systemYellow.withAlphaComponent(0.25)
+        permissionBox.borderColor = isGranted ? .clear : .systemYellow
+        openSystemSettings.isHidden = isGranted
+        fitToContent()
+    }
+
+    @objc private func openAccessibilitySettings() {
+        guard let url = Self.accessibilitySettings else { return }
+        NSWorkspace.shared.open(url)
+    }
+
     // Recording suspends the shortcuts: leaving the window must never leave them off.
     func windowDidResignKey(_ notification: Notification) {
         cancelRecording()
@@ -39,6 +64,25 @@ final class PreferencesWindow: NSWindow, NSWindowDelegate {
         static let messageGap: CGFloat = 4
         static let hintGap: CGFloat = 14
         static let buttonGap: CGFloat = 16
+        static let permissionGap: CGFloat = 16
+        static let permissionPadding: CGFloat = 6
+    }
+
+    private func makePermissionBox() -> NSView {
+        permissionStatus.preferredMaxLayoutWidth = Layout.fieldColumnWidth - 2 * Layout.permissionPadding
+        openSystemSettings.target = self
+        openSystemSettings.action = #selector(openAccessibilitySettings)
+        let stack = NSStackView(views: [permissionStatus, openSystemSettings])
+        stack.orientation = .vertical
+        stack.alignment = .leading
+        stack.spacing = 6
+        permissionBox.boxType = .custom
+        permissionBox.cornerRadius = 6
+        permissionBox.borderWidth = 1
+        permissionBox.contentViewMargins = NSSize(width: Layout.permissionPadding, height: Layout.permissionPadding)
+        permissionBox.contentView = stack
+        permissionBox.setAccessibilityLabel("Accessibility permission")
+        return permissionBox
     }
 
     /// Two columns: trailing-aligned labels, then fields with their messages, the hint and Restore Defaults.
@@ -53,10 +97,11 @@ final class PreferencesWindow: NSWindow, NSWindowDelegate {
         let restore = NSButton(title: "Restore Defaults", target: self, action: #selector(restoreDefaults))
 
         let grid = NSGridView(
-            views: ShortcutSlot.allCases.flatMap(rows(for:)) + [
-                [NSGridCell.emptyContentView, hint],
-                [NSGridCell.emptyContentView, restore],
-            ]
+            views: [[NSTextField(labelWithString: "Accessibility:"), makePermissionBox()]]
+                + ShortcutSlot.allCases.flatMap(rows(for:)) + [
+                    [NSGridCell.emptyContentView, hint],
+                    [NSGridCell.emptyContentView, restore],
+                ]
         )
         grid.translatesAutoresizingMaskIntoConstraints = false
         grid.rowSpacing = 0
@@ -65,9 +110,10 @@ final class PreferencesWindow: NSWindow, NSWindowDelegate {
         grid.column(at: 0).xPlacement = .trailing
         grid.column(at: 1).xPlacement = .leading
         grid.column(at: 1).width = Layout.fieldColumnWidth
+        grid.row(at: 0).yPlacement = .top
         for (index, slot) in ShortcutSlot.allCases.enumerated() {
-            grid.row(at: 2 * index).topPadding = index == 0 ? 0 : Layout.rowGap
-            let messageRow = grid.row(at: 2 * index + 1)
+            grid.row(at: 1 + 2 * index).topPadding = index == 0 ? Layout.permissionGap : Layout.rowGap
+            let messageRow = grid.row(at: 2 + 2 * index)
             messageRow.topPadding = Layout.messageGap
             messageRow.isHidden = true
             messageRows[slot] = messageRow
