@@ -12,7 +12,6 @@ public final class WindowEventObserver: Sendable {
     /// Shared with the observer thread through the callbacks' context pointer.
     fileprivate final class Relay: Sendable {
         let onChange: @MainActor @Sendable () -> Void
-        let logger = Logger(subsystem: "local.downtab", category: "observer")
 
         init(onChange: @escaping @MainActor @Sendable () -> Void) {
             self.onChange = onChange
@@ -25,7 +24,7 @@ public final class WindowEventObserver: Sendable {
         func report(_ notification: String, from element: AXUIElement, observer: AXObserver) {
             var pid: pid_t = 0
             AXUIElementGetPid(element, &pid)
-            logger.info("window event \(notification, privacy: .public) pid=\(pid)")
+            WindowEventObserver.logger.info("window event \(notification, privacy: .public) pid=\(pid)")
             if notification == kAXWindowCreatedNotification {
                 WindowEventObserver.watchWindow(element, with: observer, context: context)
             }
@@ -39,10 +38,22 @@ public final class WindowEventObserver: Sendable {
         var pending: [@Sendable () -> Void] = []
     }
 
+    /// Touched only on the observer thread.
+    private struct Watched {
+        var observers: [AppID: AXObserver] = [:]
+        var retryAfter: [AppID: ContinuousClock.Instant] = [:]
+    }
+
+    private struct WatchFailure: Error {
+        let step: String
+        let error: AXError
+    }
+
     private let relay: Relay
     private let thread = Mutex(ThreadState())
-    /// Touched only on the observer thread.
-    private let observers = Mutex<[AppID: AXObserver]>([:])
+    private let watched = Mutex(Watched())
+    /// Registering with a busy or frozen app blocks the observer thread: a failed app is not retried at every scan.
+    private static let retryDelay = Duration.seconds(5)
 
     public init(onChange: @escaping @MainActor @Sendable () -> Void) {
         relay = Relay(onChange: onChange)
@@ -55,27 +66,36 @@ public final class WindowEventObserver: Sendable {
         observerThread.start()
     }
 
-    public func watch(_ app: AppID) {
+    /// Watches these apps and stops watching any other, such as one that quit or stopped being regular.
+    /// An app whose registration failed is retried on a later call.
+    public func watch(only apps: Set<AppID>) {
         perform { [self] in
             // Created under the lock: an observer is not Sendable, so it cannot be handed into the Mutex.
-            let isWatching = observers.withLock { observers in
-                if observers[app] == nil {
-                    observers[app] = Self.makeObserver(for: app, context: relay.context)
+            watched.withLock { watched in
+                for (app, observer) in watched.observers where !apps.contains(app) {
+                    CFRunLoopRemoveSource(CFRunLoopGetCurrent(), AXObserverGetRunLoopSource(observer), .defaultMode)
+                    watched.observers[app] = nil
+                    Self.logger.info("stopped watching window events pid=\(app.processIdentifier)")
                 }
-                return observers[app] != nil
+                watched.retryAfter = watched.retryAfter.filter { apps.contains($0.key) }
+                let now = ContinuousClock.now
+                let due = apps.filter { app in
+                    watched.observers[app] == nil && watched.retryAfter[app].map { retry in now >= retry } ?? true
+                }
+                for app in due {
+                    switch Self.makeObserver(for: app, context: relay.context) {
+                    case .success(let observer):
+                        watched.observers[app] = observer
+                        watched.retryAfter[app] = nil
+                        Self.logger.info("watching window events pid=\(app.processIdentifier)")
+                    case .failure(let failure):
+                        watched.retryAfter[app] = now + Self.retryDelay
+                        Self.logger.error(
+                            "window events unavailable pid=\(app.processIdentifier) \(failure.step, privacy: .public) error=\(failure.error.rawValue)"
+                        )
+                    }
+                }
             }
-            if isWatching {
-                relay.logger.info("watching window events pid=\(app.processIdentifier)")
-            } else {
-                relay.logger.error("window events unavailable pid=\(app.processIdentifier)")
-            }
-        }
-    }
-
-    public func unwatch(_ app: AppID) {
-        perform { [self] in
-            guard let observer = observers.withLock({ $0.removeValue(forKey: app) }) else { return }
-            CFRunLoopRemoveSource(CFRunLoopGetCurrent(), AXObserverGetRunLoopSource(observer), .defaultMode)
         }
     }
 
@@ -104,34 +124,49 @@ public final class WindowEventObserver: Sendable {
         }
     }
 
-    private static func makeObserver(for app: AppID, context: UnsafeMutableRawPointer) -> AXObserver? {
+    private static func makeObserver(
+        for app: AppID, context: UnsafeMutableRawPointer
+    ) -> Result<AXObserver, WatchFailure> {
         var created: AXObserver?
-        guard AXObserverCreate(app.processIdentifier, handleWindowEvent, &created) == .success,
-            let observer = created
-        else { return nil }
+        let creation = AXObserverCreate(app.processIdentifier, handleWindowEvent, &created)
+        guard creation == .success, let observer = created else {
+            return .failure(WatchFailure(step: "create", error: creation))
+        }
         let element = AXUIElementCreateApplication(app.processIdentifier)
         AXUIElementSetMessagingTimeout(element, accessibilityTimeout)
         // Registered on the app: one registration catches every window it opens later.
-        AXObserverAddNotification(observer, element, kAXWindowCreatedNotification as CFString, context)
+        let registration = AXObserverAddNotification(
+            observer, element, kAXWindowCreatedNotification as CFString, context)
+        guard registration == .success || registration == .notificationAlreadyRegistered else {
+            return .failure(WatchFailure(step: "register", error: registration))
+        }
         var windows: CFTypeRef?
-        AXUIElementCopyAttributeValue(element, kAXWindowsAttribute as CFString, &windows)
+        let listing = AXUIElementCopyAttributeValue(element, kAXWindowsAttribute as CFString, &windows)
+        guard listing == .success || listing == .noValue else {
+            return .failure(WatchFailure(step: "list windows", error: listing))
+        }
         for window in windows as? [AXUIElement] ?? [] {
             watchWindow(window, with: observer, context: context)
         }
         CFRunLoopAddSource(CFRunLoopGetCurrent(), AXObserverGetRunLoopSource(observer), .defaultMode)
-        return observer
+        return .success(observer)
     }
 
     /// Registered on each window, not on the app: on the app these would fire for every element, not only windows.
+    /// A window that refuses one is still caught by the periodic scan.
     fileprivate static func watchWindow(
         _ window: AXUIElement, with observer: AXObserver, context: UnsafeMutableRawPointer
     ) {
         AXUIElementSetMessagingTimeout(window, accessibilityTimeout)
         for notification in windowNotifications {
-            AXObserverAddNotification(observer, window, notification as CFString, context)
+            let registration = AXObserverAddNotification(observer, window, notification as CFString, context)
+            if registration != .success && registration != .notificationAlreadyRegistered {
+                logger.info("window event \(notification, privacy: .public) unavailable error=\(registration.rawValue)")
+            }
         }
     }
 
+    private static let logger = Logger(subsystem: "local.downtab", category: "observer")
     private static let windowNotifications = [
         kAXUIElementDestroyedNotification,
         kAXTitleChangedNotification,

@@ -22,7 +22,6 @@ final class DesktopTracker {
     private var needsAnotherScan = false
     private var periodicScan: Task<Void, Never>?
     private var windowEvents: WindowEventObserver?
-    private var watchedApps: Set<AppID> = []
 
     func start() {
         let windowEvents = WindowEventObserver { [weak self] in self?.requestScan() }
@@ -104,10 +103,8 @@ final class DesktopTracker {
         isScanning = true
         // Agents never reach the App row: querying them would only slow the scan.
         let regularApps = mruOrder.apps.filter { apps[$0]?.process.activationPolicy == .regular }
-        // Here rather than at launch: an app can become regular after launching.
-        for app in regularApps where watchedApps.insert(app).inserted {
-            windowEvents?.watch(app)
-        }
+        // Here rather than at launch: an app can become regular after launching, or stop being regular.
+        windowEvents?.watch(only: Set(regularApps))
         Task { [weak self, scanner] in
             let result = await scanner.scan(regularApps)
             guard let self else { return }
@@ -139,7 +136,6 @@ final class DesktopTracker {
         let id = AppID(app)
         apps[id] = nil
         mruOrder.recordQuit(of: id)
-        if watchedApps.remove(id) != nil { windowEvents?.unwatch(id) }
     }
 }
 
