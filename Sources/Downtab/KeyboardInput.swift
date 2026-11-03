@@ -10,6 +10,7 @@ final class KeyboardInput {
     private let onEvent: (SwitcherEvent) -> Void
     private let logger = Logger(subsystem: "local.downtab", category: "keyboard")
     private let modifierRelease = ModifierReleaseTap()
+    private let escapeTap = EscapeKeyTap()
     private let hotKeyPresses = HotKeyPressHandler()
     /// The combinations held on the keyboard: each shortcut, plus ⇧ for the reverse. Indexed by Carbon hot key id.
     private var registrations: [Shortcut] = []
@@ -33,9 +34,16 @@ final class KeyboardInput {
         }
     }
 
-    /// The Modifier release is detected only once the Accessibility permission is granted; calling again is harmless.
-    func startModifierRelease() {
+    /// The Modifier release and Esc held with the Modifier are detected only once the Accessibility permission is
+    /// granted; calling again is harmless.
+    func startEventTaps() {
         modifierRelease.start { [weak self] held in self?.onEvent(.modifiersChanged(held: held)) }
+        escapeTap.start { [weak self] in self?.onEvent(.escapePressed) }
+    }
+
+    /// While the Switcher is open, Esc reaches it even when another app or the system holds Esc with the Modifier.
+    func captureEscape(_ isOpen: Bool) {
+        escapeTap.setCapturing(isOpen)
     }
 
     /// A shortcut key the Carbon hot keys do not hold reaches the Switcher here, such as ⌥` opened with ⌥Tab

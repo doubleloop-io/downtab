@@ -37,7 +37,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private func apply(_ change: PermissionWatch.Change) {
         let isGranted = change == .granted
         if isGranted {
-            switcher.keyboard.startModifierRelease()
+            switcher.keyboard.startEventTaps()
             shortcuts.enable()
         } else {
             shortcuts.disable()

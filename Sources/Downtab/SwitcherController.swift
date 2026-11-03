@@ -25,6 +25,7 @@ final class SwitcherController {
         // Re-showing an unchanged state would move the panel to the pointer's current display.
         if switcher.state != previous {
             render()
+            keyboard.captureEscape(switcher.state != .closed)
             updateMissedReleaseCheck()
             updateShowDelay()
         }
