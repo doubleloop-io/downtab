@@ -145,9 +145,6 @@ final class ShortcutRecorderField: NSView {
     }
 
     private static func modifiers(of flags: NSEvent.ModifierFlags) -> Set<ShortcutModifier> {
-        let pairs: [(NSEvent.ModifierFlags, ShortcutModifier)] = [
-            (.control, .control), (.option, .option), (.shift, .shift), (.command, .command),
-        ]
-        return Set(pairs.filter { flags.contains($0.0) }.map(\.1))
+        Set(ShortcutModifier.allCases.filter { flags.contains($0.eventFlag) })
     }
 }

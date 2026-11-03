@@ -111,9 +111,6 @@ final class KeyboardInput {
     }
 
     private static func carbonModifiers(_ modifiers: Set<ShortcutModifier>) -> UInt32 {
-        let carbonFlags: [ShortcutModifier: Int] = [
-            .control: controlKey, .option: optionKey, .shift: shiftKey, .command: cmdKey,
-        ]
-        return UInt32(modifiers.reduce(0) { $0 | (carbonFlags[$1] ?? 0) })
+        UInt32(modifiers.reduce(0) { $0 | $1.carbonFlag })
     }
 }
