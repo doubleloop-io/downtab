@@ -2,6 +2,9 @@ public enum SwitcherEvent: Equatable, Sendable {
     case appShortcutPressed
     /// ⇧ with the App shortcut key: moves the selection back.
     case shiftAppShortcutPressed
+    case windowShortcutPressed
+    /// ⇧ with the Window shortcut key: moves the selection back in the Window list.
+    case shiftWindowShortcutPressed
     case modifierReleased
     case enterPressed
     case escapePressed
@@ -52,11 +55,11 @@ public struct DisplayedState: Equatable, Sendable {
     /// Fixed at opening, like the App row.
     let frontmostApp: AppID?
 
-    init(appRow: [AppRowEntry], frontmostApp: AppID?) {
+    init(appRow: [AppRowEntry], frontmostApp: AppID?, selectedIndex: Int = 0, level: SelectionLevel = .app) {
         self.appRow = appRow
         self.frontmostApp = frontmostApp
-        selectedIndex = 0
-        level = .app
+        self.selectedIndex = selectedIndex
+        self.level = level
     }
 
     public var selectedEntry: AppRowEntry { appRow[selectedIndex] }
@@ -75,6 +78,13 @@ public struct DisplayedState: Equatable, Sendable {
         moved.selectedIndex = ((selectedIndex + step) % count + count) % count
         moved.level = .app
         return moved
+    }
+
+    /// The Window shortcut key: wraps around at both ends of the Window list.
+    func movingWindowSelection(by step: Int) -> DisplayedState {
+        guard case .window(let index) = level else { return self }
+        let count = selectedEntry.windows.count
+        return at(.window(((index + step) % count + count) % count))
     }
 
     /// `←` / `→`: at Window level, change app and stay at Window level, opening its Window list if it has one.
@@ -135,24 +145,34 @@ public struct Switcher: Sendable {
     @discardableResult
     public mutating func handle(_ event: SwitcherEvent, desktop: DesktopSnapshot) -> FinalEffect? {
         switch event {
-        case .appShortcutPressed:
-            moveSelection(by: 1, desktop: desktop)
-            return nil
-        case .shiftAppShortcutPressed:
-            moveSelection(by: -1, desktop: desktop)
-            return nil
         case .modifierReleased, .enterPressed:
-            guard case .open(let displayed) = state else { return nil }
-            state = .closed
-            return displayed.confirmation
+            return confirm()
         case .escapePressed:
-            guard state != .closed else { return nil }
-            state = .closed
-            return .noChange
+            return cancel()
+        case .appShortcutPressed, .shiftAppShortcutPressed:
+            moveSelection(by: event == .appShortcutPressed ? 1 : -1, desktop: desktop)
+        case .windowShortcutPressed, .shiftWindowShortcutPressed:
+            moveWindowSelection(by: event == .windowShortcutPressed ? 1 : -1, desktop: desktop)
         case .downPressed, .upPressed, .leftPressed, .rightPressed:
-            if case .open(let displayed) = state { state = .open(Self.moving(displayed, by: event)) }
-            return nil
+            moveWhileOpen { Self.moving($0, by: event) }
         }
+        return nil
+    }
+
+    private mutating func confirm() -> FinalEffect? {
+        guard case .open(let displayed) = state else { return nil }
+        state = .closed
+        return displayed.confirmation
+    }
+
+    private mutating func cancel() -> FinalEffect? {
+        guard state != .closed else { return nil }
+        state = .closed
+        return .noChange
+    }
+
+    private mutating func moveWhileOpen(_ move: (DisplayedState) -> DisplayedState) {
+        if case .open(let displayed) = state { state = .open(move(displayed)) }
     }
 
     private static func moving(_ displayed: DisplayedState, by arrow: SwitcherEvent) -> DisplayedState {
@@ -176,6 +196,22 @@ public struct Switcher: Sendable {
             // Opening starts on the app being left, so the first step lands on the previous app.
             let opening = DisplayedState(appRow: appRow, frontmostApp: desktop.frontmostApp)
             state = .open(opening.movingSelection(by: step))
+        }
+    }
+
+    private mutating func moveWindowSelection(by step: Int, desktop: DesktopSnapshot) {
+        switch state {
+        case .open(let displayed):
+            state = .open(displayed.movingWindowSelection(by: step))
+        case .closed:
+            let appRow = desktop.appRow()
+            guard let frontmostIndex = appRow.firstIndex(where: { $0.id == desktop.frontmostApp }),
+                appRow[frontmostIndex].windowCountBadge != nil
+            else { return }
+            // Like App row opening: starts on the window being left, so the first step lands on the next one.
+            let opening = DisplayedState(
+                appRow: appRow, frontmostApp: desktop.frontmostApp, selectedIndex: frontmostIndex, level: .window(0))
+            state = .open(opening.movingWindowSelection(by: step))
         }
     }
 }

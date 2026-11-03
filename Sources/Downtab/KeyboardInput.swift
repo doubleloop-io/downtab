@@ -5,18 +5,20 @@ import SwitcherCore
 import os
 
 final class KeyboardInput {
-    private static let appShortcutSignature = OSType(0x4454_4142)  // "DTAB"
+    private static let shortcutSignature = OSType(0x4454_4142)  // "DTAB"
     /// Indexed by Carbon hot key id.
-    private static let appShortcuts: [(name: String, modifiers: Int, event: SwitcherEvent)] = [
-        ("⌥Tab", optionKey, .appShortcutPressed),
-        ("⌥⇧Tab", optionKey | shiftKey, .shiftAppShortcutPressed),
+    private static let shortcuts: [(name: String, keyCode: Int, modifiers: Int, event: SwitcherEvent)] = [
+        ("⌥Tab", kVK_Tab, optionKey, .appShortcutPressed),
+        ("⌥⇧Tab", kVK_Tab, optionKey | shiftKey, .shiftAppShortcutPressed),
+        ("⌥`", kVK_ANSI_Grave, optionKey, .windowShortcutPressed),
+        ("⌥⇧`", kVK_ANSI_Grave, optionKey | shiftKey, .shiftWindowShortcutPressed),
     ]
 
     private let onEvent: (SwitcherEvent) -> Void
     private let logger = Logger(subsystem: "local.downtab", category: "keyboard")
     private let modifierRelease = ModifierReleaseTap()
     private var carbonHandler: EventHandlerRef?
-    private var appShortcutRefs: [EventHotKeyRef?] = []
+    private var shortcutRefs: [EventHotKeyRef?] = []
     private var keyMonitor: Any?
 
     init(onEvent: @escaping (SwitcherEvent) -> Void) {
@@ -24,7 +26,7 @@ final class KeyboardInput {
     }
 
     func start() {
-        registerAppShortcuts()
+        registerShortcuts()
         modifierRelease.start { [weak self] in self?.onEvent(.modifierReleased) }
         // A local monitor only sees keys sent to Downtab's own windows, that is the key Switcher panel.
         keyMonitor = NSEvent.addLocalMonitorForEvents(matching: .keyDown) { [weak self] event in
@@ -46,16 +48,16 @@ final class KeyboardInput {
         }
     }
 
-    private func appShortcutPressed(id: UInt32) {
-        guard Self.appShortcuts.indices.contains(Int(id)) else { return }
-        onEvent(Self.appShortcuts[Int(id)].event)
+    private func shortcutPressed(id: UInt32) {
+        guard Self.shortcuts.indices.contains(Int(id)) else { return }
+        onEvent(Self.shortcuts[Int(id)].event)
         // The tap may report a quick release before Carbon delivers the press, while the Switcher was still closed.
         if !ModifierReleaseTap.isModifierDown {
             onEvent(.modifierReleased)
         }
     }
 
-    private func registerAppShortcuts() {
+    private func registerShortcuts() {
         var spec = EventTypeSpec(eventClass: OSType(kEventClassKeyboard), eventKind: UInt32(kEventHotKeyPressed))
         let context = Unmanaged.passUnretained(self).toOpaque()
         let installStatus = InstallEventHandler(
@@ -75,7 +77,7 @@ final class KeyboardInput {
                 guard status == noErr else { return status }
                 let input = Unmanaged<KeyboardInput>.fromOpaque(context).takeUnretainedValue()
                 // Carbon dispatches hot key events on the main run loop.
-                MainActor.assumeIsolated { input.appShortcutPressed(id: id.id) }
+                MainActor.assumeIsolated { input.shortcutPressed(id: id.id) }
                 return noErr
             },
             1,
@@ -84,22 +86,22 @@ final class KeyboardInput {
             &carbonHandler
         )
         if installStatus != noErr {
-            logger.error("app shortcut handler failed: \(installStatus)")
+            logger.error("shortcut handler failed: \(installStatus)")
         }
-        appShortcutRefs = Self.appShortcuts.enumerated().map { index, shortcut in
+        shortcutRefs = Self.shortcuts.enumerated().map { index, shortcut in
             var ref: EventHotKeyRef?
             let status = RegisterEventHotKey(
-                UInt32(kVK_Tab),
+                UInt32(shortcut.keyCode),
                 UInt32(shortcut.modifiers),
-                EventHotKeyID(signature: Self.appShortcutSignature, id: UInt32(index)),
+                EventHotKeyID(signature: Self.shortcutSignature, id: UInt32(index)),
                 GetEventDispatcherTarget(),
                 0,
                 &ref
             )
             if status == noErr {
-                logger.info("app shortcut \(shortcut.name, privacy: .public) registered")
+                logger.info("shortcut \(shortcut.name, privacy: .public) registered")
             } else {
-                logger.error("app shortcut \(shortcut.name, privacy: .public) failed: \(status)")
+                logger.error("shortcut \(shortcut.name, privacy: .public) failed: \(status)")
             }
             return ref
         }
