@@ -49,8 +49,9 @@ Esito di `SPIKE.md` e tutto ciò che serve per riscrivere l'app senza rileggere 
 | `_AXUIElementGetWindow` | Id della finestra, esclusione dei fantasmi | Tutte le finestre vengono scartate: elenchi vuoti, va cambiato il codice. |
 | `CGSMainConnectionID`, `CGSCopyManagedDisplaySpaces`, `CGSCopySpacesForWindows` | Space delle finestre | Si perde il riconoscimento delle app solo in altri Space e delle minimizzate in altri Space. |
 | `CGSGetActiveSpace` | Space attivo (display con il focus), per mostrare tutte le app da uno Space a schermo intero | Da uno Space a schermo intero l'App row filtra per Space come da uno Space normale. |
+| `_AXUIElementCreateWithRemoteToken` | Elemento AX di una finestra in un altro Space (assente da `kAXWindows`), per alzarla dopo `activate` da uno Space a schermo intero: prova gli id 0..<1000 (tutti: circa 50-60 ms; si ferma al primo AXWindow con quel wid, entro 150 ms) | Da uno Space a schermo intero alcune app (Orca, Miro, Notion) vengono avanti senza cambiare Space. Log `via=remote-unavailable`. |
 
-Tutte sono risolte a runtime con `dlsym`: un simbolo assente produce una riga di log, non un errore all'avvio. `_AXUIElementGetWindow` e `GetProcessForPID` si cercano con `RTLD_DEFAULT`, le altre in `/System/Library/PrivateFrameworks/SkyLight.framework/SkyLight`.
+Tutte sono risolte a runtime con `dlsym`: un simbolo assente produce una riga di log, non un errore all'avvio. `_AXUIElementGetWindow`, `_AXUIElementCreateWithRemoteToken` e `GetProcessForPID` si cercano con `RTLD_DEFAULT`, le altre in `/System/Library/PrivateFrameworks/SkyLight.framework/SkyLight`.
 
 Firme usate:
 
@@ -62,6 +63,7 @@ CGSGetActiveSpace(cid) -> UInt64     // 0 se sconosciuto
 _SLPSSetFrontProcessWithOptions(&psn, wid, 0x200) -> Int32
 SLPSPostEventRecordTo(&psn, bytes) -> Int32
 _AXUIElementGetWindow(element, &wid) -> AXError
+_AXUIElementCreateWithRemoteToken(token) -> AXUIElement?     // 20 byte: pid Int32, 0 Int32, 0x636f636f Int32, id UInt64
 GetProcessForPID(pid, &psn) -> OSStatus
 ```
 
