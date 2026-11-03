@@ -147,8 +147,31 @@ Before starting: `make run`, Accessibility granted to Downtab. Open TextEdit wit
 5. Press `` ⌥` `` once and release both keys quickly: only `two` comes to the front and gets the keyboard focus (type a few letters: they land in it); TextEdit's other windows stay where they were. Pressing it again brings `one` back.
 6. Hold ⌥, press `` ` ``, then `↓`: `three` is highlighted. Press `↑` three times: the Window list closes and TextEdit is selected at App level. Press Tab: Safari is selected. Press `` ` ``: nothing happens. Press `Esc`.
 7. Hold ⌥, press `` ` ``, then Tab: the Window list closes and Safari is selected. Release ⌥: Safari comes to the front.
-8. In Safari (one window), press `` ⌥` ``: no Switcher appears and nothing changes. Same with `` ⌥⇧` ``, and in an app with no windows (close all TextEdit windows with ⌘W, then press `` ⌥` `` in TextEdit).
-9. `log show --last 1h --predicate 'subsystem == "local.downtab" AND category == "keyboard"'` shows `` shortcut ⌥` registered `` and `` shortcut ⌥⇧` registered `` at launch, next to the ⌥Tab ones.
+8. Click TextEdit's `one` window. Hold ⌥, press `` ` ``, then `→`: TextEdit's list closes and Safari (one window) is selected without a Window list. Press `←`: TextEdit's Window list reopens. Press `Esc`.
+9. Click the Safari window (one window) and press `` ⌥` ``: no Switcher appears and nothing changes. Same with `` ⌥⇧` ``, and in an app with no windows (close all TextEdit windows with ⌘W, then press `` ⌥` `` in TextEdit).
+10. `log show --last 1h --predicate 'subsystem == "local.downtab" AND category == "keyboard"'` shows `` shortcut ⌥` registered `` and `` shortcut ⌥⇧` registered `` at launch, next to the ⌥Tab ones.
+
+## Switcher: cross-app navigation
+
+Before starting: `make run`, Accessibility granted to Downtab. Open TextEdit with 2 windows, Safari with one window, Notes with 2 windows, then Finder last (any one window), clicking each to bring it to the front, so the App row reads Finder, Notes, Safari, TextEdit. Keep ⌥ held during each step unless the step says to release it.
+
+1. In Finder, hold ⌥, press Tab (Notes selected), press `→`: Safari is selected, its tile highlighted as at App level. Press `→` again: TextEdit is selected. Press `←` twice: Notes, then Finder is selected; `←` once more wraps to TextEdit. No Window list opens. Press `Esc`.
+2. Hold ⌥, press Tab, press `↓`: Notes' Window list opens. Press `→`: Notes' list closes and Safari (one window) is selected without a Window list, its tile highlighted as at App level.
+3. Press `→` again: TextEdit's Window list opens under its icon, first window highlighted. Press `→` again: it wraps to Finder (one window), selected without a list. Press `←`: TextEdit's Window list reopens.
+4. With TextEdit's Window list open, press `←` twice: Safari (no list), then Notes' Window list opens on its first window. Release ⌥: only that Notes window comes to the front.
+5. Hold ⌥, press Tab, `↓`, `→` (Safari, no list), release ⌥: Safari comes to the front.
+6. Hold ⌥, press Tab, `↓`, `→` (Safari, no list), press Tab: the Switcher is at App level on TextEdit, no Window list. Press `↓`: TextEdit's Window list opens. Press Tab: the list closes and Finder is selected at App level. Press `Esc`: nothing changes.
+7. Hold ⌥, press Tab, `↓`, `→` (Safari, no list), press `↑`: Safari is selected at App level. Press `↓`: nothing happens. Press `Esc`.
+
+## Switcher: which windows are listed
+
+Before starting: `make run`, Accessibility granted to Downtab, two Spaces (Mission Control, `+`), Notes open so another app is frontmost. Wait one second after each change before pressing ⌥Tab. Keep ⌥ held during each check and press `Esc` after it.
+
+1. Finder with tabs: open 2 Finder windows (⌘N), and in one of them 3 tabs (⌘T). ⌥Tab to Finder: the badge shows `2`. Press `↓`: the Window list holds 2 entries, one per window (the one with tabs is titled after its current tab); the desktop is not listed.
+2. cmux with fake dialogs: with cmux open on one window, ⌥Tab to cmux: no badge. Press `↓`: nothing happens (no `Item-0` or `Item-1` entry anywhere).
+3. TextEdit minimized in another Space: open 2 TextEdit windows in Space 1 and a third one in Space 2, minimize the third one (⌘M) while in Space 2, then go back to Space 1. ⌥Tab to TextEdit: the badge shows `2`; `↓` lists only the 2 windows of Space 1.
+4. Untitled: in iTerm2 (or any app with a window without a title) open 2 windows, one of them untitled (iTerm2: Settings › Profiles › Window title set to empty, or `printf '\e]0;\a'` in it). ⌥Tab to it, `↓`: the window without a title reads `Untitled`.
+5. Duplicate titles: open 2 Safari windows on the same page (e.g. 2 empty Start Pages). ⌥Tab to Safari, `↓`: both entries show the same title, unchanged (no numbering).
 
 ## Switcher: accessibility
 

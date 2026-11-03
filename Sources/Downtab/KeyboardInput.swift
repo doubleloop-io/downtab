@@ -42,6 +42,8 @@ final class KeyboardInput {
         case kVK_Return, kVK_ANSI_KeypadEnter: .enterPressed
         case kVK_DownArrow: .downPressed
         case kVK_UpArrow: .upPressed
+        case kVK_LeftArrow: .leftPressed
+        case kVK_RightArrow: .rightPressed
         default: nil
         }
     }

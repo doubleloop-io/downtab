@@ -35,7 +35,11 @@ final class SwitcherPanel: NSPanel {
         // The display is chosen at opening: moving the selection never moves the panel to another display.
         let target = isVisible ? screen : Self.pointerScreen()
         let iconSize = Metrics.iconSize(screenWidth: target?.frame.width, tileCount: displayed.appRow.count)
-        let selection: AppTile.Selection = displayed.level == .app ? .selected : .parentOfWindowList
+        let selection: AppTile.Selection =
+            switch displayed.level {
+            case .app, .windowWithoutList: .selected
+            case .window: .parentOfWindowList
+            }
         let views = displayed.appRow.enumerated().map { index, entry in
             AppTile(
                 icon: icon(entry.id), entry: entry, iconSize: iconSize,

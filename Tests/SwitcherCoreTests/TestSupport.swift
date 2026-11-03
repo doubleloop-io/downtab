@@ -33,15 +33,22 @@ extension DesktopWindow {
         )
     }
 
-    /// An element Accessibility lists as a window, in the Current Space.
-    static func listed(role: String, subrole: String?, title: String = "", hasID: Bool = true) -> DesktopWindow {
+    /// An element Accessibility lists as a window, by default in no known Space.
+    static func listed(
+        role: String,
+        subrole: String?,
+        title: String = "",
+        hasID: Bool = true,
+        in spaces: Set<UInt64> = [],
+        isMinimized: Bool = false
+    ) -> DesktopWindow {
         DesktopWindow(
             id: hasID ? WindowID(UInt32(uniqueID())) : nil,
             title: title,
             role: role,
             subrole: subrole,
-            spaces: [],
-            isMinimized: false,
+            spaces: spaceIDs(spaces),
+            isMinimized: isMinimized,
             isFullScreen: false,
             size: WindowSize(width: 800, height: 600)
         )
@@ -162,6 +169,12 @@ func opened(on desktop: DesktopSnapshot) -> Switcher {
     var switcher = Switcher()
     switcher.handle(.appShortcutPressed, desktop: desktop)
     return switcher
+}
+
+/// Another app is the Frontmost app, so the Switcher opens with the app under test selected.
+func openedOn(_ app: DesktopApp) -> (Switcher, DesktopSnapshot) {
+    let desktop = DesktopSnapshot.with(apps: [.regular("Frontmost"), app])
+    return (opened(on: desktop), desktop)
 }
 
 /// Opens the Switcher on the snapshot and returns the names in its App row.

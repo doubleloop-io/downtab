@@ -10,6 +10,8 @@ public enum SwitcherEvent: Equatable, Sendable {
     case escapePressed
     case downPressed
     case upPressed
+    case leftPressed
+    case rightPressed
 }
 
 /// What closing the Switcher asks the app to do.
@@ -41,6 +43,9 @@ public enum SelectionLevel: Equatable, Sendable {
     case app
     /// The index of the selected window in the selected app's Window list.
     case window(Int)
+    /// Window level reached with `←` / `→` on an app with fewer than 2 windows: the app is selected without a
+    /// Window list, and the next `←` / `→` opens the list of the app it lands on.
+    case windowWithoutList
 }
 
 public struct DisplayedState: Equatable, Sendable {
@@ -61,7 +66,7 @@ public struct DisplayedState: Equatable, Sendable {
 
     var confirmation: FinalEffect {
         switch level {
-        case .app: .activateApp(selectedEntry.id)
+        case .app, .windowWithoutList: .activateApp(selectedEntry.id)
         case .window(let index): .bringWindowToFront(selectedEntry.windows[index].id, of: selectedEntry.id)
         }
     }
@@ -82,15 +87,24 @@ public struct DisplayedState: Equatable, Sendable {
         return at(.window(((index + step) % count + count) % count))
     }
 
+    /// `←` / `→`: at Window level, change app and stay at Window level, opening its Window list if it has one.
+    func movingAcrossApps(by step: Int) -> DisplayedState {
+        let moved = movingSelection(by: step)
+        switch level {
+        case .app: return moved
+        case .window, .windowWithoutList: return moved.at(moved.windowListOpening ?? .windowWithoutList)
+        }
+    }
+
     /// `↓`: opens the Window list of an app with at least 2 windows, then walks it down to the last window.
     func movingDown() -> DisplayedState {
         switch level {
         case .app:
-            guard selectedEntry.windowCountBadge != nil else { return self }
-            // The Frontmost app's first window is the one being left.
-            return at(.window(selectedEntry.id == frontmostApp ? 1 : 0))
+            return windowListOpening.map(at) ?? self
         case .window(let index):
             return at(.window(min(index + 1, selectedEntry.windows.count - 1)))
+        case .windowWithoutList:
+            return self
         }
     }
 
@@ -98,9 +112,16 @@ public struct DisplayedState: Equatable, Sendable {
     func movingUp() -> DisplayedState {
         switch level {
         case .app: self
-        case .window(0): at(.app)
+        case .window(0), .windowWithoutList: at(.app)
         case .window(let index): at(.window(index - 1))
         }
+    }
+
+    /// Nil when the selected app has fewer than 2 windows, so there is no Window list to open.
+    private var windowListOpening: SelectionLevel? {
+        guard selectedEntry.windowCountBadge != nil else { return nil }
+        // The Frontmost app's first window is the one being left.
+        return .window(selectedEntry.id == frontmostApp ? 1 : 0)
     }
 
     private func at(_ level: SelectionLevel) -> DisplayedState {
@@ -132,10 +153,8 @@ public struct Switcher: Sendable {
             moveSelection(by: event == .appShortcutPressed ? 1 : -1, desktop: desktop)
         case .windowShortcutPressed, .shiftWindowShortcutPressed:
             moveWindowSelection(by: event == .windowShortcutPressed ? 1 : -1, desktop: desktop)
-        case .downPressed:
-            moveWhileOpen { $0.movingDown() }
-        case .upPressed:
-            moveWhileOpen { $0.movingUp() }
+        case .downPressed, .upPressed, .leftPressed, .rightPressed:
+            moveWhileOpen { Self.moving($0, by: event) }
         }
         return nil
     }
@@ -154,6 +173,16 @@ public struct Switcher: Sendable {
 
     private mutating func moveWhileOpen(_ move: (DisplayedState) -> DisplayedState) {
         if case .open(let displayed) = state { state = .open(move(displayed)) }
+    }
+
+    private static func moving(_ displayed: DisplayedState, by arrow: SwitcherEvent) -> DisplayedState {
+        switch arrow {
+        case .downPressed: displayed.movingDown()
+        case .upPressed: displayed.movingUp()
+        case .leftPressed: displayed.movingAcrossApps(by: -1)
+        case .rightPressed: displayed.movingAcrossApps(by: 1)
+        default: displayed
+        }
     }
 
     private mutating func moveSelection(by step: Int, desktop: DesktopSnapshot) {
