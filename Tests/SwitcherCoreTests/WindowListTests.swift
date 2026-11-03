@@ -1,12 +1,6 @@
 import SwitcherCore
 import Testing
 
-/// Another app is the Frontmost app, so the Switcher opens with the app under test selected.
-private func openedOn(_ app: DesktopApp) -> (Switcher, DesktopSnapshot) {
-    let desktop = DesktopSnapshot.with(apps: [.regular("Frontmost"), app])
-    return (opened(on: desktop), desktop)
-}
-
 @Test func downOnAnAppWithTwoWindowsOpensItsWindowListOnTheFirstWindow() {
     var (switcher, desktop) = openedOn(.regular("Safari", windows: [.window("A"), .window("B")]))
 
@@ -98,6 +92,22 @@ func confirmingAtWindowLevelBringsOnlyTheSelectedWindowToTheFront(confirm: Switc
 
     #expect(switcher.state == .closed)
     #expect(effect == .bringWindowToFront(try #require(chosen.id), of: app.id))
+}
+
+@Test func aWindowWithoutATitleIsListedAsUntitled() {
+    var (switcher, desktop) = openedOn(.regular("iTerm2", windows: [.window(""), .window("Shell")]))
+
+    switcher.handle(.downPressed, desktop: desktop)
+
+    #expect(switcher.state.windowListTitles == ["Untitled", "Shell"])
+}
+
+@Test func duplicateTitlesAreListedAsTheyAre() {
+    var (switcher, desktop) = openedOn(.regular("Safari", windows: [.window("Start Page"), .window("Start Page")]))
+
+    switcher.handle(.downPressed, desktop: desktop)
+
+    #expect(switcher.state.windowListTitles == ["Start Page", "Start Page"])
 }
 
 @Test(arguments: [0, 1])

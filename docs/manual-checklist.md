@@ -136,6 +136,16 @@ Before starting: `make run`, Accessibility granted to Downtab. Open TextEdit wit
 8. Minimize a TextEdit window (⌘M), wait one second, select it in the Window list and release ⌥: it comes back from the Dock and to the front.
 9. `log stream --predicate 'subsystem == "local.downtab" AND category == "focus"'` shows a `raise pid=... wid=... private=true ax=0` line for each window confirmed. `private=false` means a private API is missing: the window still comes forward, but with all of the app's windows, and `log show --last 1h --predicate 'subsystem == "local.downtab" AND category == "private-api"'` shows one `private symbol missing: <name>, its feature is off` line per missing symbol; the app keeps running.
 
+## Switcher: which windows are listed
+
+Before starting: `make run`, Accessibility granted to Downtab, two Spaces (Mission Control, `+`), Notes open so another app is frontmost. Wait one second after each change before pressing ⌥Tab. Keep ⌥ held during each check and press `Esc` after it.
+
+1. Finder with tabs: open 2 Finder windows (⌘N), and in one of them 3 tabs (⌘T). ⌥Tab to Finder: the badge shows `2`. Press `↓`: the Window list holds 2 entries, one per window (the one with tabs is titled after its current tab); the desktop is not listed.
+2. cmux with fake dialogs: with cmux open on one window, ⌥Tab to cmux: no badge. Press `↓`: nothing happens (no `Item-0` or `Item-1` entry anywhere).
+3. TextEdit minimized in another Space: open 2 TextEdit windows in Space 1 and a third one in Space 2, minimize the third one (⌘M) while in Space 2, then go back to Space 1. ⌥Tab to TextEdit: the badge shows `2`; `↓` lists only the 2 windows of Space 1.
+4. Untitled: in iTerm2 (or any app with a window without a title) open 2 windows, one of them untitled (iTerm2: Settings › Profiles › Window title set to empty, or `printf '\e]0;\a'` in it). ⌥Tab to it, `↓`: the window without a title reads `Untitled`.
+5. Duplicate titles: open 2 Safari windows on the same page (e.g. 2 empty Start Pages). ⌥Tab to Safari, `↓`: both entries show the same title, unchanged (no numbering).
+
 ## Switcher: accessibility
 
 Before starting: `make run`. Step 2 needs Accessibility Inspector, which ships with Xcode (`open -a "Accessibility Inspector"`); without Xcode run step 1 only.
