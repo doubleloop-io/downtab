@@ -17,6 +17,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         statusItem = item
         switcher.start()
         shortcuts.registerStored()
+        LaunchAtLogin().applyStored()
     }
 
     @objc private func openPreferences() {

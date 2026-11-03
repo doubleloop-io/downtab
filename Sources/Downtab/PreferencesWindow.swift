@@ -1,9 +1,13 @@
 import AppKit
 import SwitcherCore
 
-/// The App shortcut and Window shortcut recorders, with their rejection messages and Restore Defaults.
+/// The App shortcut and Window shortcut recorders, with their rejection messages and Restore Defaults,
+/// then the launch at login toggle.
 final class PreferencesWindow: NSWindow, NSWindowDelegate {
     private let settings: ShortcutSettings
+    private let launchAtLogin = LaunchAtLogin()
+    private let launchAtLoginToggle = NSButton(checkboxWithTitle: "Launch at login", target: nil, action: nil)
+    private var launchAtLoginApprovalRow: NSGridRow?
     private var recorders: [ShortcutSlot: ShortcutRecorderField] = [:]
     private var messages: [ShortcutSlot: NSTextField] = [:]
     private var messageRows: [ShortcutSlot: NSGridRow] = [:]
@@ -21,6 +25,7 @@ final class PreferencesWindow: NSWindow, NSWindowDelegate {
 
     func open() {
         showCurrentShortcuts()
+        showLaunchAtLogin()
         NSApp.activate()
         makeKeyAndOrderFront(nil)
         // AppKit focuses the first recorder on open; nothing should look selected until the user picks a field.
@@ -32,6 +37,11 @@ final class PreferencesWindow: NSWindow, NSWindowDelegate {
         cancelRecording()
     }
 
+    // The user may have changed the login item in System Settings meanwhile.
+    func windowDidBecomeKey(_ notification: Notification) {
+        showLaunchAtLogin()
+    }
+
     private enum Layout {
         static let margin: CGFloat = 20
         static let fieldColumnWidth: CGFloat = 240
@@ -39,6 +49,7 @@ final class PreferencesWindow: NSWindow, NSWindowDelegate {
         static let messageGap: CGFloat = 4
         static let hintGap: CGFloat = 14
         static let buttonGap: CGFloat = 16
+        static let sectionGap: CGFloat = 20
     }
 
     /// Two columns: trailing-aligned labels, then fields with their messages, the hint and Restore Defaults.
@@ -51,11 +62,15 @@ final class PreferencesWindow: NSWindow, NSWindowDelegate {
         hint.textColor = .secondaryLabelColor
         hint.preferredMaxLayoutWidth = Layout.fieldColumnWidth
         let restore = NSButton(title: "Restore Defaults", target: self, action: #selector(restoreDefaults))
+        launchAtLoginToggle.target = self
+        launchAtLoginToggle.action = #selector(toggleLaunchAtLogin)
 
         let grid = NSGridView(
             views: ShortcutSlot.allCases.flatMap(rows(for:)) + [
                 [NSGridCell.emptyContentView, hint],
                 [NSGridCell.emptyContentView, restore],
+                [NSGridCell.emptyContentView, launchAtLoginToggle],
+                [NSGridCell.emptyContentView, makeApprovalNote()],
             ]
         )
         grid.translatesAutoresizingMaskIntoConstraints = false
@@ -72,8 +87,14 @@ final class PreferencesWindow: NSWindow, NSWindowDelegate {
             messageRow.isHidden = true
             messageRows[slot] = messageRow
         }
-        grid.row(at: grid.numberOfRows - 2).topPadding = Layout.hintGap
-        grid.row(at: grid.numberOfRows - 1).topPadding = Layout.buttonGap
+        let hintIndex = 2 * ShortcutSlot.allCases.count
+        grid.row(at: hintIndex).topPadding = Layout.hintGap
+        grid.row(at: hintIndex + 1).topPadding = Layout.buttonGap
+        grid.row(at: hintIndex + 2).topPadding = Layout.sectionGap
+        let approvalRow = grid.row(at: hintIndex + 3)
+        approvalRow.topPadding = Layout.messageGap
+        approvalRow.isHidden = true
+        launchAtLoginApprovalRow = approvalRow
 
         let content = NSView()
         content.addSubview(grid)
@@ -130,6 +151,39 @@ final class PreferencesWindow: NSWindow, NSWindowDelegate {
         case .rejected(let rejection):
             show(rejection, of: shortcut, for: slot)
         }
+    }
+
+    private func makeApprovalNote() -> NSView {
+        let note = NSTextField(
+            wrappingLabelWithString: "Turned off in System Settings. "
+                + "Turn Downtab on in Login Items to launch it at login."
+        )
+        note.font = .systemFont(ofSize: NSFont.smallSystemFontSize)
+        note.textColor = .secondaryLabelColor
+        note.preferredMaxLayoutWidth = Layout.fieldColumnWidth
+        let open = NSButton(title: "Open Login Items…", target: self, action: #selector(openLoginItems))
+        let stack = NSStackView(views: [note, open])
+        stack.orientation = .vertical
+        stack.alignment = .leading
+        stack.spacing = Layout.messageGap
+        return stack
+    }
+
+    @objc private func toggleLaunchAtLogin() {
+        launchAtLogin.set(launchAtLoginToggle.state == .on)
+        showLaunchAtLogin()
+    }
+
+    @objc private func openLoginItems() {
+        launchAtLogin.openSystemSettings()
+    }
+
+    /// The toggle shows the stored choice; the note appears when System Settings overrides it.
+    private func showLaunchAtLogin() {
+        let wanted = launchAtLogin.isWanted
+        launchAtLoginToggle.state = wanted ? .on : .off
+        launchAtLoginApprovalRow?.isHidden = !(wanted && launchAtLogin.status == .needsApproval)
+        fitToContent()
     }
 
     @objc private func restoreDefaults() {
