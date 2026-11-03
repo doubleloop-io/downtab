@@ -1,14 +1,19 @@
 import SwitcherCore
 import Testing
 
-/// macOS virtual key codes, the same on every layout.
-private let tabKey = 48
-private let graveKey = 50
-private let spaceKey = 49
-
 @Test func aShortcutWithoutAnyModifierIsRejected() {
     let outcome = ShortcutRules.check(
-        Shortcut(keyCode: tabKey, modifiers: []),
+        Shortcut(keyCode: KeyCode.tab, modifiers: []),
+        other: .defaultWindow,
+        systemShortcuts: []
+    )
+
+    #expect(outcome == .rejected(.noModifier))
+}
+
+@Test func aShortcutWhoseOnlyModifierIsShiftIsRejectedForHavingNoModifier() {
+    let outcome = ShortcutRules.check(
+        Shortcut(keyCode: KeyCode.tab, modifiers: [.shift]),
         other: .defaultWindow,
         systemShortcuts: []
     )
@@ -19,11 +24,10 @@ private let spaceKey = 49
 @Test(arguments: [
     Set<ShortcutModifier>([.option, .shift]),
     [.command, .control, .shift],
-    [.shift],
 ])
 func aShortcutContainingShiftIsRejected(modifiers: Set<ShortcutModifier>) {
     let outcome = ShortcutRules.check(
-        Shortcut(keyCode: tabKey, modifiers: modifiers),
+        Shortcut(keyCode: KeyCode.tab, modifiers: modifiers),
         other: .defaultWindow,
         systemShortcuts: []
     )
@@ -32,10 +36,10 @@ func aShortcutContainingShiftIsRejected(modifiers: Set<ShortcutModifier>) {
 }
 
 @Test func aShortcutEqualToTheOtherShortcutIsRejected() {
-    let other = Shortcut(keyCode: graveKey, modifiers: [.control])
+    let other = Shortcut(keyCode: KeyCode.grave, modifiers: [.control])
 
     let outcome = ShortcutRules.check(
-        Shortcut(keyCode: graveKey, modifiers: [.control]),
+        Shortcut(keyCode: KeyCode.grave, modifiers: [.control]),
         other: other,
         systemShortcuts: []
     )
@@ -45,8 +49,8 @@ func aShortcutContainingShiftIsRejected(modifiers: Set<ShortcutModifier>) {
 
 @Test func aShortcutWithTheOtherShortcutsKeyButDifferentModifiersIsValid() {
     let outcome = ShortcutRules.check(
-        Shortcut(keyCode: graveKey, modifiers: [.control]),
-        other: Shortcut(keyCode: graveKey, modifiers: [.option]),
+        Shortcut(keyCode: KeyCode.grave, modifiers: [.control]),
+        other: Shortcut(keyCode: KeyCode.grave, modifiers: [.option]),
         systemShortcuts: []
     )
 
@@ -54,10 +58,10 @@ func aShortcutContainingShiftIsRejected(modifiers: Set<ShortcutModifier>) {
 }
 
 @Test func aShortcutUsedByTheSystemIsRejected() {
-    let spotlight = Shortcut(keyCode: spaceKey, modifiers: [.command])
+    let spotlight = Shortcut(keyCode: KeyCode.space, modifiers: [.command])
 
     let outcome = ShortcutRules.check(
-        Shortcut(keyCode: spaceKey, modifiers: [.command]),
+        Shortcut(keyCode: KeyCode.space, modifiers: [.command]),
         other: .defaultWindow,
         systemShortcuts: [spotlight]
     )
@@ -66,10 +70,10 @@ func aShortcutContainingShiftIsRejected(modifiers: Set<ShortcutModifier>) {
 }
 
 @Test func aShortcutWithASystemShortcutsKeyButDifferentModifiersIsValid() {
-    let spotlight = Shortcut(keyCode: spaceKey, modifiers: [.command])
+    let spotlight = Shortcut(keyCode: KeyCode.space, modifiers: [.command])
 
     let outcome = ShortcutRules.check(
-        Shortcut(keyCode: spaceKey, modifiers: [.command, .option, .control]),
+        Shortcut(keyCode: KeyCode.space, modifiers: [.command, .option, .control]),
         other: .defaultWindow,
         systemShortcuts: [spotlight]
     )
@@ -80,8 +84,8 @@ func aShortcutContainingShiftIsRejected(modifiers: Set<ShortcutModifier>) {
 @Test(arguments: [
     (Shortcut.defaultApp, Shortcut.defaultWindow),
     (Shortcut.defaultWindow, Shortcut.defaultApp),
-    (Shortcut(keyCode: tabKey, modifiers: [.command, .option]), Shortcut.defaultWindow),
-    (Shortcut(keyCode: graveKey, modifiers: [.control]), Shortcut.defaultApp),
+    (Shortcut(keyCode: KeyCode.tab, modifiers: [.command, .option]), Shortcut.defaultWindow),
+    (Shortcut(keyCode: KeyCode.grave, modifiers: [.control]), Shortcut.defaultApp),
 ])
 func aShortcutWithAModifierAndNoConflictIsValid(recorded: Shortcut, other: Shortcut) {
     let outcome = ShortcutRules.check(recorded, other: other, systemShortcuts: [])
@@ -94,7 +98,47 @@ func aShortcutWithAModifierAndNoConflictIsValid(recorded: Shortcut, other: Short
     (.containsShift, "⇧ is reserved for going back: record the shortcut without it."),
     (.sameAsOther, "The other shortcut already uses this combination."),
     (.usedBySystem, "macOS already uses this combination: choose another one."),
+    (.shiftVariantUsedBySystem, "macOS already uses this combination with ⇧: choose another one."),
 ])
 func everyRejectionHasAnEnglishMessage(rejection: ShortcutRejection, message: String) {
     #expect(rejection.message == message)
+}
+
+@Test func aShortcutMacOSRefusesOnlyWithShiftIsRejectedForItsShiftVariant() {
+    let recorded = Shortcut(keyCode: KeyCode.space, modifiers: [.option])
+
+    let outcome = ShortcutRules.checkRegistration(
+        of: recorded,
+        refused: [Shortcut(keyCode: KeyCode.space, modifiers: [.option, .shift])]
+    )
+
+    #expect(outcome == .rejected(.shiftVariantUsedBySystem))
+}
+
+@Test func aShortcutMacOSRefusesIsRejectedAsUsedBySystemEvenIfItsShiftVariantIsRefusedToo() {
+    let recorded = Shortcut(keyCode: KeyCode.space, modifiers: [.option])
+
+    let outcome = ShortcutRules.checkRegistration(of: recorded, refused: [recorded, recorded.withShift])
+
+    #expect(outcome == .rejected(.usedBySystem))
+}
+
+@Test func aShortcutMacOSRegistersWithAndWithoutShiftIsValid() {
+    let outcome = ShortcutRules.checkRegistration(
+        of: Shortcut(keyCode: KeyCode.space, modifiers: [.option]),
+        refused: [Shortcut(keyCode: KeyCode.tab, modifiers: [.option])]
+    )
+
+    #expect(outcome == .valid)
+}
+
+@Test func registrationFailuresNameOnlyTheSlotsMacOSRefused() {
+    let shortcuts = Shortcuts(
+        app: Shortcut(keyCode: KeyCode.tab, modifiers: [.option]),
+        window: Shortcut(keyCode: KeyCode.space, modifiers: [.option])
+    )
+
+    let failures = shortcuts.registrationFailures(refused: [shortcuts.window.withShift])
+
+    #expect(failures == [.window: .shiftVariantUsedBySystem])
 }

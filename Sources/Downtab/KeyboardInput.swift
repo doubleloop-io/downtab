@@ -6,16 +6,9 @@ import os
 
 final class KeyboardInput {
     private struct Registration {
-        let shortcut: Shortcut
-        let withShift: Bool
-        let event: SwitcherEvent
-
         /// What is held on the keyboard: the shortcut, plus ⇧ for the reverse registration.
-        var combination: Shortcut {
-            Shortcut(
-                keyCode: shortcut.keyCode,
-                modifiers: withShift ? shortcut.modifiers.union([.shift]) : shortcut.modifiers)
-        }
+        let combination: Shortcut
+        let event: SwitcherEvent
     }
 
     private static let shortcutSignature = OSType(0x4454_4142)  // "DTAB"
@@ -23,7 +16,7 @@ final class KeyboardInput {
     private let onEvent: (SwitcherEvent) -> Void
     private let logger = Logger(subsystem: "local.downtab", category: "keyboard")
     private let modifierRelease = ModifierReleaseTap()
-    private var carbonHandler: EventHandlerRef?
+    private let hotKeyPresses = HotKeyPressHandler()
     /// Indexed by Carbon hot key id.
     private var registrations: [Registration] = []
     private var shortcutRefs: [EventHotKeyRef?] = []
@@ -33,9 +26,9 @@ final class KeyboardInput {
         self.onEvent = onEvent
     }
 
-    func start(shortcuts: Shortcuts) {
-        installShortcutHandler()
-        register(shortcuts)
+    /// Shortcuts open the Switcher once registered with `register(_:)`.
+    func start() {
+        hotKeyPresses.install { [weak self] id in self?.shortcutPressed(id: id) }
         modifierRelease.start { [weak self] in self?.onEvent(.modifierReleased) }
         // A local monitor sees keys sent to any of Downtab's windows: the Preferences need theirs.
         keyMonitor = NSEvent.addLocalMonitorForEvents(matching: .keyDown) { [weak self] event in
@@ -69,22 +62,22 @@ final class KeyboardInput {
     }
 
     /// Replaces the registered shortcuts, each with and without ⇧.
-    /// Returns the shortcuts macOS refused, with or without ⇧: another app or the system holds them.
+    /// Returns the combinations macOS refused, each shortcut with or without ⇧: another app or the system holds them.
     @discardableResult
     func register(_ shortcuts: Shortcuts) -> Set<Shortcut> {
         suspendShortcuts()
         registrations = [
-            Registration(shortcut: shortcuts.app, withShift: false, event: .appShortcutPressed),
-            Registration(shortcut: shortcuts.app, withShift: true, event: .shiftAppShortcutPressed),
-            Registration(shortcut: shortcuts.window, withShift: false, event: .windowShortcutPressed),
-            Registration(shortcut: shortcuts.window, withShift: true, event: .shiftWindowShortcutPressed),
+            Registration(combination: shortcuts.app, event: .appShortcutPressed),
+            Registration(combination: shortcuts.app.withShift, event: .shiftAppShortcutPressed),
+            Registration(combination: shortcuts.window, event: .windowShortcutPressed),
+            Registration(combination: shortcuts.window.withShift, event: .shiftWindowShortcutPressed),
         ]
         var refused: Set<Shortcut> = []
         shortcutRefs = registrations.enumerated().map { index, registration in
             let name = ShortcutLabel.text(for: registration.combination)
             var ref: EventHotKeyRef?
             let status = RegisterEventHotKey(
-                UInt32(registration.shortcut.keyCode),
+                UInt32(registration.combination.keyCode),
                 Self.carbonModifiers(registration.combination.modifiers),
                 EventHotKeyID(signature: Self.shortcutSignature, id: UInt32(index)),
                 GetEventDispatcherTarget(),
@@ -95,7 +88,7 @@ final class KeyboardInput {
                 logger.info("shortcut \(name, privacy: .public) registered")
             } else {
                 logger.error("shortcut \(name, privacy: .public) failed: \(status)")
-                refused.insert(registration.shortcut)
+                refused.insert(registration.combination)
             }
             return ref
         }
@@ -111,42 +104,6 @@ final class KeyboardInput {
     }
 
     private static func carbonModifiers(_ modifiers: Set<ShortcutModifier>) -> UInt32 {
-        let carbonFlags: [ShortcutModifier: Int] = [
-            .control: controlKey, .option: optionKey, .shift: shiftKey, .command: cmdKey,
-        ]
-        return UInt32(modifiers.reduce(0) { $0 | (carbonFlags[$1] ?? 0) })
-    }
-
-    private func installShortcutHandler() {
-        var spec = EventTypeSpec(eventClass: OSType(kEventClassKeyboard), eventKind: UInt32(kEventHotKeyPressed))
-        let context = Unmanaged.passUnretained(self).toOpaque()
-        let installStatus = InstallEventHandler(
-            GetEventDispatcherTarget(),
-            { _, event, context in
-                guard let context else { return OSStatus(eventNotHandledErr) }
-                var id = EventHotKeyID()
-                let status = GetEventParameter(
-                    event,
-                    EventParamName(kEventParamDirectObject),
-                    EventParamType(typeEventHotKeyID),
-                    nil,
-                    MemoryLayout<EventHotKeyID>.size,
-                    nil,
-                    &id
-                )
-                guard status == noErr else { return status }
-                let input = Unmanaged<KeyboardInput>.fromOpaque(context).takeUnretainedValue()
-                // Carbon dispatches hot key events on the main run loop.
-                MainActor.assumeIsolated { input.shortcutPressed(id: id.id) }
-                return noErr
-            },
-            1,
-            &spec,
-            context,
-            &carbonHandler
-        )
-        if installStatus != noErr {
-            logger.error("shortcut handler failed: \(installStatus)")
-        }
+        UInt32(modifiers.reduce(0) { $0 | $1.carbonFlag })
     }
 }

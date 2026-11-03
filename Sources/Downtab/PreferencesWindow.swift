@@ -23,17 +23,14 @@ final class PreferencesWindow: NSWindow, NSWindowDelegate {
     }
 
     func open() {
-        for slot in ShortcutSlot.allCases {
-            recorders[slot]?.shortcut = settings.current[slot]
-            show(nil, for: slot)
-        }
+        showCurrentShortcuts()
         NSApp.activate()
         makeKeyAndOrderFront(nil)
     }
 
     // Recording suspends the shortcuts: leaving the window must never leave them off.
     func windowDidResignKey(_ notification: Notification) {
-        for recorder in recorders.values { recorder.cancelRecording() }
+        cancelRecording()
     }
 
     private func makeContent() -> NSView {
@@ -61,8 +58,7 @@ final class PreferencesWindow: NSWindow, NSWindowDelegate {
     }
 
     private func rows(for slot: ShortcutSlot) -> [[NSView]] {
-        let name = slot == .app ? "App shortcut" : "Window shortcut"
-        let recorder = ShortcutRecorderField(shortcut: settings.current[slot], accessibilityName: name)
+        let recorder = ShortcutRecorderField(shortcut: settings.current[slot], accessibilityName: slot.name)
         recorder.onRecordingChanged = { [weak self] recording in
             guard let self else { return }
             if recording {
@@ -70,6 +66,7 @@ final class PreferencesWindow: NSWindow, NSWindowDelegate {
                 settings.suspendWhileRecording()
             } else {
                 settings.resumeAfterRecording()
+                showCurrentShortcuts()
             }
         }
         recorder.onRecord = { [weak self] shortcut in self?.record(shortcut, for: slot) }
@@ -81,7 +78,7 @@ final class PreferencesWindow: NSWindow, NSWindowDelegate {
         recorders[slot] = recorder
         messages[slot] = message
         return [
-            [NSTextField(labelWithString: "\(name):"), recorder],
+            [NSTextField(labelWithString: "\(slot.name):"), recorder],
             [NSGridCell.emptyContentView, message],
         ]
     }
@@ -89,20 +86,37 @@ final class PreferencesWindow: NSWindow, NSWindowDelegate {
     private func record(_ shortcut: Shortcut, for slot: ShortcutSlot) {
         switch settings.record(shortcut, for: slot) {
         case .valid:
-            recorders[slot]?.shortcut = shortcut
-            show(nil, for: slot)
+            showCurrentShortcuts()
         case .rejected(let rejection):
-            show("\(ShortcutLabel.text(for: shortcut)): \(rejection.message)", for: slot)
+            show(rejection, of: shortcut, for: slot)
         }
     }
 
     @objc private func restoreDefaults() {
+        cancelRecording()
+        showCurrentShortcuts(restoreFailures: settings.restoreDefaults())
+    }
+
+    private func cancelRecording() {
         for recorder in recorders.values { recorder.cancelRecording() }
-        let refused = settings.restoreDefaults()
+    }
+
+    /// Each slot shows why its default failed to register, if it did, otherwise why its current shortcut did.
+    private func showCurrentShortcuts(restoreFailures: [ShortcutSlot: ShortcutRejection] = [:]) {
         for slot in ShortcutSlot.allCases {
             recorders[slot]?.shortcut = settings.current[slot]
-            show(refused.contains(slot) ? ShortcutRejection.usedBySystem.message : nil, for: slot)
+            if let rejection = restoreFailures[slot] {
+                show(rejection, of: Shortcuts.defaults[slot], for: slot)
+            } else if let failure = settings.failures[slot] {
+                show(failure, of: settings.current[slot], for: slot)
+            } else {
+                show(nil, for: slot)
+            }
         }
+    }
+
+    private func show(_ rejection: ShortcutRejection, of shortcut: Shortcut, for slot: ShortcutSlot) {
+        show("\(ShortcutLabel.text(for: shortcut)): \(rejection.message)", for: slot)
     }
 
     private func show(_ text: String?, for slot: ShortcutSlot) {

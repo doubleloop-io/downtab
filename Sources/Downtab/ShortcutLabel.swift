@@ -3,10 +3,6 @@ import SwitcherCore
 
 /// How a shortcut reads on screen and in logs, e.g. `⌥Tab`, with the key named by the current keyboard layout.
 enum ShortcutLabel {
-    private static let modifierOrder: [(ShortcutModifier, String)] = [
-        (.control, "⌃"), (.option, "⌥"), (.shift, "⇧"), (.command, "⌘"),
-    ]
-
     /// Keys that type nothing visible.
     private static let keyNames: [Int: String] = [
         kVK_Tab: "Tab", kVK_Space: "Space", kVK_Return: "↩", kVK_ANSI_KeypadEnter: "⌤", kVK_Escape: "Esc",
@@ -21,7 +17,7 @@ enum ShortcutLabel {
     }
 
     static func modifiersText(_ modifiers: Set<ShortcutModifier>) -> String {
-        modifierOrder.filter { modifiers.contains($0.0) }.map(\.1).joined()
+        ShortcutModifier.allCases.filter(modifiers.contains).map(\.symbol).joined()
     }
 
     private static func keyName(_ keyCode: Int) -> String {

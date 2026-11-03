@@ -13,8 +13,68 @@ public struct Shortcut: Hashable, Codable, Sendable {
         self.modifiers = modifiers
     }
 
+    /// The reverse combination: the same shortcut held with ⇧.
+    public var withShift: Shortcut {
+        Shortcut(keyCode: keyCode, modifiers: modifiers.union([.shift]))
+    }
+
     /// ⌥Tab.
-    public static let defaultApp = Shortcut(keyCode: 48, modifiers: [.option])
-    /// ⌥`, the key left of `1`.
-    public static let defaultWindow = Shortcut(keyCode: 50, modifiers: [.option])
+    public static let defaultApp = Shortcut(keyCode: KeyCode.tab, modifiers: [.option])
+    /// ⌥`.
+    public static let defaultWindow = Shortcut(keyCode: KeyCode.grave, modifiers: [.option])
+}
+
+public enum ShortcutSlot: CaseIterable, Sendable {
+    case app, window
+
+    public var other: ShortcutSlot {
+        switch self {
+        case .app: .window
+        case .window: .app
+        }
+    }
+
+    /// The glossary name, shown in the Preferences.
+    public var name: String {
+        switch self {
+        case .app: "App shortcut"
+        case .window: "Window shortcut"
+        }
+    }
+}
+
+/// The App shortcut and the Window shortcut.
+public struct Shortcuts: Equatable, Sendable {
+    public var app: Shortcut
+    public var window: Shortcut
+
+    public init(app: Shortcut, window: Shortcut) {
+        self.app = app
+        self.window = window
+    }
+
+    public static let defaults = Shortcuts(app: .defaultApp, window: .defaultWindow)
+
+    public subscript(slot: ShortcutSlot) -> Shortcut {
+        get {
+            switch slot {
+            case .app: app
+            case .window: window
+            }
+        }
+        set {
+            switch slot {
+            case .app: app = newValue
+            case .window: window = newValue
+            }
+        }
+    }
+}
+
+/// macOS virtual key codes the core names: key positions, the same on every keyboard layout.
+public enum KeyCode {
+    public static let tab = 48
+    public static let space = 49
+    /// The key left of `1`: `` ` `` on US layouts.
+    public static let grave = 50
 }

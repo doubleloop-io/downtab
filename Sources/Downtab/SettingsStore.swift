@@ -2,30 +2,6 @@ import Foundation
 import SwitcherCore
 import os
 
-enum ShortcutSlot: CaseIterable {
-    case app, window
-
-    var other: ShortcutSlot { self == .app ? .window : .app }
-}
-
-/// The App shortcut and the Window shortcut.
-struct Shortcuts: Equatable {
-    var app: Shortcut
-    var window: Shortcut
-
-    static let defaults = Shortcuts(app: .defaultApp, window: .defaultWindow)
-
-    subscript(slot: ShortcutSlot) -> Shortcut {
-        get { slot == .app ? app : window }
-        set {
-            switch slot {
-            case .app: app = newValue
-            case .window: window = newValue
-            }
-        }
-    }
-}
-
 /// Downtab's preferences, kept in `UserDefaults`.
 struct SettingsStore {
     private let defaults = UserDefaults.standard
@@ -42,25 +18,27 @@ struct SettingsStore {
     }
 
     private func shortcut(for slot: ShortcutSlot) -> Shortcut {
-        guard let data = defaults.data(forKey: key(for: slot)) else { return Shortcuts.defaults[slot] }
+        guard let data = defaults.data(forKey: slot.storageKey) else { return Shortcuts.defaults[slot] }
         do {
             return try JSONDecoder().decode(Shortcut.self, from: data)
         } catch {
-            logger.error("stored \(key(for: slot), privacy: .public) unreadable, using the default: \(error)")
+            logger.error("stored \(slot.storageKey, privacy: .public) unreadable, using the default: \(error)")
             return Shortcuts.defaults[slot]
         }
     }
 
     private func save(_ shortcut: Shortcut, for slot: ShortcutSlot) {
         do {
-            defaults.set(try JSONEncoder().encode(shortcut), forKey: key(for: slot))
+            defaults.set(try JSONEncoder().encode(shortcut), forKey: slot.storageKey)
         } catch {
-            logger.error("cannot store \(key(for: slot), privacy: .public): \(error)")
+            logger.error("cannot store \(slot.storageKey, privacy: .public): \(error)")
         }
     }
+}
 
-    private func key(for slot: ShortcutSlot) -> String {
-        switch slot {
+extension ShortcutSlot {
+    fileprivate var storageKey: String {
+        switch self {
         case .app: "appShortcut"
         case .window: "windowShortcut"
         }
