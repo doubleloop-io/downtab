@@ -10,36 +10,61 @@ public struct WindowScan: Sendable {
 }
 
 /// Reads the windows of every app as raw facts, merging what Accessibility and the window server each know.
-/// An actor so scans never overlap; it blocks on Accessibility, so opening the Switcher must never await it.
+/// Opening the Switcher must never await a scan: it reads the copy the last scan left.
 public actor WindowScanner {
     private let logger = Logger(subsystem: "local.downtab", category: "scan")
+    private var windowsByApp: [AppID: [DesktopWindow]] = [:]
+    /// Twice the Accessibility timeout: a responsive app with many windows still answers in time.
+    private static let appDeadline = Duration.milliseconds(500)
 
     public init() {}
 
-    public func scan(_ apps: [AppID]) -> WindowScan {
+    /// Slower apps keep their last known windows: a frozen app costs one deadline, not a stalled scan.
+    public func scan(_ apps: [AppID]) async -> WindowScan {
         let began = ContinuousClock.now
         let spaces = PrivateSpaces.displaySpaces()
         let serverWindows = Self.serverWindowsByProcess()
-        var windowsByApp: [AppID: [DesktopWindow]] = [:]
-        for app in apps {
-            windowsByApp[app] = Self.windows(
-                of: app, serverWindows: serverWindows[app.processIdentifier] ?? [:], spaces: spaces)
+        let result = await TimeboxedQuery.run(apps, within: Self.appDeadline, previous: windowsByApp) { app in
+            Self.windows(of: app, serverWindows: serverWindows[app.processIdentifier] ?? [:], spaces: spaces)
         }
-        logger.debug("scan apps=\(apps.count) took=\(ContinuousClock.now - began, privacy: .public)")
-        return WindowScan(windowsByApp: windowsByApp, currentSpaces: Set(spaces.current.map(SpaceID.init)))
+        log(result, previous: windowsByApp, took: ContinuousClock.now - began)
+        windowsByApp = result.answers
+        return WindowScan(windowsByApp: result.answers, currentSpaces: Set(spaces.current.map(SpaceID.init)))
+    }
+
+    /// Changes only at info level: a change logged with no window event just before it is a missed event.
+    private func log(
+        _ result: TimeboxedAnswers<AppID, [DesktopWindow]>, previous: [AppID: [DesktopWindow]], took: Duration
+    ) {
+        let changed = result.answers.keys.filter { result.answers[$0] != previous[$0] }
+        if !result.unanswered.isEmpty {
+            logger.info("scan no answer pid=\(Self.pids(result.unanswered), privacy: .public)")
+        }
+        if changed.isEmpty {
+            logger.debug("scan apps=\(result.answers.count) took=\(took, privacy: .public)")
+        } else {
+            logger.info("scan changed pid=\(Self.pids(changed), privacy: .public) took=\(took, privacy: .public)")
+        }
+    }
+
+    private static func pids(_ apps: some Collection<AppID>) -> String {
+        apps.map { String($0.processIdentifier) }.sorted().joined(separator: ",")
     }
 
     private static func windows(
         of app: AppID,
         serverWindows: [CGWindowID: WindowSize],
         spaces: PrivateSpaces.DisplaySpaces
-    ) -> [DesktopWindow] {
+    ) -> [DesktopWindow]? {
         let element = AXUIElementCreateApplication(app.processIdentifier)
-        // A slow or frozen app must not stall the whole scan.
-        AXUIElementSetMessagingTimeout(element, 0.25)
+        AXUIElementSetMessagingTimeout(element, accessibilityTimeout)
+        var listedWindows: CFTypeRef?
+        let listing = AXUIElementCopyAttributeValue(element, kAXWindowsAttribute as CFString, &listedWindows)
+        // Timed out: the app is busy or frozen, so what it would answer is unknown, not "no windows".
+        if listing == .cannotComplete { return nil }
         var listed: Set<CGWindowID> = []
         var windows: [DesktopWindow] = []
-        for window in AXAttribute.elements(of: element, kAXWindowsAttribute) {
+        for window in listedWindows as? [AXUIElement] ?? [] {
             let id = PrivateSpaces.windowID(of: window)
             if let id { listed.insert(id) }
             let windowSpaces = id.map(PrivateSpaces.spaces(of:)) ?? []
@@ -88,6 +113,7 @@ public actor WindowScanner {
     }
 
     private static let fullScreenAttribute = "AXFullScreen"
+    private static let accessibilityTimeout: Float = 0.25
 }
 
 private enum AXAttribute {
@@ -102,9 +128,5 @@ private enum AXAttribute {
 
     static func bool(of element: AXUIElement, _ attribute: String) -> Bool {
         copy(of: element, attribute) as? Bool ?? false
-    }
-
-    static func elements(of element: AXUIElement, _ attribute: String) -> [AXUIElement] {
-        copy(of: element, attribute) as? [AXUIElement] ?? []
     }
 }
