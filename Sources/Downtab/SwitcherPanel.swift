@@ -168,7 +168,6 @@ final class SwitcherPanel: NSPanel {
     }
 }
 
-/// One App row entry: the icon, wrapped by the highlight when selected, with its Window count badge.
 private final class AppTile: NSView {
     enum Selection {
         case unselected

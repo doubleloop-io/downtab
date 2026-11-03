@@ -99,7 +99,6 @@ final class WindowListPanel: NSPanel {
     }
 }
 
-/// One window: its title, on the accent color when selected.
 private final class WindowRow: NSView {
     let isSelected: Bool
     private let label: NSTextField
@@ -140,7 +139,6 @@ private final class WindowRow: NSView {
     }
 }
 
-/// The rounded body with the caret on its top edge, pointing at the selected icon.
 private final class CaretBackground: FlippedView {
     var caretX: CGFloat = 0
 
