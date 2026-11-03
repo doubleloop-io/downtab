@@ -84,7 +84,7 @@ final class WindowListPanel: NSPanel {
             x: Metrics.padding, y: Metrics.caretHeight + Metrics.padding + Metrics.headerHeight, width: listWidth,
             height: listHeight)
         let views = windows.enumerated().map { index, window in
-            WindowRow(title: window.title, isSelected: index == selected)
+            WindowRow(window, isSelected: index == selected)
         }
         rows.subviews = views
         for (index, row) in views.enumerated() {
@@ -102,10 +102,12 @@ final class WindowListPanel: NSPanel {
 private final class WindowRow: NSView {
     let isSelected: Bool
     private let label: NSTextField
+    private let tags: [WindowTag]
 
-    init(title: String, isSelected: Bool) {
+    init(_ window: WindowListEntry, isSelected: Bool) {
         self.isSelected = isSelected
-        label = NSTextField(labelWithString: title)
+        label = NSTextField(labelWithString: window.title)
+        tags = window.labels.map { WindowTag($0.text, isSelected: isSelected) }
         super.init(frame: .zero)
         wantsLayer = true
         layer?.cornerRadius = Metrics.rowCornerRadius
@@ -113,29 +115,83 @@ private final class WindowRow: NSView {
             layer?.backgroundColor = Palette.accent.cgColor
         }
         label.font = .systemFont(ofSize: Metrics.rowFontSize)
-        label.textColor = isSelected ? .white : Palette.text
+        label.textColor =
+            isSelected ? .white : window.labels.contains(.minimized) ? Palette.muted : Palette.text
         label.lineBreakMode = .byTruncatingTail
         label.setAccessibilityElement(false)
-        addSubview(label)
+        for view in [label] + tags {
+            addSubview(view)
+        }
 
         setAccessibilityElement(true)
         setAccessibilityRole(.staticText)
         setAccessibilityRoleDescription("window")
-        setAccessibilityLabel(title)
+        setAccessibilityLabel(([window.title] + window.labels.map(\.text)).joined(separator: ", "))
         setAccessibilitySelected(isSelected)
     }
 
     override func layout() {
         super.layout()
+        var tagsMinX = bounds.width - Metrics.rowSidePadding
+        for tag in tags.reversed() {
+            let size = tag.fittingSize
+            tagsMinX -= size.width
+            tag.frame = NSRect(origin: NSPoint(x: tagsMinX, y: (bounds.height - size.height) / 2), size: size)
+            tagsMinX -= Metrics.tagGap
+        }
         let height = ceil(label.intrinsicContentSize.height)
         label.frame = NSRect(
             x: Metrics.rowSidePadding, y: (bounds.height - height) / 2,
-            width: bounds.width - 2 * Metrics.rowSidePadding, height: height)
+            width: max(0, tagsMinX - Metrics.rowSidePadding), height: height)
     }
 
     @available(*, unavailable)
     required init?(coder: NSCoder) {
         fatalError("not used")
+    }
+}
+
+/// The prototype's `.tag`: a small outlined pill after the title.
+private final class WindowTag: NSView {
+    private let label: NSTextField
+
+    init(_ text: String, isSelected: Bool) {
+        label = NSTextField(labelWithString: text)
+        super.init(frame: .zero)
+        wantsLayer = true
+        layer?.cornerRadius = Metrics.tagCornerRadius
+        layer?.borderWidth = 1
+        layer?.borderColor = (isSelected ? NSColor(white: 1, alpha: 0.5) : Palette.border).cgColor
+        label.font = .systemFont(ofSize: Metrics.tagFontSize)
+        label.textColor = isSelected ? .white : Palette.muted
+        label.setAccessibilityElement(false)
+        addSubview(label)
+        setAccessibilityElement(false)
+    }
+
+    override var fittingSize: NSSize {
+        let text = label.intrinsicContentSize
+        return NSSize(width: ceil(text.width) + 2 * Metrics.tagSidePadding, height: ceil(text.height))
+    }
+
+    override func layout() {
+        super.layout()
+        label.frame = bounds.insetBy(dx: Metrics.tagSidePadding, dy: 0)
+    }
+
+    @available(*, unavailable)
+    required init?(coder: NSCoder) {
+        fatalError("not used")
+    }
+}
+
+extension WindowLabel {
+    fileprivate var text: String {
+        switch self {
+        case .minimized: "Minimized"
+        case .fullScreen: "Full screen"
+        case .hidden: "Hidden"
+        }
     }
 }
 
@@ -191,5 +247,10 @@ private enum Metrics {
     static let rowSidePadding: CGFloat = 10
     static let rowCornerRadius: CGFloat = 8
     static let rowFontSize: CGFloat = 13
+    /// The prototype's `gap: 8px` between title and tags, and its `.tag` style.
+    static let tagGap: CGFloat = 8
+    static let tagFontSize: CGFloat = 10
+    static let tagSidePadding: CGFloat = 5
+    static let tagCornerRadius: CGFloat = 5
     static let maxListHeight: CGFloat = 300
 }

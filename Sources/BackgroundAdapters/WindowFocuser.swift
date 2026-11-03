@@ -19,8 +19,8 @@ public actor WindowFocuser {
             break
         case .activateApp(let id):
             activate(id)
-        case .bringWindowToFront(let window, of: let app):
-            await bringToFront(window, of: app, focusChange: latestFocusChange)
+        case .bringWindowToFront(let window, of: let app, let restoration):
+            await bringToFront(window, of: app, restoring: restoration, focusChange: latestFocusChange)
         }
     }
 
@@ -35,7 +35,9 @@ public actor WindowFocuser {
     }
 
     /// The spike's recipe (`docs/spike-results.md`, "Ricetta: alzare una finestra").
-    private func bringToFront(_ windowID: WindowID, of app: AppID, focusChange: Int) async {
+    private func bringToFront(
+        _ windowID: WindowID, of app: AppID, restoring restoration: WindowRestoration, focusChange: Int
+    ) async {
         let pid = app.processIdentifier
         let wid = windowID.rawValue
         guard let window = Self.element(of: windowID, in: app) else {
@@ -43,8 +45,14 @@ public actor WindowFocuser {
             activate(app)
             return
         }
-        if AXAttribute.bool(of: window, kAXMinimizedAttribute) {
-            AXUIElementSetAttributeValue(window, kAXMinimizedAttribute as CFString, kCFBooleanFalse)
+        if restoration.contains(.unhide) {
+            // Unhiding does not activate: the private front below still brings only this window forward.
+            let unhidden = NSRunningApplication(processIdentifier: pid)?.unhide() ?? false
+            logger.info("unhide pid=\(pid) ok=\(unhidden)")
+        }
+        if restoration.contains(.unminimize) {
+            let restored = AXUIElementSetAttributeValue(window, kAXMinimizedAttribute as CFString, kCFBooleanFalse)
+            logger.info("unminimize pid=\(pid) wid=\(wid) ax=\(restored.rawValue)")
         }
         let fronted = PrivateWindowFront.bringToFront(wid, of: pid)
         if !fronted {
