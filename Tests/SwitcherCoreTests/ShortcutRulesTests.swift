@@ -98,7 +98,36 @@ func aShortcutWithAModifierAndNoConflictIsValid(recorded: Shortcut, other: Short
     (.containsShift, "⇧ is reserved for going back: record the shortcut without it."),
     (.sameAsOther, "The other shortcut already uses this combination."),
     (.usedBySystem, "macOS already uses this combination: choose another one."),
+    (.shiftVariantUsedBySystem, "macOS already uses this combination with ⇧: choose another one."),
 ])
 func everyRejectionHasAnEnglishMessage(rejection: ShortcutRejection, message: String) {
     #expect(rejection.message == message)
+}
+
+@Test func aShortcutMacOSRefusesOnlyWithShiftIsRejectedForItsShiftVariant() {
+    let recorded = Shortcut(keyCode: KeyCode.space, modifiers: [.option])
+
+    let outcome = ShortcutRules.checkRegistration(
+        of: recorded,
+        refused: [Shortcut(keyCode: KeyCode.space, modifiers: [.option, .shift])]
+    )
+
+    #expect(outcome == .rejected(.shiftVariantUsedBySystem))
+}
+
+@Test func aShortcutMacOSRefusesIsRejectedAsUsedBySystemEvenIfItsShiftVariantIsRefusedToo() {
+    let recorded = Shortcut(keyCode: KeyCode.space, modifiers: [.option])
+
+    let outcome = ShortcutRules.checkRegistration(of: recorded, refused: [recorded, recorded.withShift])
+
+    #expect(outcome == .rejected(.usedBySystem))
+}
+
+@Test func aShortcutMacOSRegistersWithAndWithoutShiftIsValid() {
+    let outcome = ShortcutRules.checkRegistration(
+        of: Shortcut(keyCode: KeyCode.space, modifiers: [.option]),
+        refused: [Shortcut(keyCode: KeyCode.tab, modifiers: [.option])]
+    )
+
+    #expect(outcome == .valid)
 }

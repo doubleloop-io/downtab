@@ -6,16 +6,9 @@ import os
 
 final class KeyboardInput {
     private struct Registration {
-        let shortcut: Shortcut
-        let withShift: Bool
-        let event: SwitcherEvent
-
         /// What is held on the keyboard: the shortcut, plus ⇧ for the reverse registration.
-        var combination: Shortcut {
-            Shortcut(
-                keyCode: shortcut.keyCode,
-                modifiers: withShift ? shortcut.modifiers.union([.shift]) : shortcut.modifiers)
-        }
+        let combination: Shortcut
+        let event: SwitcherEvent
     }
 
     private static let shortcutSignature = OSType(0x4454_4142)  // "DTAB"
@@ -69,22 +62,22 @@ final class KeyboardInput {
     }
 
     /// Replaces the registered shortcuts, each with and without ⇧.
-    /// Returns the shortcuts macOS refused, with or without ⇧: another app or the system holds them.
+    /// Returns the combinations macOS refused, each shortcut with or without ⇧: another app or the system holds them.
     @discardableResult
     func register(_ shortcuts: Shortcuts) -> Set<Shortcut> {
         suspendShortcuts()
         registrations = [
-            Registration(shortcut: shortcuts.app, withShift: false, event: .appShortcutPressed),
-            Registration(shortcut: shortcuts.app, withShift: true, event: .shiftAppShortcutPressed),
-            Registration(shortcut: shortcuts.window, withShift: false, event: .windowShortcutPressed),
-            Registration(shortcut: shortcuts.window, withShift: true, event: .shiftWindowShortcutPressed),
+            Registration(combination: shortcuts.app, event: .appShortcutPressed),
+            Registration(combination: shortcuts.app.withShift, event: .shiftAppShortcutPressed),
+            Registration(combination: shortcuts.window, event: .windowShortcutPressed),
+            Registration(combination: shortcuts.window.withShift, event: .shiftWindowShortcutPressed),
         ]
         var refused: Set<Shortcut> = []
         shortcutRefs = registrations.enumerated().map { index, registration in
             let name = ShortcutLabel.text(for: registration.combination)
             var ref: EventHotKeyRef?
             let status = RegisterEventHotKey(
-                UInt32(registration.shortcut.keyCode),
+                UInt32(registration.combination.keyCode),
                 Self.carbonModifiers(registration.combination.modifiers),
                 EventHotKeyID(signature: Self.shortcutSignature, id: UInt32(index)),
                 GetEventDispatcherTarget(),
@@ -95,7 +88,7 @@ final class KeyboardInput {
                 logger.info("shortcut \(name, privacy: .public) registered")
             } else {
                 logger.error("shortcut \(name, privacy: .public) failed: \(status)")
-                refused.insert(registration.shortcut)
+                refused.insert(registration.combination)
             }
             return ref
         }

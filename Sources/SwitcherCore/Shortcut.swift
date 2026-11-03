@@ -13,6 +13,11 @@ public struct Shortcut: Hashable, Codable, Sendable {
         self.modifiers = modifiers
     }
 
+    /// The reverse combination: the same shortcut held with ⇧.
+    public var withShift: Shortcut {
+        Shortcut(keyCode: keyCode, modifiers: modifiers.union([.shift]))
+    }
+
     /// ⌥Tab.
     public static let defaultApp = Shortcut(keyCode: KeyCode.tab, modifiers: [.option])
     /// ⌥`.

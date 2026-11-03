@@ -43,10 +43,10 @@ final class ShortcutSettings {
         guard outcome == .valid else { return outcome }
         var proposed = current
         proposed[slot] = recorded
-        // A refused registration means another app or macOS holds the combination.
-        guard !keyboard.register(proposed).contains(recorded) else {
+        let registration = ShortcutRules.checkRegistration(of: recorded, refused: keyboard.register(proposed))
+        guard registration == .valid else {
             keyboard.register(current)
-            return .rejected(.usedBySystem)
+            return registration
         }
         current = proposed
         store.save(current)
@@ -58,6 +58,9 @@ final class ShortcutSettings {
         current = .defaults
         store.save(current)
         let refused = keyboard.register(current)
-        return Set(ShortcutSlot.allCases.filter { refused.contains(current[$0]) })
+        return Set(
+            ShortcutSlot.allCases.filter {
+                ShortcutRules.checkRegistration(of: current[$0], refused: refused) != .valid
+            })
     }
 }
