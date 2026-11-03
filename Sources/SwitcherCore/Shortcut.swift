@@ -14,7 +14,15 @@ public struct Shortcut: Hashable, Codable, Sendable {
     }
 
     /// ⌥Tab.
-    public static let defaultApp = Shortcut(keyCode: 48, modifiers: [.option])
-    /// ⌥`, the key left of `1`.
-    public static let defaultWindow = Shortcut(keyCode: 50, modifiers: [.option])
+    public static let defaultApp = Shortcut(keyCode: KeyCode.tab, modifiers: [.option])
+    /// ⌥`.
+    public static let defaultWindow = Shortcut(keyCode: KeyCode.grave, modifiers: [.option])
+}
+
+/// macOS virtual key codes the core names: key positions, the same on every keyboard layout.
+public enum KeyCode {
+    public static let tab = 48
+    public static let space = 49
+    /// The key left of `1`: `` ` `` on US layouts.
+    public static let grave = 50
 }

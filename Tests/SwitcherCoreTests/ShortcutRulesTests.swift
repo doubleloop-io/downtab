@@ -1,14 +1,9 @@
 import SwitcherCore
 import Testing
 
-/// macOS virtual key codes, the same on every layout.
-private let tabKey = 48
-private let graveKey = 50
-private let spaceKey = 49
-
 @Test func aShortcutWithoutAnyModifierIsRejected() {
     let outcome = ShortcutRules.check(
-        Shortcut(keyCode: tabKey, modifiers: []),
+        Shortcut(keyCode: KeyCode.tab, modifiers: []),
         other: .defaultWindow,
         systemShortcuts: []
     )
@@ -23,7 +18,7 @@ private let spaceKey = 49
 ])
 func aShortcutContainingShiftIsRejected(modifiers: Set<ShortcutModifier>) {
     let outcome = ShortcutRules.check(
-        Shortcut(keyCode: tabKey, modifiers: modifiers),
+        Shortcut(keyCode: KeyCode.tab, modifiers: modifiers),
         other: .defaultWindow,
         systemShortcuts: []
     )
@@ -32,10 +27,10 @@ func aShortcutContainingShiftIsRejected(modifiers: Set<ShortcutModifier>) {
 }
 
 @Test func aShortcutEqualToTheOtherShortcutIsRejected() {
-    let other = Shortcut(keyCode: graveKey, modifiers: [.control])
+    let other = Shortcut(keyCode: KeyCode.grave, modifiers: [.control])
 
     let outcome = ShortcutRules.check(
-        Shortcut(keyCode: graveKey, modifiers: [.control]),
+        Shortcut(keyCode: KeyCode.grave, modifiers: [.control]),
         other: other,
         systemShortcuts: []
     )
@@ -45,8 +40,8 @@ func aShortcutContainingShiftIsRejected(modifiers: Set<ShortcutModifier>) {
 
 @Test func aShortcutWithTheOtherShortcutsKeyButDifferentModifiersIsValid() {
     let outcome = ShortcutRules.check(
-        Shortcut(keyCode: graveKey, modifiers: [.control]),
-        other: Shortcut(keyCode: graveKey, modifiers: [.option]),
+        Shortcut(keyCode: KeyCode.grave, modifiers: [.control]),
+        other: Shortcut(keyCode: KeyCode.grave, modifiers: [.option]),
         systemShortcuts: []
     )
 
@@ -54,10 +49,10 @@ func aShortcutContainingShiftIsRejected(modifiers: Set<ShortcutModifier>) {
 }
 
 @Test func aShortcutUsedByTheSystemIsRejected() {
-    let spotlight = Shortcut(keyCode: spaceKey, modifiers: [.command])
+    let spotlight = Shortcut(keyCode: KeyCode.space, modifiers: [.command])
 
     let outcome = ShortcutRules.check(
-        Shortcut(keyCode: spaceKey, modifiers: [.command]),
+        Shortcut(keyCode: KeyCode.space, modifiers: [.command]),
         other: .defaultWindow,
         systemShortcuts: [spotlight]
     )
@@ -66,10 +61,10 @@ func aShortcutContainingShiftIsRejected(modifiers: Set<ShortcutModifier>) {
 }
 
 @Test func aShortcutWithASystemShortcutsKeyButDifferentModifiersIsValid() {
-    let spotlight = Shortcut(keyCode: spaceKey, modifiers: [.command])
+    let spotlight = Shortcut(keyCode: KeyCode.space, modifiers: [.command])
 
     let outcome = ShortcutRules.check(
-        Shortcut(keyCode: spaceKey, modifiers: [.command, .option, .control]),
+        Shortcut(keyCode: KeyCode.space, modifiers: [.command, .option, .control]),
         other: .defaultWindow,
         systemShortcuts: [spotlight]
     )
@@ -80,8 +75,8 @@ func aShortcutContainingShiftIsRejected(modifiers: Set<ShortcutModifier>) {
 @Test(arguments: [
     (Shortcut.defaultApp, Shortcut.defaultWindow),
     (Shortcut.defaultWindow, Shortcut.defaultApp),
-    (Shortcut(keyCode: tabKey, modifiers: [.command, .option]), Shortcut.defaultWindow),
-    (Shortcut(keyCode: graveKey, modifiers: [.control]), Shortcut.defaultApp),
+    (Shortcut(keyCode: KeyCode.tab, modifiers: [.command, .option]), Shortcut.defaultWindow),
+    (Shortcut(keyCode: KeyCode.grave, modifiers: [.control]), Shortcut.defaultApp),
 ])
 func aShortcutWithAModifierAndNoConflictIsValid(recorded: Shortcut, other: Shortcut) {
     let outcome = ShortcutRules.check(recorded, other: other, systemShortcuts: [])
