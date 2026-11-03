@@ -116,16 +116,57 @@ private func desktopWithFrontmostSafari(windows titles: [String]) -> DesktopSnap
     #expect(switcher.state.selectedWindowTitle == "First")
 }
 
-@Test func windowShortcutAtAppLevelDoesNothing() {
+@Test func windowShortcutAtAppLevelOpensTheSelectedAppsWindowListOnItsFirstWindow() {
+    var (switcher, desktop) = openedOn(.regular("Safari", windows: [.window("S1"), .window("S2")]))
+
+    switcher.handle(.windowShortcutPressed, desktop: desktop)
+
+    #expect(switcher.state.selectedName == "Safari")
+    #expect(switcher.state.selectedWindowTitle == "S1")
+}
+
+@Test func windowShortcutAtAppLevelOnTheFrontmostAppOpensItsWindowListOnTheSecondWindow() {
     let desktop = desktopWithFrontmostSafari(windows: ["Current", "Behind"])
     var switcher = Switcher()
     switcher.handle(.windowShortcutPressed, desktop: desktop)
-    switcher.handle(.appShortcutPressed, desktop: desktop)
-    let atAppLevel = switcher.state
+    switcher.handle(.upPressed, desktop: desktop)
 
     switcher.handle(.windowShortcutPressed, desktop: desktop)
 
+    #expect(switcher.state.selectedName == "Safari")
+    #expect(switcher.state.selectedWindowTitle == "Behind")
+}
+
+@Test func shiftWindowShortcutAtAppLevelOpensTheSelectedAppsWindowListOnItsLastWindow() {
+    var (switcher, desktop) = openedOn(.regular("Safari", windows: [.window("S1"), .window("S2"), .window("S3")]))
+
+    switcher.handle(.shiftWindowShortcutPressed, desktop: desktop)
+
+    #expect(switcher.state.selectedName == "Safari")
+    #expect(switcher.state.selectedWindowTitle == "S3")
+}
+
+@Test(arguments: [SwitcherEvent.windowShortcutPressed, .shiftWindowShortcutPressed], [0, 1])
+func windowShortcutAtAppLevelOnAnAppWithFewerThanTwoWindowsDoesNothing(shortcut: SwitcherEvent, windowCount: Int) {
+    var (switcher, desktop) = openedOn(.regular("Safari", windows: (0..<windowCount).map { _ in .window() }))
+    let atAppLevel = switcher.state
+
+    switcher.handle(shortcut, desktop: desktop)
+
     #expect(switcher.state == atAppLevel)
+}
+
+@Test func windowShortcutAtWindowLevelWithoutAWindowListDoesNothing() {
+    var (switcher, desktop) = atWindowLevel(on: [
+        .regular("Safari", windows: [.window("S1"), .window("S2")]),
+        .regular("Notes", windows: [.window("N1")]),
+    ])
+    switcher.handle(.rightPressed, desktop: desktop)
+    let withoutAWindowList = switcher.state
+
+    switcher.handle(.windowShortcutPressed, desktop: desktop)
+
+    #expect(switcher.state == withoutAWindowList)
 }
 
 @Test(arguments: [SwitcherEvent.modifierReleased, .enterPressed])

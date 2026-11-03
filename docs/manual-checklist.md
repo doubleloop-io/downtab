@@ -172,7 +172,7 @@ Before starting: `make run`, Accessibility granted to Downtab. Open TextEdit wit
 3. Hold ⌥, press `` ` ``, then ⇧`` ` ``: `one` is highlighted. Press ⇧`` ` `` again: it wraps to `three`. Press `Esc`.
 4. Hold ⌥ and ⇧, press `` ` ``: the Switcher opens on TextEdit's last window (`three`). Press `Esc`.
 5. Press `` ⌥` `` once and release both keys quickly: only `two` comes to the front and gets the keyboard focus (type a few letters: they land in it); TextEdit's other windows stay where they were. Pressing it again brings `one` back.
-6. Hold ⌥, press `` ` ``, then `↓`: `three` is highlighted. Press `↑` three times: the Window list closes and TextEdit is selected at App level. Press Tab: Safari is selected. Press `` ` ``: nothing happens. Press `Esc`.
+6. Hold ⌥, press `` ` ``, then `↓`: `three` is highlighted. Press `↑` three times: the Window list closes and TextEdit is selected at App level. Press `` ` ``: the Window list reopens with `two` highlighted, like `↓`. Press Tab: Safari is selected. Press `` ` ``: nothing happens, Safari has one window. Press `Esc`.
 7. Hold ⌥, press `` ` ``, then Tab: the Window list closes and Safari is selected. Release ⌥: Safari comes to the front.
 8. Click TextEdit's `one` window. Hold ⌥, press `` ` ``, then `→`: TextEdit's list closes and Safari (one window) is selected without a Window list. Press `←`: TextEdit's Window list reopens. Press `Esc`.
 9. Click the Safari window (one window) and press `` ⌥` ``: no Switcher appears and nothing changes. Same with `` ⌥⇧` ``, and in an app with no windows (close all TextEdit windows with ⌘W, then press `` ⌥` `` in TextEdit).

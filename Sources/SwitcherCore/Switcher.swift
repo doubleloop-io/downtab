@@ -127,11 +127,19 @@ public struct DisplayedState: Equatable, Sendable {
         return moved
     }
 
-    /// The Window shortcut key: wraps around at both ends of the Window list.
+    /// The Window shortcut key: at App level opens the Window list like `↓`, with ⇧ on its last window; in the
+    /// list, wraps around at both ends.
     func movingWindowSelection(by step: Int) -> DisplayedState {
-        guard case .window(let index) = level else { return self }
         let count = selectedEntry.windows.count
-        return at(.window(((index + step) % count + count) % count))
+        switch level {
+        case .app:
+            guard let opening = windowListOpening else { return self }
+            return at(step < 0 ? .window(count - 1) : opening)
+        case .window(let index):
+            return at(.window(((index + step) % count + count) % count))
+        case .windowWithoutList:
+            return self
+        }
     }
 
     /// `←` / `→`: at Window level, change app and stay at Window level, opening its Window list if it has one.
