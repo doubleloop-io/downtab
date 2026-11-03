@@ -6,7 +6,8 @@ final class PermissionMonitor {
     private static let pollInterval = Duration.seconds(1)
     private var watch = PermissionWatch()
     private var polling: Task<Void, Never>?
-    private(set) var isGranted = false
+
+    var isGranted: Bool { watch.isGranted }
 
     func start(onChange: @escaping (PermissionWatch.Change) -> Void) {
         check(onChange)
@@ -19,8 +20,7 @@ final class PermissionMonitor {
     }
 
     private func check(_ onChange: (PermissionWatch.Change) -> Void) {
-        isGranted = AccessibilityPermission.isGranted
-        if let change = watch.observe(isGranted: isGranted) {
+        if let change = watch.observe(isGranted: AccessibilityPermission.isGranted) {
             onChange(change)
         }
     }

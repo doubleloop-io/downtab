@@ -29,3 +29,17 @@ func anUnchangedReadingReportsNothing(isGranted: Bool) {
 
     #expect(watch.observe(isGranted: false) == .revoked)
 }
+
+@Test func beforeAnyReadingThePermissionCountsAsNotGranted() {
+    #expect(PermissionWatch().isGranted == false)
+}
+
+@Test(arguments: [true, false])
+func thePermissionIsWhatTheLastReadingSaid(isGranted: Bool) {
+    var watch = PermissionWatch()
+    _ = watch.observe(isGranted: !isGranted)
+
+    _ = watch.observe(isGranted: isGranted)
+
+    #expect(watch.isGranted == isGranted)
+}

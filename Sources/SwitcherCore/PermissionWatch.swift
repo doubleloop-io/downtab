@@ -6,14 +6,16 @@ public struct PermissionWatch: Sendable {
         case revoked
     }
 
-    private var isGranted: Bool?
+    private var lastReading: Bool?
 
     public init() {}
 
+    public var isGranted: Bool { lastReading == true }
+
     /// The first reading is a change: at launch Downtab has not yet acted on either state.
     public mutating func observe(isGranted granted: Bool) -> Change? {
-        guard granted != isGranted else { return nil }
-        isGranted = granted
+        guard granted != lastReading else { return nil }
+        lastReading = granted
         return granted ? .granted : .revoked
     }
 }
