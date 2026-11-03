@@ -120,21 +120,11 @@ public actor WindowScanner {
         let depth: Int
     }
 
-    /// Level-0 windows of every Space, by owner process.
-    private static func serverWindowsByProcess() -> [Int32: [CGWindowID: ServerWindow]] {
-        let options: CGWindowListOption = [.optionAll, .excludeDesktopElements]
-        guard let list = CGWindowListCopyWindowInfo(options, kCGNullWindowID) as? [[String: Any]] else { return [:] }
-        var result: [Int32: [CGWindowID: ServerWindow]] = [:]
-        for (depth, info) in list.enumerated() {
-            guard info[kCGWindowLayer as String] as? Int == 0,
-                let id = info[kCGWindowNumber as String] as? CGWindowID,
-                let pid = info[kCGWindowOwnerPID as String] as? Int32
-            else { continue }
-            let bounds =
-                (info[kCGWindowBounds as String] as? NSDictionary)
-                .flatMap { CGRect(dictionaryRepresentation: $0) } ?? .zero
-            result[pid, default: [:]][id] = ServerWindow(
-                size: WindowSize(width: bounds.width, height: bounds.height), depth: depth)
+    private static func serverWindowsByProcess() -> [pid_t: [CGWindowID: ServerWindow]] {
+        var result: [pid_t: [CGWindowID: ServerWindow]] = [:]
+        for (depth, window) in WindowServerList.normalWindows(includingOffScreen: true).enumerated() {
+            let size = WindowSize(width: window.bounds.width, height: window.bounds.height)
+            result[window.ownerPID, default: [:]][window.id] = ServerWindow(size: size, depth: depth)
         }
         return result
     }

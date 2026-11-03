@@ -59,7 +59,7 @@ public actor WindowFocuser {
             logger.info("raise again skipped pid=\(pid) wid=\(wid): a newer focus change followed")
             return
         }
-        if Self.frontmostWindowID() != wid {
+        if WindowServerList.normalWindows(includingOffScreen: false).first?.id != wid {
             let again = AXUIElementPerformAction(window, kAXRaiseAction as CFString)
             logger.info("raise again pid=\(pid) wid=\(wid) ax=\(again.rawValue)")
         }
@@ -72,13 +72,5 @@ public actor WindowFocuser {
             let windows = value as? [AXUIElement]
         else { return nil }
         return windows.first { PrivateSpaces.windowID(of: $0) == windowID.rawValue }
-    }
-
-    /// The topmost normal window on screen, whatever its app.
-    private static func frontmostWindowID() -> CGWindowID? {
-        let options: CGWindowListOption = [.optionOnScreenOnly, .excludeDesktopElements]
-        guard let list = CGWindowListCopyWindowInfo(options, kCGNullWindowID) as? [[String: Any]] else { return nil }
-        let front = list.first { $0[kCGWindowLayer as String] as? Int == 0 }
-        return front?[kCGWindowNumber as String] as? CGWindowID
     }
 }
