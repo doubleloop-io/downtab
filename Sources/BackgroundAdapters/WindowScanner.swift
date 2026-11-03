@@ -13,18 +13,19 @@ public struct WindowScan: Sendable {
 /// Opening the Switcher must never await a scan: it reads the copy the last scan left.
 public actor WindowScanner {
     private let logger = Logger(subsystem: "local.downtab", category: "scan")
+    private let query = TimeboxedQuery<AppID, [DesktopWindow]>()
     private var windowsByApp: [AppID: [DesktopWindow]] = [:]
     /// Twice the Accessibility timeout: a responsive app with many windows still answers in time.
     private static let appDeadline = Duration.milliseconds(500)
 
     public init() {}
 
-    /// Slower apps keep their last known windows: a frozen app costs one deadline, not a stalled scan.
+    /// A frozen app keeps its last known windows and costs one deadline, not a stalled scan.
     public func scan(_ apps: [AppID]) async -> WindowScan {
         let began = ContinuousClock.now
         let spaces = PrivateSpaces.displaySpaces()
         let serverWindows = Self.serverWindowsByProcess()
-        let result = await TimeboxedQuery.run(apps, within: Self.appDeadline, previous: windowsByApp) { app in
+        let result = await query.run(apps, within: Self.appDeadline) { app in
             Self.windows(of: app, serverWindows: serverWindows[app.processIdentifier] ?? [:], spaces: spaces)
         }
         log(result, previous: windowsByApp, took: ContinuousClock.now - began)
