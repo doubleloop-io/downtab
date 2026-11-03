@@ -112,7 +112,7 @@ Before starting: `make run`, Accessibility granted to Downtab, two Spaces (Missi
 
 Before starting: `make run`, Accessibility granted to Downtab, TextEdit and Safari open with one window each in Space 1, a second Space. In a second terminal run `log stream --level info --predicate 'subsystem == "local.downtab" AND (category == "observer" OR category == "scan")'` and keep it open. Press `Esc` after each ⌥Tab.
 
-1. Right after `make run` the log shows `watching window events pid=...` once per app with a Dock icon.
+1. Right after `make run` the log shows `watching window events pid=...` once per app with a Dock icon. An app that refuses shows `window events unavailable pid=... <step> error=...` instead, repeated at most every 5 s.
 2. In TextEdit press ⌘N, then at once ⌥Tab: TextEdit has the `2` badge. The log shows `window event AXWindowCreated pid=...` followed by `scan changed pid=...` with TextEdit's pid (`pgrep -x TextEdit`).
 3. Close that window (⌘W), then at once ⌥Tab: the badge is gone. The log shows `window event AXUIElementDestroyed`.
 4. Save the TextEdit document under a new name: the log shows `window event AXTitleChanged`.
@@ -120,6 +120,7 @@ Before starting: `make run`, Accessibility granted to Downtab, TextEdit and Safa
 6. Fallback scan: move the TextEdit window to Space 2 in Mission Control (no window event is raised for it). Within one second the log shows `scan changed pid=...` with TextEdit's pid and no `window event` line before it; from Space 1, ⌥Tab no longer shows TextEdit.
 7. Frozen app: move the TextEdit window back, then run `kill -STOP $(pgrep -x TextEdit)`. Press ⌥Tab several times: the Switcher opens at once every time, TextEdit still in the App row. Within a few seconds the log shows `scan no answer pid=...` with TextEdit's pid, once per second. Open and close a Safari window: Safari's badge still updates.
 8. Run `kill -CONT $(pgrep -x TextEdit)`: the `scan no answer` lines stop.
+9. Quit Safari (⌘Q): within one second the log shows `stopped watching window events pid=...` with Safari's pid.
 
 ## Switcher: Window list
 
