@@ -45,6 +45,10 @@ final class PreferencesWindow: NSWindow, NSWindowDelegate {
         permissionStatus.textColor = isGranted ? .secondaryLabelColor : .labelColor
         permissionBox.fillColor = isGranted ? .clear : .systemYellow.withAlphaComponent(0.25)
         permissionBox.borderColor = isGranted ? .clear : .systemYellow
+        // Without the highlight, "Granted" must sit where the other fields start, not inset by the box padding.
+        let padding = isGranted ? 0 : Layout.permissionPadding
+        permissionBox.borderWidth = isGranted ? 0 : 1
+        permissionBox.contentViewMargins = NSSize(width: padding, height: padding)
         openSystemSettings.isHidden = isGranted
         fitToContent()
     }
@@ -83,8 +87,6 @@ final class PreferencesWindow: NSWindow, NSWindowDelegate {
         let stack = Self.leadingColumn([permissionStatus, openSystemSettings], spacing: 6)
         permissionBox.boxType = .custom
         permissionBox.cornerRadius = 6
-        permissionBox.borderWidth = 1
-        permissionBox.contentViewMargins = NSSize(width: Layout.permissionPadding, height: Layout.permissionPadding)
         permissionBox.contentView = stack
         permissionBox.setAccessibilityLabel("Accessibility permission")
         return permissionBox
@@ -116,6 +118,11 @@ final class PreferencesWindow: NSWindow, NSWindowDelegate {
         let permissionRow = addRow("Accessibility:", makePermissionBox(), topPadding: 0)
         permissionRow.yPlacement = .top
         permissionRow.cell(at: 1).xPlacement = .fill
+        // The label follows the status text, which the box's padding moves when the permission is missing.
+        if let label = permissionRow.cell(at: 0).contentView {
+            permissionRow.cell(at: 0).yPlacement = .none
+            label.firstBaselineAnchor.constraint(equalTo: permissionStatus.firstBaselineAnchor).isActive = true
+        }
         for slot in ShortcutSlot.allCases {
             let (recorder, message) = makeRecorder(for: slot)
             let isFirst = slot == ShortcutSlot.allCases.first
