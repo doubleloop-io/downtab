@@ -65,13 +65,11 @@ final class ShortcutRecorderField: NSView {
     override var wantsUpdateLayer: Bool { true }
 
     override func mouseDown(with event: NSEvent) {
-        window?.makeFirstResponder(self)
-        startRecording()
+        focusAndRecord()
     }
 
     override func accessibilityPerformPress() -> Bool {
-        window?.makeFirstResponder(self)
-        startRecording()
+        focusAndRecord()
         return true
     }
 
@@ -126,6 +124,11 @@ final class ShortcutRecorderField: NSView {
     override var focusRingMaskBounds: NSRect { bounds }
 
     // MARK: Private
+
+    private func focusAndRecord() {
+        window?.makeFirstResponder(self)
+        startRecording()
+    }
 
     private func startRecording() {
         guard !isRecording else { return }

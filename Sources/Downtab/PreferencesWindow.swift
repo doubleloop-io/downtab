@@ -30,7 +30,7 @@ final class PreferencesWindow: NSWindow, NSWindowDelegate {
 
     // Recording suspends the shortcuts: leaving the window must never leave them off.
     func windowDidResignKey(_ notification: Notification) {
-        for recorder in recorders.values { recorder.cancelRecording() }
+        cancelRecording()
     }
 
     private func makeContent() -> NSView {
@@ -93,8 +93,12 @@ final class PreferencesWindow: NSWindow, NSWindowDelegate {
     }
 
     @objc private func restoreDefaults() {
-        for recorder in recorders.values { recorder.cancelRecording() }
+        cancelRecording()
         showCurrentShortcuts(restoreFailures: settings.restoreDefaults())
+    }
+
+    private func cancelRecording() {
+        for recorder in recorders.values { recorder.cancelRecording() }
     }
 
     /// Each slot shows why its default failed to register, if it did, otherwise why its current shortcut did.
