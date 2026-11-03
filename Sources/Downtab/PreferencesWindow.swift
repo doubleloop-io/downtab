@@ -61,8 +61,7 @@ final class PreferencesWindow: NSWindow, NSWindowDelegate {
     }
 
     private func rows(for slot: ShortcutSlot) -> [[NSView]] {
-        let name = slot == .app ? "App shortcut" : "Window shortcut"
-        let recorder = ShortcutRecorderField(shortcut: settings.current[slot], accessibilityName: name)
+        let recorder = ShortcutRecorderField(shortcut: settings.current[slot], accessibilityName: slot.name)
         recorder.onRecordingChanged = { [weak self] recording in
             guard let self else { return }
             if recording {
@@ -81,7 +80,7 @@ final class PreferencesWindow: NSWindow, NSWindowDelegate {
         recorders[slot] = recorder
         messages[slot] = message
         return [
-            [NSTextField(labelWithString: "\(name):"), recorder],
+            [NSTextField(labelWithString: "\(slot.name):"), recorder],
             [NSGridCell.emptyContentView, message],
         ]
     }
