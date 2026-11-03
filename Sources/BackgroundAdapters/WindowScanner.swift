@@ -15,13 +15,25 @@ public actor WindowScanner {
     private let logger = Logger(subsystem: "local.downtab", category: "scan")
     private let query = TimeboxedQuery<AppID, [DesktopWindow]>()
     private var windowsByApp: [AppID: [DesktopWindow]] = [:]
+    private var latestScan: Task<WindowScan, Never>?
     /// Twice the Accessibility timeout: a responsive app with many windows still answers in time.
     private static let appDeadline = Duration.milliseconds(500)
 
     public init() {}
 
-    /// A frozen app keeps its last known windows and costs one deadline, not a stalled scan.
+    /// Scans run one after the other, in the order asked: an actor alone would interleave them at each await.
     public func scan(_ apps: [AppID]) async -> WindowScan {
+        let previous = latestScan
+        let next = Task { [self] in
+            _ = await previous?.value
+            return await performScan(apps)
+        }
+        latestScan = next
+        return await next.value
+    }
+
+    /// A frozen app keeps its last known windows and costs one deadline, not a stalled scan.
+    private func performScan(_ apps: [AppID]) async -> WindowScan {
         let began = ContinuousClock.now
         let spaces = PrivateSpaces.displaySpaces()
         let serverWindows = Self.serverWindowsByProcess()
