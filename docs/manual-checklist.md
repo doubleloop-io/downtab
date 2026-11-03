@@ -68,6 +68,17 @@ Before starting: `make stop`, then open TextEdit, Safari and Notes with one wind
 6. Quit Safari (⌘Q). ⌥Tab: Safari is not in the App row.
 7. Launch Calculator from Spotlight. ⌥Tab: Calculator is first. Quit it.
 
+## Switcher: Modifier release never missed
+
+Before starting: `make run`, Accessibility granted to Downtab, then open TextEdit, Safari and Notes in this order. In a second terminal run `log stream --predicate 'subsystem == "local.downtab" AND category == "keyboard"'` and keep it open.
+
+1. In Notes, hold ⌥, press Tab, release ⌥: Safari comes to the front. The log shows no `fallback check` line.
+2. Run `pkill -USR1 -x Downtab`: the log shows `modifier release tap disabled by simulation`, and Downtab keeps running.
+3. Hold ⌥, press Tab twice, release ⌥: the Switcher closes at once and the highlighted app comes to the front. The log shows `modifier release confirmed by fallback check`.
+4. Hold ⌥, press Tab, then press `Esc`: the Switcher closes and nothing changes. Release ⌥: nothing more happens, and the log shows no `fallback check` line.
+5. `make run` restores the tap: repeat step 1.
+6. macOS disabling the tap cannot be provoked on demand. If the log ever shows `modifier release tap disabled by timeout` or `... by user input`, the next line is `modifier release tap re-enabled`.
+
 ## Switcher: look
 
 Before starting: `make run`, then open TextEdit, Safari and Notes in this order. Open `docs/prototype-switcher.html?names=below` in a browser (the bar at the bottom shows `E · name below the row, icon-only highlight`) and hold ⌥ + Tab to open its panel. Ignore the prototype's Italian texts: they are not part of this check.
