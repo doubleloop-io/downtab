@@ -30,6 +30,19 @@ Before starting: grant Accessibility to the terminal (System Settings › Privac
 1. Run `make bundle` twice. The `designated => ...` line is identical both times.
 2. Grant Accessibility (needed from now on to detect the ⌥ release) in System Settings › Privacy & Security › Accessibility, rebuild with `make run`, and check Downtab is still enabled there without granting again.
 
+## Accessibility permission
+
+Before starting: `make run` with Accessibility granted. Revoke and grant only by toggling Downtab in System Settings › Privacy & Security › Accessibility (never `tccutil reset`: it drops the grant of every build). Re-enable it at the end.
+
+1. Granted: the menu bar icon shows stacked rectangles and its menu has no `Accessibility Permission Missing…` item. The Preferences show `Accessibility: Granted`, with no highlight and no `Open System Settings` button.
+2. Turn Downtab off in the Accessibility list. Within about a second: the menu bar icon becomes a warning triangle, the menu starts with `Accessibility Permission Missing…` (it opens the Preferences), and the Preferences' Accessibility row turns into a yellow box reading `Not granted: the shortcuts do nothing until you allow Downtab in System Settings.` with an `Open System Settings` button.
+3. With the permission off, ⌥Tab and `` ⌥` `` do nothing: no Switcher appears and the front app does not change; in a text editor ⌥Tab types what it does without Downtab running.
+4. `make stop`, then `make run` with the permission still off: the Preferences open by themselves with the Accessibility row highlighted, and the menu bar icon is the warning triangle.
+5. Click `Open System Settings`: System Settings opens on Privacy & Security › Accessibility.
+6. Turn Downtab on there, without restarting it: within about a second the icon returns to stacked rectangles, the Preferences read `Granted` and the box loses its highlight, and ⌥Tab opens the Switcher, which stays open while ⌥ is held and confirms on its release.
+7. With the permission off, record a new App shortcut (e.g. ⌃Tab): it is accepted and stored but does nothing until the permission is turned back on; then it works. `Restore Defaults` afterwards.
+8. With VoiceOver on (⌘F5), point at the menu bar icon with the permission off: it reads `Downtab: Accessibility permission missing`. Turn VoiceOver off.
+
 ## Switcher: open and Cancel
 
 Before starting: `make run`, then open TextEdit, Safari and Notes in this order, clicking each to bring it to the front. In this section keep ⌥ held until `Esc`: releasing it confirms.

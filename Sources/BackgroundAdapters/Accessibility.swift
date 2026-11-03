@@ -26,3 +26,10 @@ enum AXAttribute {
         copy(of: element, attribute) as? Bool ?? false
     }
 }
+
+/// Whether macOS lets Downtab use Accessibility: without it the Modifier release and windows cannot be read.
+public enum AccessibilityPermission {
+    public static var isGranted: Bool {
+        AXIsProcessTrusted()
+    }
+}
