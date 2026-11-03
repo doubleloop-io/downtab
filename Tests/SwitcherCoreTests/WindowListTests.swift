@@ -100,6 +100,22 @@ func confirmingAtWindowLevelBringsOnlyTheSelectedWindowToTheFront(confirm: Switc
     #expect(effect == .bringWindowToFront(try #require(chosen.id), of: app.id))
 }
 
+@Test func aWindowWithoutATitleIsListedAsUntitled() {
+    var (switcher, desktop) = openedOn(.regular("iTerm2", windows: [.window(""), .window("Shell")]))
+
+    switcher.handle(.downPressed, desktop: desktop)
+
+    #expect(switcher.state.windowListTitles == ["Untitled", "Shell"])
+}
+
+@Test func duplicateTitlesAreListedAsTheyAre() {
+    var (switcher, desktop) = openedOn(.regular("Safari", windows: [.window("Start Page"), .window("Start Page")]))
+
+    switcher.handle(.downPressed, desktop: desktop)
+
+    #expect(switcher.state.windowListTitles == ["Start Page", "Start Page"])
+}
+
 @Test(arguments: [0, 1])
 func downOnAnAppWithFewerThanTwoWindowsDoesNothing(windowCount: Int) {
     var (switcher, desktop) = openedOn(.regular("Safari", windows: (0..<windowCount).map { _ in .window() }))
