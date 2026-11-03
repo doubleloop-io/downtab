@@ -6,9 +6,26 @@ extension DesktopSnapshot {
         // Like the native switcher, which shows every app from a full-screen Space; App level only, for now
         // (`docs/GOAL.md`). The Space, not the Frontmost app: activation can bring an app forward and stay there.
         if isActiveSpaceFullScreen {
-            return regularApps.map { AppRowEntry(id: $0.id, name: $0.name, windows: []) }
+            return regularApps.map { entry(of: $0, windows: []) }
         }
-        return regularApps.filter(admits).map { AppRowEntry(id: $0.id, name: $0.name, windows: windowList(of: $0)) }
+        return regularApps.filter(admits).map { entry(of: $0, windows: windowList(of: $0)) }
+    }
+
+    private func entry(of app: DesktopApp, windows: [WindowListEntry]) -> AppRowEntry {
+        AppRowEntry(
+            id: app.id, name: app.name, windows: windows, windowToFrontOnActivation: windowInAnotherSpace(of: app))
+    }
+
+    /// The app's frontmost window, when all its windows are in other Spaces: from a full-screen Space, activation
+    /// alone keeps macOS there for apps that do not bring a window forward themselves (Miro, Notion Calendar).
+    private func windowInAnotherSpace(of app: DesktopApp) -> WindowID? {
+        guard hasWindowsOnlyInOtherSpaces(app) else { return nil }
+        let candidate = app.windows.first { window in
+            // Accessibility does not list windows of other Spaces: an unlisted window counts by its size alone.
+            !window.isMinimized && !window.spaces.isEmpty && window.isLargeEnoughToBeReal
+                && (window.role == nil || window.isRealWindow)
+        }
+        return candidate?.id
     }
 
     private func admits(_ app: DesktopApp) -> Bool {
