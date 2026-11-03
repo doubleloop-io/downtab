@@ -25,16 +25,23 @@ private func openedOn(_ app: DesktopApp) -> (Switcher, DesktopSnapshot) {
     #expect(switcher.state.windowListTitles == ["Front", "Middle", "Back"])
 }
 
-@Test func downAtWindowLevelSelectsTheNextWindowAndStopsAtTheLast() {
+@Test func downAtWindowLevelSelectsTheNextWindow() {
     var (switcher, desktop) = openedOn(.regular("Safari", windows: [.window("A"), .window("B"), .window("C")]))
     switcher.handle(.downPressed, desktop: desktop)
+
     switcher.handle(.downPressed, desktop: desktop)
+
     #expect(switcher.state.selectedWindowTitle == "B")
+}
 
+@Test func downOnTheLastWindowStaysOnIt() {
+    var (switcher, desktop) = openedOn(.regular("Safari", windows: [.window("A"), .window("B")]))
     switcher.handle(.downPressed, desktop: desktop)
     switcher.handle(.downPressed, desktop: desktop)
 
-    #expect(switcher.state.selectedWindowTitle == "C")
+    switcher.handle(.downPressed, desktop: desktop)
+
+    #expect(switcher.state.selectedWindowTitle == "B")
 }
 
 @Test func upAtWindowLevelSelectsThePreviousWindow() {
