@@ -16,13 +16,14 @@ enum PrivateWindowFront {
         "SLPSPostEventRecordTo", in: .skyLight, as: PostEventRecord.self)
     private static let processForPID = PrivateSymbol.resolve("GetProcessForPID", in: .process, as: ProcessForPID.self)
 
-    /// False when a symbol is missing or the process is gone: the caller falls back to public APIs.
+    /// False when a symbol is missing, the process is gone or the window server refuses: the caller falls back to
+    /// public APIs.
     static func bringToFront(_ windowID: CGWindowID, of pid: pid_t) -> Bool {
         guard let setFrontProcess, let postEventRecord, let processForPID else { return false }
         var psn = ProcessSerialNumber()
         guard processForPID(pid, &psn) == noErr else { return false }
         let userGenerated: UInt32 = 0x200
-        _ = setFrontProcess(&psn, windowID, userGenerated)
+        guard setFrontProcess(&psn, windowID, userGenerated) == CGError.success.rawValue else { return false }
         var record = keyWindowRecord(windowID)
         _ = record.withUnsafeMutableBufferPointer { bytes in
             bytes.baseAddress.map { postEventRecord(&psn, $0) }
