@@ -34,11 +34,22 @@ extension DesktopSnapshot {
 
     /// A window the Switcher can bring forward without leaving the Current Space, or a full-screen one.
     private func isReachable(_ window: DesktopWindow) -> Bool {
-        window.role != nil && (window.spaces.isEmpty || window.isIn(currentSpaces) || window.isFullScreen)
+        window.isRealWindow && (window.spaces.isEmpty || window.isIn(currentSpaces) || window.isFullScreen)
     }
 }
 
 extension DesktopWindow {
+    /// Some apps list elements backed by no real window (cmux's `Item-0` dialogs) or that are not windows at all
+    /// (Finder's desktop): public attributes alone cannot tell them apart, the window id can.
+    fileprivate var isRealWindow: Bool {
+        guard role == "AXWindow", id != nil else { return false }
+        switch subrole {
+        case "AXStandardWindow": return true
+        case "AXDialog": return !title.isEmpty
+        default: return false
+        }
+    }
+
     fileprivate func isIn(_ spaces: Set<SpaceID>) -> Bool {
         !self.spaces.isDisjoint(with: spaces)
     }

@@ -67,6 +67,7 @@ Before starting: `make run`, then open TextEdit, Safari and Notes in this order.
 5. With many apps open (15 or more), the Switcher still fits the screen width: icons get smaller instead of overflowing.
 6. With many apps open, select the first and then the last app: a name wider than its tile stays inside the panel, pushed against its left or right edge instead of centered. Press `Esc`.
 7. Open a second TextEdit window (⌘N). Hold ⌥ and press Tab: TextEdit's icon has a Window count badge like the prototype's (press `B` there to cycle badge styles until it shows `cerchio`): a white disc with a blue ring and `2`, centered near the icon's bottom-right corner, inside the tile's highlight when selected. Safari and Notes, with one window each, have no badge. Press `Esc`.
+8. Open 3 Finder windows: Finder's badge shows `3` (the desktop does not count). An app exposing fake dialogs (cmux, with one window) shows no badge. Press `Esc`.
 
 ## Switcher: which apps appear
 

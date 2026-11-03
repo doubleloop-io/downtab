@@ -32,6 +32,20 @@ extension DesktopWindow {
         )
     }
 
+    /// An element Accessibility lists as a window, in the Current Space.
+    static func listed(role: String, subrole: String?, title: String = "", hasID: Bool = true) -> DesktopWindow {
+        DesktopWindow(
+            id: hasID ? WindowID(UInt32(uniqueID())) : nil,
+            title: title,
+            role: role,
+            subrole: subrole,
+            spaces: [],
+            isMinimized: false,
+            isFullScreen: false,
+            size: WindowSize(width: 800, height: 600)
+        )
+    }
+
     /// Known only to the window server, as normal windows of other Spaces are.
     static func unlisted(
         in spaces: Set<UInt64>,
