@@ -183,8 +183,20 @@ func opened(on desktop: DesktopSnapshot) -> Switcher {
 
 /// Another app is the Frontmost app, so the Switcher opens with the app under test selected.
 func openedOn(_ app: DesktopApp) -> (Switcher, DesktopSnapshot) {
-    let desktop = DesktopSnapshot.with(apps: [.regular("Frontmost"), app])
+    let desktop = behindAFrontmostApp([app])
     return (opened(on: desktop), desktop)
+}
+
+/// Like `openedOn`, then descends into the first app's Window list.
+func atWindowLevel(on apps: [DesktopApp]) -> (Switcher, DesktopSnapshot) {
+    let desktop = behindAFrontmostApp(apps)
+    var switcher = opened(on: desktop)
+    switcher.handle(.downPressed, desktop: desktop)
+    return (switcher, desktop)
+}
+
+private func behindAFrontmostApp(_ apps: [DesktopApp]) -> DesktopSnapshot {
+    DesktopSnapshot.with(apps: [.regular("Frontmost")] + apps)
 }
 
 /// Opens the Switcher on the snapshot and returns the names in its App row.

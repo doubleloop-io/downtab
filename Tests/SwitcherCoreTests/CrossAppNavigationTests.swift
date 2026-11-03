@@ -50,14 +50,6 @@ func arrowsWhileClosedLeaveTheSwitcherClosed(arrow: SwitcherEvent) {
     #expect(effect == nil)
 }
 
-/// Opens the Switcher with another app in front and descends into the first app's Window list.
-private func atWindowLevel(on apps: [DesktopApp]) -> (Switcher, DesktopSnapshot) {
-    let desktop = DesktopSnapshot.with(apps: [.regular("Frontmost")] + apps)
-    var switcher = opened(on: desktop)
-    switcher.handle(.downPressed, desktop: desktop)
-    return (switcher, desktop)
-}
-
 @Test func rightAtWindowLevelOpensTheNextAppsWindowListOnItsFirstWindow() {
     var (switcher, desktop) = atWindowLevel(on: [
         .regular("Safari", windows: [.window("S1"), .window("S2")]),

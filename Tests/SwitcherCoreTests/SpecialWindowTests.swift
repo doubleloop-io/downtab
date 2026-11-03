@@ -1,22 +1,13 @@
 import SwitcherCore
 import Testing
 
-/// Another app is the Frontmost app, so the Switcher opens with the app under test selected, then `↓` opens its
-/// Window list on the first window.
-private func windowListOf(_ app: DesktopApp) -> (Switcher, DesktopSnapshot) {
-    let desktop = DesktopSnapshot.with(apps: [.regular("Frontmost"), app])
-    var switcher = opened(on: desktop)
-    switcher.handle(.downPressed, desktop: desktop)
-    return (switcher, desktop)
-}
-
 @Test func minimizedWindowsGoAfterTheOthersKeepingTheirOrder() {
     let windows: [DesktopWindow] = [
         .window("Minimized front", isMinimized: true), .window("Front"), .window("Minimized back", isMinimized: true),
         .window("Back"),
     ]
 
-    let (switcher, _) = windowListOf(.regular("TextEdit", windows: windows))
+    let (switcher, _) = atWindowLevel(on: [.regular("TextEdit", windows: windows)])
 
     #expect(switcher.state.windowListTitles == ["Front", "Back", "Minimized front", "Minimized back"])
 }
@@ -28,7 +19,7 @@ private func windowListOf(_ app: DesktopApp) -> (Switcher, DesktopSnapshot) {
         .window("Minimized in no Space", isMinimized: true),
     ]
 
-    let (switcher, _) = windowListOf(.regular("TextEdit", windows: windows))
+    let (switcher, _) = atWindowLevel(on: [.regular("TextEdit", windows: windows)])
 
     #expect(switcher.state.windowListTitles == ["Here", "Minimized here", "Minimized in no Space"])
 }
@@ -38,7 +29,7 @@ private func windowListOf(_ app: DesktopApp) -> (Switcher, DesktopSnapshot) {
         .window("Plain"), .window("Full", in: [3], isFullScreen: true), .window("Minimized", isMinimized: true),
     ]
 
-    let (switcher, _) = windowListOf(.regular("TextEdit", windows: windows))
+    let (switcher, _) = atWindowLevel(on: [.regular("TextEdit", windows: windows)])
 
     #expect(switcher.state.windowListLabels == [[], [.fullScreen], [.minimized]])
 }
@@ -46,7 +37,7 @@ private func windowListOf(_ app: DesktopApp) -> (Switcher, DesktopSnapshot) {
 @Test func everyWindowOfAHiddenAppIsLabelledHidden() {
     let windows: [DesktopWindow] = [.window("Plain"), .window("Minimized", isMinimized: true)]
 
-    let (switcher, _) = windowListOf(.regular("TextEdit", isHidden: true, windows: windows))
+    let (switcher, _) = atWindowLevel(on: [.regular("TextEdit", isHidden: true, windows: windows)])
 
     #expect(switcher.state.windowListLabels == [[.hidden], [.minimized, .hidden]])
 }
@@ -71,7 +62,7 @@ private func windowListOf(_ app: DesktopApp) -> (Switcher, DesktopSnapshot) {
 @Test func confirmingAMinimizedWindowAsksToRestoreIt() throws {
     let minimized = DesktopWindow.window("Minimized", isMinimized: true)
     let app = DesktopApp.regular("TextEdit", windows: [minimized, .window("Plain")])
-    var (switcher, desktop) = windowListOf(app)
+    var (switcher, desktop) = atWindowLevel(on: [app])
     switcher.handle(.downPressed, desktop: desktop)
 
     let effect = switcher.handle(.modifierReleased, desktop: desktop)
@@ -82,7 +73,7 @@ private func windowListOf(_ app: DesktopApp) -> (Switcher, DesktopSnapshot) {
 @Test func confirmingAWindowOfAHiddenAppAsksToUnhideTheApp() throws {
     let chosen = DesktopWindow.window("Chosen")
     let app = DesktopApp.regular("TextEdit", isHidden: true, windows: [chosen, .window("Other")])
-    var (switcher, desktop) = windowListOf(app)
+    var (switcher, desktop) = atWindowLevel(on: [app])
 
     let effect = switcher.handle(.modifierReleased, desktop: desktop)
 
@@ -92,7 +83,7 @@ private func windowListOf(_ app: DesktopApp) -> (Switcher, DesktopSnapshot) {
 @Test func confirmingAMinimizedWindowOfAHiddenAppAsksForBoth() throws {
     let minimized = DesktopWindow.window("Minimized", isMinimized: true)
     let app = DesktopApp.regular("TextEdit", isHidden: true, windows: [minimized, .window("Plain")])
-    var (switcher, desktop) = windowListOf(app)
+    var (switcher, desktop) = atWindowLevel(on: [app])
     switcher.handle(.downPressed, desktop: desktop)
 
     let effect = switcher.handle(.modifierReleased, desktop: desktop)
@@ -103,7 +94,7 @@ private func windowListOf(_ app: DesktopApp) -> (Switcher, DesktopSnapshot) {
 @Test func confirmingAPlainWindowAsksToRestoreNothing() throws {
     let chosen = DesktopWindow.window("Chosen")
     let app = DesktopApp.regular("TextEdit", windows: [chosen, .window("Other")])
-    var (switcher, desktop) = windowListOf(app)
+    var (switcher, desktop) = atWindowLevel(on: [app])
 
     let effect = switcher.handle(.modifierReleased, desktop: desktop)
 
