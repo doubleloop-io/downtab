@@ -16,13 +16,14 @@ private func spaceIDs(_ spaces: Set<UInt64>) -> Set<SpaceID> {
 extension DesktopWindow {
     /// A standard window listed by Accessibility, large enough to count as a real window.
     static func window(
+        _ title: String = "Window",
         in spaces: Set<UInt64> = [],
         isMinimized: Bool = false,
         isFullScreen: Bool = false
     ) -> DesktopWindow {
         DesktopWindow(
             id: WindowID(UInt32(uniqueID())),
-            title: "Window",
+            title: title,
             role: "AXWindow",
             subrole: "AXStandardWindow",
             spaces: spaceIDs(spaces),
@@ -132,6 +133,21 @@ extension SwitcherState {
     var selectedName: String? {
         guard case .open(let displayed) = self else { return nil }
         return displayed.selectedEntry.name
+    }
+
+    var windowListTitles: [String]? {
+        guard case .open(let displayed) = self, case .window = displayed.level else { return nil }
+        return displayed.selectedEntry.windows.map(\.title)
+    }
+
+    var selectedWindowTitle: String? {
+        guard case .open(let displayed) = self, case .window(let index) = displayed.level else { return nil }
+        return displayed.selectedEntry.windows[index].title
+    }
+
+    var isAtAppLevel: Bool {
+        guard case .open(let displayed) = self else { return false }
+        return displayed.level == .app
     }
 
     func windowCountBadge(of name: String) -> Int? {

@@ -53,7 +53,7 @@ public actor WindowScanner {
 
     private static func windows(
         of app: AppID,
-        serverWindows: [CGWindowID: WindowSize],
+        serverWindows: [CGWindowID: ServerWindow],
         spaces: PrivateSpaces.DisplaySpaces
     ) -> [DesktopWindow]? {
         let element = AXUIElementCreateApplication(app.processIdentifier)
@@ -78,28 +78,42 @@ public actor WindowScanner {
                     isMinimized: AXAttribute.bool(of: window, kAXMinimizedAttribute),
                     isFullScreen: AXAttribute.bool(of: window, fullScreenAttribute)
                         || !windowSpaces.isDisjoint(with: spaces.fullScreen),
-                    size: id.flatMap { serverWindows[$0] } ?? WindowSize(width: 0, height: 0)
+                    size: id.flatMap { serverWindows[$0]?.size } ?? WindowSize(width: 0, height: 0)
                 ))
         }
         // Accessibility does not list normal windows of other Spaces: only the window server knows them.
-        for (id, size) in serverWindows where !listed.contains(id) {
+        for (id, server) in serverWindows where !listed.contains(id) {
             let windowSpaces = PrivateSpaces.spaces(of: id)
             windows.append(
                 DesktopWindow(
                     id: WindowID(id), title: "", role: nil, subrole: nil,
                     spaces: Set(windowSpaces.map(SpaceID.init)), isMinimized: false,
-                    isFullScreen: !windowSpaces.isDisjoint(with: spaces.fullScreen), size: size
+                    isFullScreen: !windowSpaces.isDisjoint(with: spaces.fullScreen), size: server.size
                 ))
         }
-        return windows
+        // The window server lists windows front to back; Accessibility's order is up to each app.
+        return windows.sorted { lhs, rhs in
+            depth(of: lhs, in: serverWindows) < depth(of: rhs, in: serverWindows)
+        }
+    }
+
+    /// Windows the window server does not know go last.
+    private static func depth(of window: DesktopWindow, in serverWindows: [CGWindowID: ServerWindow]) -> Int {
+        window.id.flatMap { serverWindows[$0.rawValue]?.depth } ?? Int.max
+    }
+
+    private struct ServerWindow {
+        let size: WindowSize
+        /// Position in the window server's front-to-back order.
+        let depth: Int
     }
 
     /// Level-0 windows of every Space, by owner process.
-    private static func serverWindowsByProcess() -> [Int32: [CGWindowID: WindowSize]] {
+    private static func serverWindowsByProcess() -> [Int32: [CGWindowID: ServerWindow]] {
         let options: CGWindowListOption = [.optionAll, .excludeDesktopElements]
         guard let list = CGWindowListCopyWindowInfo(options, kCGNullWindowID) as? [[String: Any]] else { return [:] }
-        var result: [Int32: [CGWindowID: WindowSize]] = [:]
-        for info in list {
+        var result: [Int32: [CGWindowID: ServerWindow]] = [:]
+        for (depth, info) in list.enumerated() {
             guard info[kCGWindowLayer as String] as? Int == 0,
                 let id = info[kCGWindowNumber as String] as? CGWindowID,
                 let pid = info[kCGWindowOwnerPID as String] as? Int32
@@ -107,7 +121,8 @@ public actor WindowScanner {
             let bounds =
                 (info[kCGWindowBounds as String] as? NSDictionary)
                 .flatMap { CGRect(dictionaryRepresentation: $0) } ?? .zero
-            result[pid, default: [:]][id] = WindowSize(width: bounds.width, height: bounds.height)
+            result[pid, default: [:]][id] = ServerWindow(
+                size: WindowSize(width: bounds.width, height: bounds.height), depth: depth)
         }
         return result
     }

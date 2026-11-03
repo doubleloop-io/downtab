@@ -7,6 +7,7 @@ import SwitcherCore
 final class SwitcherPanel: NSPanel {
     private let appRow = NSStackView()
     private let selectedName = NSTextField(labelWithString: "")
+    private let windowList = WindowListPanel()
 
     override var canBecomeKey: Bool { true }
 
@@ -34,9 +35,11 @@ final class SwitcherPanel: NSPanel {
         // The display is chosen at opening: moving the selection never moves the panel to another display.
         let target = isVisible ? screen : Self.pointerScreen()
         let iconSize = Metrics.iconSize(screenWidth: target?.frame.width, tileCount: displayed.appRow.count)
+        let isAtWindowLevel = displayed.level != .app
         let views = displayed.appRow.enumerated().map { index, entry in
             AppTile(
-                icon: icon(entry.id), entry: entry, iconSize: iconSize, isSelected: index == displayed.selectedIndex
+                icon: icon(entry.id), entry: entry, iconSize: iconSize, isSelected: index == displayed.selectedIndex,
+                isAtWindowLevel: isAtWindowLevel && index == displayed.selectedIndex
             )
         }
         appRow.setViews(views, in: .leading)
@@ -50,10 +53,32 @@ final class SwitcherPanel: NSPanel {
             placeSelectedName(under: selectedTile)
         }
         makeKeyAndOrderFront(nil)
+        showWindowList(of: displayed, under: views.first(where: \.isSelected), icon: icon)
     }
 
     func hide() {
+        hideWindowList()
         orderOut(nil)
+    }
+
+    private func showWindowList(of displayed: DisplayedState, under tile: NSView?, icon: (AppID) -> NSImage?) {
+        guard case .window(let selectedWindow) = displayed.level, let tile else {
+            hideWindowList()
+            return
+        }
+        let tileInWindow = tile.convert(tile.bounds, to: nil)
+        let anchor = NSPoint(x: frame.minX + tileInWindow.midX, y: frame.minY)
+        let entry = displayed.selectedEntry
+        windowList.show(entry, selectedWindow: selectedWindow, icon: icon(entry.id), below: anchor, on: screen)
+        if windowList.parent == nil {
+            // A child window moves and closes with the Switcher.
+            addChildWindow(windowList, ordered: .above)
+        }
+    }
+
+    private func hideWindowList() {
+        removeChildWindow(windowList)
+        windowList.orderOut(nil)
     }
 
     /// Centered under the selected tile while it fits, otherwise pushed against the Switcher's edge. Placed by
@@ -147,13 +172,14 @@ final class SwitcherPanel: NSPanel {
 private final class AppTile: NSView {
     let isSelected: Bool
 
-    init(icon: NSImage?, entry: AppRowEntry, iconSize: CGFloat, isSelected: Bool) {
+    /// At Window level the selected tile dims, leaving the highlight to the selected window, and its badge inverts.
+    init(icon: NSImage?, entry: AppRowEntry, iconSize: CGFloat, isSelected: Bool, isAtWindowLevel: Bool) {
         self.isSelected = isSelected
         super.init(frame: .zero)
         wantsLayer = true
         layer?.cornerRadius = Metrics.tileCornerRadius
         if isSelected {
-            layer?.backgroundColor = Palette.selectedTile.cgColor
+            layer?.backgroundColor = (isAtWindowLevel ? Palette.parentTile : Palette.selectedTile).cgColor
             layer?.borderWidth = 1
             layer?.borderColor = Palette.border.cgColor
         }
@@ -182,13 +208,14 @@ private final class AppTile: NSView {
         ])
         if let count = entry.windowCountBadge {
             setAccessibilityValue("\(count) windows")
-            addBadge(count, iconSize: iconSize)
+            addBadge(count, iconSize: iconSize, isInverted: isAtWindowLevel)
         }
     }
 
     /// Centered on the artwork's corner, inside the icon box past its transparent margin.
-    private func addBadge(_ count: Int, iconSize: CGFloat) {
-        let badge = WindowCountBadge(count: count, diameter: iconSize * Metrics.badgeIconRatio)
+    private func addBadge(_ count: Int, iconSize: CGFloat, isInverted: Bool) {
+        let badge = WindowCountBadge(
+            count: count, diameter: iconSize * Metrics.badgeIconRatio, isInverted: isInverted)
         addSubview(badge)
         let offset = Metrics.tileMargin + iconSize * Metrics.badgeCenterIconRatio
         NSLayoutConstraint.activate([
@@ -203,18 +230,19 @@ private final class AppTile: NSView {
     }
 }
 
-/// Style `cerchio` of the prototype: a light disc with an accent ring and the count.
+/// Style `cerchio` of the prototype: a light disc with an accent ring and the count; inverted, an accent disc with a
+/// white ring.
 private final class WindowCountBadge: NSView {
-    init(count: Int, diameter: CGFloat) {
+    init(count: Int, diameter: CGFloat, isInverted: Bool) {
         super.init(frame: .zero)
         translatesAutoresizingMaskIntoConstraints = false
         setAccessibilityElement(false)
         wantsLayer = true
-        layer?.backgroundColor = Palette.badgeFill.cgColor
+        layer?.backgroundColor = (isInverted ? Palette.accent : Palette.badgeFill).cgColor
         layer?.cornerRadius = diameter / 2
         // A layer border is drawn inside the bounds, like the prototype's inset ring.
         layer?.borderWidth = Metrics.badgeRing
-        layer?.borderColor = Palette.accent.cgColor
+        layer?.borderColor = (isInverted ? NSColor.white : Palette.accent).cgColor
         layer?.shadowColor = NSColor.black.cgColor
         layer?.shadowOpacity = Metrics.badgeShadowOpacity
         layer?.shadowRadius = Metrics.badgeShadowRadius
@@ -222,7 +250,7 @@ private final class WindowCountBadge: NSView {
 
         let label = NSTextField(labelWithString: "\(count)")
         label.font = .monospacedDigitSystemFont(ofSize: diameter * Metrics.badgeFontRatio, weight: .semibold)
-        label.textColor = Palette.badgeText
+        label.textColor = isInverted ? .white : Palette.badgeText
         label.alignment = .center
         label.setAccessibilityElement(false)
         label.translatesAutoresizingMaskIntoConstraints = false
@@ -288,6 +316,7 @@ private enum Palette {
     static let border = NSColor(white: 1, alpha: 0.12)
     static let hudTint = NSColor(srgbRed: 30 / 255, green: 30 / 255, blue: 34 / 255, alpha: 0.8)
     static let selectedTile = NSColor(white: 1, alpha: 0.2)
+    static let parentTile = NSColor(white: 1, alpha: 0.1)
     static let text = NSColor(srgbRed: 0xF5 / 255, green: 0xF5 / 255, blue: 0xF7 / 255, alpha: 1)
     static let accent = NSColor(srgbRed: 0x0A / 255, green: 0x84 / 255, blue: 0xFF / 255, alpha: 1)
     static let badgeFill = text
