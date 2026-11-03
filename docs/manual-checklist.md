@@ -58,7 +58,7 @@ Before starting: `make run`, Accessibility granted to Downtab, then open TextEdi
 
 ## Switcher: look
 
-Before starting: `make run`, then open TextEdit, Safari and Notes in this order. Open `docs/prototype-switcher.html?names=below` in a browser (the bar at the bottom shows `E · name below the row, icon-only highlight`) and hold ⌥ + Tab to open its panel. Ignore the prototype's Window count badges and Italian texts: they are not part of this check.
+Before starting: `make run`, then open TextEdit, Safari and Notes in this order. Open `docs/prototype-switcher.html?names=below` in a browser (the bar at the bottom shows `E · name below the row, icon-only highlight`) and hold ⌥ + Tab to open its panel. Ignore the prototype's Italian texts: they are not part of this check.
 
 1. In Notes, hold ⌥ and press Tab: the Switcher is a dark, rounded, translucent panel with a thin light border, like the prototype's, even in Light Mode and over a bright window.
 2. Each app is a large icon. The selected app's icon sits in a lighter rounded tile with a thin border and an even margin on every side; the others have none.
@@ -66,6 +66,23 @@ Before starting: `make run`, then open TextEdit, Safari and Notes in this order.
 4. Press Tab a few times: the highlight and the name move, the icons do not move. Press `Esc`.
 5. With many apps open (15 or more), the Switcher still fits the screen width: icons get smaller instead of overflowing.
 6. With many apps open, select the first and then the last app: a name wider than its tile stays inside the panel, pushed against its left or right edge instead of centered. Press `Esc`.
+7. Open a second TextEdit window (⌘N). Hold ⌥ and press Tab: TextEdit's icon has a Window count badge like the prototype's (press `B` there to cycle badge styles until it shows `cerchio`): a white disc with a blue ring and `2`, centered near the icon's bottom-right corner, inside the tile's highlight when selected. Safari and Notes, with one window each, have no badge. Press `Esc`.
+
+## Switcher: which apps appear
+
+Before starting: `make run`, Accessibility granted to Downtab, two Spaces (Mission Control, `+`), TextEdit, Safari and Notes open with one window each in Space 1. Wait one second after each change before pressing ⌥Tab: the window list is refreshed every second. Press `Esc` after each check.
+
+1. From Space 1, ⌥Tab shows TextEdit, Safari and Notes.
+2. Move the Notes window to Space 2 (drag it to Space 2 in Mission Control). From Space 1, ⌥Tab: Notes is not in the App row. From Space 2, ⌥Tab: Notes is there, TextEdit and Safari are not.
+3. Open a second Notes window in Space 1. From Space 1, ⌥Tab: Notes is there again, with no badge (its other window is in Space 2).
+4. Close all Notes windows (⌘W) without quitting Notes: Notes is in the App row from any Space, with no badge.
+5. Hide Safari (⌘H) and move to Space 2: ⌥Tab shows Safari.
+6. With a window in several Spaces (right click its Dock icon › Options › All Desktops): its app appears from every Space.
+7. Make TextEdit full screen (green button), then go back to Space 1 (⌃←). ⌥Tab: TextEdit is in the App row. Select it and release ⌥: macOS moves to TextEdit's full-screen Space and TextEdit is frontmost.
+8. From the full-screen TextEdit, ⌥Tab: every running app with a Dock icon is in the App row, including those with windows only in Space 2.
+9. Two instances of the same app (e.g. `open -n -a TextEdit`): two TextEdit entries, each admitted on its own windows.
+10. With two displays, each showing a different Space: apps with windows on either display appear; an app whose only window is in a Space shown on neither display does not. A window on each display counts twice towards the badge.
+11. `log show --last 1h --predicate 'subsystem == "local.downtab" AND category == "private-api"'` prints nothing on a supported macOS. A line `private symbol missing: <name>, its feature is off` means macOS removed a private API: the app keeps running, and apps living in other Spaces are no longer hidden.
 
 ## Switcher: accessibility
 

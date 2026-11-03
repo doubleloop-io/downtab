@@ -36,7 +36,7 @@ final class SwitcherPanel: NSPanel {
         let iconSize = Metrics.iconSize(screenWidth: target?.frame.width, tileCount: displayed.appRow.count)
         let views = displayed.appRow.enumerated().map { index, entry in
             AppTile(
-                icon: icon(entry.id), name: entry.name, iconSize: iconSize, isSelected: index == displayed.selectedIndex
+                icon: icon(entry.id), entry: entry, iconSize: iconSize, isSelected: index == displayed.selectedIndex
             )
         }
         appRow.setViews(views, in: .leading)
@@ -143,11 +143,11 @@ final class SwitcherPanel: NSPanel {
     }
 }
 
-/// One App row entry: the icon, wrapped by the highlight when selected.
+/// One App row entry: the icon, wrapped by the highlight when selected, with its Window count badge.
 private final class AppTile: NSView {
     let isSelected: Bool
 
-    init(icon: NSImage?, name: String, iconSize: CGFloat, isSelected: Bool) {
+    init(icon: NSImage?, entry: AppRowEntry, iconSize: CGFloat, isSelected: Bool) {
         self.isSelected = isSelected
         super.init(frame: .zero)
         wantsLayer = true
@@ -161,7 +161,7 @@ private final class AppTile: NSView {
         setAccessibilityElement(true)
         setAccessibilityRole(.image)
         setAccessibilityRoleDescription("app")
-        setAccessibilityLabel(name)
+        setAccessibilityLabel(entry.name)
         setAccessibilitySelected(isSelected)
 
         let image = NSImageView()
@@ -180,6 +180,61 @@ private final class AppTile: NSView {
             image.centerXAnchor.constraint(equalTo: centerXAnchor),
             image.centerYAnchor.constraint(equalTo: centerYAnchor),
         ])
+        if let count = entry.windowCountBadge {
+            setAccessibilityValue("\(count) windows")
+            addBadge(count, iconSize: iconSize)
+        }
+    }
+
+    /// Centered on the artwork's corner, inside the icon box past its transparent margin.
+    private func addBadge(_ count: Int, iconSize: CGFloat) {
+        let badge = WindowCountBadge(count: count, diameter: iconSize * Metrics.badgeIconRatio)
+        addSubview(badge)
+        let offset = Metrics.tileMargin + iconSize * Metrics.badgeCenterIconRatio
+        NSLayoutConstraint.activate([
+            badge.centerXAnchor.constraint(equalTo: leadingAnchor, constant: offset),
+            badge.centerYAnchor.constraint(equalTo: topAnchor, constant: offset),
+        ])
+    }
+
+    @available(*, unavailable)
+    required init?(coder: NSCoder) {
+        fatalError("not used")
+    }
+}
+
+/// Style `cerchio` of the prototype: a light disc with an accent ring and the count.
+private final class WindowCountBadge: NSView {
+    init(count: Int, diameter: CGFloat) {
+        super.init(frame: .zero)
+        translatesAutoresizingMaskIntoConstraints = false
+        setAccessibilityElement(false)
+        wantsLayer = true
+        layer?.backgroundColor = Palette.badgeFill.cgColor
+        layer?.cornerRadius = diameter / 2
+        // A layer border is drawn inside the bounds, like the prototype's inset ring.
+        layer?.borderWidth = Metrics.badgeRing
+        layer?.borderColor = Palette.accent.cgColor
+        layer?.shadowColor = NSColor.black.cgColor
+        layer?.shadowOpacity = Metrics.badgeShadowOpacity
+        layer?.shadowRadius = Metrics.badgeShadowRadius
+        layer?.shadowOffset = Metrics.badgeShadowOffset
+
+        let label = NSTextField(labelWithString: "\(count)")
+        label.font = .monospacedDigitSystemFont(ofSize: diameter * Metrics.badgeFontRatio, weight: .semibold)
+        label.textColor = Palette.badgeText
+        label.alignment = .center
+        label.setAccessibilityElement(false)
+        label.translatesAutoresizingMaskIntoConstraints = false
+        addSubview(label)
+        NSLayoutConstraint.activate([
+            heightAnchor.constraint(equalToConstant: diameter),
+            widthAnchor.constraint(greaterThanOrEqualToConstant: diameter),
+            label.leadingAnchor.constraint(greaterThanOrEqualTo: leadingAnchor, constant: Metrics.badgePadding),
+            label.trailingAnchor.constraint(lessThanOrEqualTo: trailingAnchor, constant: -Metrics.badgePadding),
+            label.centerXAnchor.constraint(equalTo: centerXAnchor),
+            label.centerYAnchor.constraint(equalTo: centerYAnchor),
+        ])
     }
 
     @available(*, unavailable)
@@ -195,6 +250,17 @@ private enum Metrics {
     static let tileCornerRadius: CGFloat = 20
     /// Between the icon and the selected tile's edge, on every side.
     static let tileMargin: CGFloat = 14
+    /// The prototype's `--badge: calc(var(--icon) * 0.3)`.
+    static let badgeIconRatio: CGFloat = 0.3
+    /// Variant E: with the tile wrapping only the icon, the badge sits at 86% of the icon, keeping a margin.
+    static let badgeCenterIconRatio: CGFloat = 0.86
+    static let badgeRing: CGFloat = 3
+    static let badgePadding: CGFloat = 4
+    static let badgeFontRatio: CGFloat = 0.5
+    /// The prototype's `0 2px 6px rgba(0, 0, 0, 0.35)`.
+    static let badgeShadowOpacity: Float = 0.35
+    static let badgeShadowRadius: CGFloat = 3
+    static let badgeShadowOffset = CGSize(width: 0, height: -2)
     static let nameGap: CGFloat = 8
     static let nameHeight: CGFloat = 18
     static let nameFontSize: CGFloat = 13
@@ -223,4 +289,7 @@ private enum Palette {
     static let hudTint = NSColor(srgbRed: 30 / 255, green: 30 / 255, blue: 34 / 255, alpha: 0.8)
     static let selectedTile = NSColor(white: 1, alpha: 0.2)
     static let text = NSColor(srgbRed: 0xF5 / 255, green: 0xF5 / 255, blue: 0xF7 / 255, alpha: 1)
+    static let accent = NSColor(srgbRed: 0x0A / 255, green: 0x84 / 255, blue: 0xFF / 255, alpha: 1)
+    static let badgeFill = text
+    static let badgeText = NSColor(srgbRed: 0x1C / 255, green: 0x1C / 255, blue: 0x1E / 255, alpha: 1)
 }

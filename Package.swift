@@ -30,5 +30,7 @@ let package = Package(
             swiftSettings: strictSettings + [.defaultIsolation(MainActor.self)]
         ),
         .testTarget(name: "SwitcherCoreTests", dependencies: ["SwitcherCore"], swiftSettings: strictSettings),
+        .testTarget(
+            name: "BackgroundAdaptersTests", dependencies: ["BackgroundAdapters"], swiftSettings: strictSettings),
     ]
 )

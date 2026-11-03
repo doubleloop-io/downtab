@@ -1,8 +1,9 @@
 import AppKit
+import BackgroundAdapters
 import SwitcherCore
 
-/// Keeps an in-memory copy of the running apps and their MRU order, updated from NSWorkspace notifications,
-/// so taking a snapshot when the Switcher opens never queries other processes.
+/// Keeps an in-memory copy of the running apps, their MRU order and their windows, updated from NSWorkspace
+/// notifications and background scans, so taking a snapshot when the Switcher opens never queries other processes.
 /// Translation only: which apps appear is decided by the core.
 final class DesktopTracker {
     private struct TrackedApp {
@@ -14,6 +15,11 @@ final class DesktopTracker {
     private var apps: [AppID: TrackedApp] = [:]
     private var mruOrder: [AppID] = []
     private var observers: [any NSObjectProtocol] = []
+    private let scanner = WindowScanner()
+    private var scan: WindowScan?
+    private var isScanning = false
+    private var needsAnotherScan = false
+    private var periodicScan: Task<Void, Never>?
 
     func start() {
         let workspace = NSWorkspace.shared
@@ -33,16 +39,34 @@ final class DesktopTracker {
             observe(NSWorkspace.didTerminateApplicationNotification, on: center) { tracker, app in
                 tracker.forget(app)
             },
+            center.addObserver(forName: NSWorkspace.activeSpaceDidChangeNotification, object: nil, queue: .main) {
+                [weak self] _ in
+                MainActor.assumeIsolated { self?.requestScan() }
+            },
         ]
+        // Windows opened, closed or moved by hand raise no NSWorkspace notification.
+        periodicScan = Task { [weak self] in
+            while !Task.isCancelled {
+                self?.requestScan()
+                try? await Task.sleep(for: .seconds(1))
+            }
+        }
     }
 
     func snapshot() -> DesktopSnapshot {
         let desktopApps = mruOrder.compactMap { id in
             apps[id].map { app in
-                DesktopApp(id: id, name: app.name, isRegular: app.process.activationPolicy == .regular)
+                DesktopApp(
+                    id: id, name: app.name, isRegular: app.process.activationPolicy == .regular,
+                    isHidden: app.process.isHidden, windows: scan?.windowsByApp[id] ?? [])
             }
         }
-        return DesktopSnapshot(apps: desktopApps, mruOrder: mruOrder)
+        return DesktopSnapshot(
+            apps: desktopApps,
+            mruOrder: mruOrder,
+            currentSpaces: scan?.currentSpaces ?? [],
+            frontmostApp: NSWorkspace.shared.frontmostApplication.map(AppID.init)
+        )
     }
 
     func icon(for id: AppID) -> NSImage? {
@@ -64,12 +88,34 @@ final class DesktopTracker {
         }
     }
 
+    /// Coalesces requests: at most one scan runs, and at most one more follows it.
+    private func requestScan() {
+        guard !isScanning else {
+            needsAnotherScan = true
+            return
+        }
+        isScanning = true
+        // Agents never reach the App row: querying them would only slow the scan.
+        let regularApps = mruOrder.filter { apps[$0]?.process.activationPolicy == .regular }
+        Task { [weak self, scanner] in
+            let result = await scanner.scan(regularApps)
+            guard let self else { return }
+            scan = result
+            isScanning = false
+            if needsAnotherScan {
+                needsAnotherScan = false
+                requestScan()
+            }
+        }
+    }
+
     private func track(_ app: NSRunningApplication) {
         let id = AppID(app)
         guard apps[id] == nil else { return }
         let name = app.localizedName ?? app.bundleURL?.deletingPathExtension().lastPathComponent ?? ""
         apps[id] = TrackedApp(process: app, name: name)
         mruOrder.append(id)
+        requestScan()
     }
 
     private func recordActivation(of app: NSRunningApplication) {
@@ -77,6 +123,7 @@ final class DesktopTracker {
         let id = AppID(app)
         mruOrder.removeAll { $0 == id }
         mruOrder.insert(id, at: 0)
+        requestScan()
     }
 
     private func forget(_ app: NSRunningApplication) {

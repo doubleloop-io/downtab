@@ -63,10 +63,7 @@ import Testing
 
 @Test func appRowLeavesOutAppsThatAreNotRegular() {
     var switcher = Switcher()
-    let mail = DesktopApp.regular("Mail", processIdentifier: 1)
-    let agent = DesktopApp(id: AppID(processIdentifier: 2), name: "Menu bar agent", isRegular: false)
-    let notes = DesktopApp.regular("Notes", processIdentifier: 3)
-    let desktop = DesktopSnapshot(apps: [mail, agent, notes], mruOrder: [mail.id, agent.id, notes.id])
+    let desktop = DesktopSnapshot.with(apps: [.regular("Mail"), .agent("Menu bar agent"), .regular("Notes")])
 
     switcher.handle(.appShortcutPressed, desktop: desktop)
 

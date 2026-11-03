@@ -18,6 +18,8 @@ public enum FinalEffect: Equatable, Sendable {
 public struct AppRowEntry: Equatable, Sendable {
     public let id: AppID
     public let name: String
+    /// Nil when the app has fewer than 2 windows.
+    public let windowCountBadge: Int?
 }
 
 public struct DisplayedState: Equatable, Sendable {
@@ -70,18 +72,10 @@ public struct Switcher: Sendable {
             state = .open(displayed.movingSelection(by: step))
         case .closed:
             // The App row is fixed at opening: it never moves while the Switcher is open.
-            let appRow = Self.appRow(of: desktop)
+            let appRow = desktop.appRow()
             guard !appRow.isEmpty else { return }
             // Opening starts on the app being left, so the first step lands on the previous app.
             state = .open(DisplayedState(appRow: appRow, selectedIndex: 0).movingSelection(by: step))
-        }
-    }
-
-    private static func appRow(of desktop: DesktopSnapshot) -> [AppRowEntry] {
-        let appsByID = Dictionary(desktop.apps.map { ($0.id, $0) }, uniquingKeysWith: { first, _ in first })
-        // Only regular apps appear, as in the native switcher.
-        return desktop.mruOrder.compactMap { appsByID[$0] }.filter(\.isRegular).map {
-            AppRowEntry(id: $0.id, name: $0.name)
         }
     }
 }
