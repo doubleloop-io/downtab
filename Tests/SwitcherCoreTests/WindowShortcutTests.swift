@@ -102,6 +102,20 @@ private func desktopWithFrontmostSafari(windows titles: [String]) -> DesktopSnap
     #expect(switcher.state.selectedName == "Notes")
 }
 
+@Test func rightAfterTheWindowShortcutMovesToTheNextAppStayingAtWindowLevel() {
+    let desktop = DesktopSnapshot.with(apps: [
+        .regular("Safari", windows: [.window("Current"), .window("Behind")]),
+        .regular("Notes", windows: [.window("First"), .window("Second")]),
+    ])
+    var switcher = Switcher()
+    switcher.handle(.windowShortcutPressed, desktop: desktop)
+
+    switcher.handle(.rightPressed, desktop: desktop)
+
+    #expect(switcher.state.selectedName == "Notes")
+    #expect(switcher.state.selectedWindowTitle == "First")
+}
+
 @Test func windowShortcutAtAppLevelDoesNothing() {
     let desktop = desktopWithFrontmostSafari(windows: ["Current", "Behind"])
     var switcher = Switcher()
