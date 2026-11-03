@@ -19,13 +19,23 @@ public final class ModifierReleaseTap {
         }
 
         /// The system disables a tap it deems slow; re-enabling from the tap thread needs no main-actor hop.
-        func reenable() {
+        func reenable(disabledBy reason: String) {
+            logger.info("modifier release tap disabled by \(reason, privacy: .public)")
             let reenabled = port.withLock { port in
                 guard let port else { return false }
                 CGEvent.tapEnable(tap: port, enable: true)
                 return true
             }
             if reenabled { logger.info("modifier release tap re-enabled") }
+        }
+
+        /// Left disabled on purpose: macOS sends no disable event for it, so only the fallback check confirms.
+        func simulateDisable() {
+            port.withLock { port in
+                guard let port else { return }
+                CGEvent.tapEnable(tap: port, enable: false)
+            }
+            logger.info("modifier release tap disabled by simulation")
         }
     }
 
@@ -37,6 +47,7 @@ public final class ModifierReleaseTap {
     }
 
     private var relay: Relay?
+    private var simulatedDisableSignal: (any DispatchSourceSignal)?
 
     public init() {}
 
@@ -66,8 +77,18 @@ public final class ModifierReleaseTap {
         thread.name = "modifier-release-tap"
         thread.qualityOfService = .userInteractive
         thread.start()
+        listenForSimulatedDisable(relay)
         // `make smoke` waits for this exact line before posting events.
         relay.logger.info("modifier release tap started")
+    }
+
+    /// `pkill -USR1 -x Downtab` disables the tap, since macOS disabling it cannot be provoked on demand.
+    private func listenForSimulatedDisable(_ relay: Relay) {
+        signal(SIGUSR1, SIG_IGN)
+        let source = DispatchSource.makeSignalSource(signal: SIGUSR1, queue: .global())
+        source.setEventHandler { relay.simulateDisable() }
+        source.resume()
+        simulatedDisableSignal = source
     }
 }
 
@@ -82,8 +103,10 @@ private func handleTapEvent(
     guard let context else { return nil }
     let relay = Unmanaged<ModifierReleaseTap.Relay>.fromOpaque(context).takeUnretainedValue()
     switch type {
-    case .tapDisabledByTimeout, .tapDisabledByUserInput:
-        relay.reenable()
+    case .tapDisabledByTimeout:
+        relay.reenable(disabledBy: "timeout")
+    case .tapDisabledByUserInput:
+        relay.reenable(disabledBy: "user input")
     case .flagsChanged where !event.flags.contains(ModifierReleaseTap.modifier):
         Task { @MainActor in relay.onRelease() }
     default:

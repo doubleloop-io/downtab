@@ -1,12 +1,15 @@
 import AppKit
 import BackgroundAdapters
 import SwitcherCore
+import os
 
 final class SwitcherController {
     private var switcher = Switcher()
     private let tracker = DesktopTracker()
     private let panel = SwitcherPanel()
     private let focuser = WindowFocuser()
+    private let logger = Logger(subsystem: "local.downtab", category: "keyboard")
+    private var missedReleaseCheck: Task<Void, Never>?
     private lazy var keyboard = KeyboardInput { [weak self] event in self?.handle(event) }
 
     func start() {
@@ -20,6 +23,7 @@ final class SwitcherController {
         // Re-showing an unchanged state would move the panel to the pointer's current display.
         if switcher.state != previous {
             render()
+            updateMissedReleaseCheck()
         }
         if let effect {
             Task { [focuser] in await focuser.perform(effect) }
@@ -32,6 +36,23 @@ final class SwitcherController {
             panel.hide()
         case .open(let displayed):
             panel.show(displayed, icon: tracker.icon(for:))
+        }
+    }
+
+    private func updateMissedReleaseCheck() {
+        switch switcher.state {
+        case .closed:
+            missedReleaseCheck?.cancel()
+            missedReleaseCheck = nil
+        case .open:
+            guard missedReleaseCheck == nil else { return }
+            missedReleaseCheck = Task { [weak self] in
+                guard (try? await ModifierReleaseFallback().waitForRelease()) != nil else { return }
+                // The tap's release may have closed the Switcher while this check was resuming.
+                guard !Task.isCancelled, let self else { return }
+                logger.info("modifier release confirmed by fallback check")
+                handle(.modifierReleased)
+            }
         }
     }
 }
