@@ -1,11 +1,11 @@
-/// Which apps the App row shows, and with which Window count badge.
+/// Which apps the App row shows, and which windows their Window list holds.
 extension DesktopSnapshot {
     func appRow() -> [AppRowEntry] {
         let appsByID = Dictionary(apps.map { ($0.id, $0) }, uniquingKeysWith: { first, _ in first })
         let regularApps = mruOrder.compactMap { appsByID[$0] }.filter(\.isRegular)
         // Like the native switcher, which shows every app from a full-screen app.
         let admitted = isFrontmostAppFullScreen(among: regularApps) ? regularApps : regularApps.filter(admits)
-        return admitted.map { AppRowEntry(id: $0.id, name: $0.name, windowCountBadge: windowCountBadge(of: $0)) }
+        return admitted.map { AppRowEntry(id: $0.id, name: $0.name, windows: windowList(of: $0)) }
     }
 
     private func isFrontmostAppFullScreen(among apps: [DesktopApp]) -> Bool {
@@ -26,10 +26,10 @@ extension DesktopSnapshot {
         return !placed.isEmpty && placed.allSatisfy { !$0.isIn(currentSpaces) }
     }
 
-    /// Only an app with something to descend into gets a badge.
-    private func windowCountBadge(of app: DesktopApp) -> Int? {
-        let count = app.windows.count(where: isReachable)
-        return count >= 2 ? count : nil
+    private func windowList(of app: DesktopApp) -> [WindowListEntry] {
+        app.windows.filter(isReachable).compactMap { window in
+            window.id.map { WindowListEntry(id: $0, title: window.title) }
+        }
     }
 
     /// A window the Switcher can bring forward without leaving the Current Space, or a full-screen one.

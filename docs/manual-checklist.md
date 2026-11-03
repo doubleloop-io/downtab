@@ -85,6 +85,20 @@ Before starting: `make run`, Accessibility granted to Downtab, two Spaces (Missi
 10. With two displays, each showing a different Space: apps with windows on either display appear; an app whose only window is in a Space shown on neither display does not. A window on each display counts twice towards the badge.
 11. `log show --last 1h --predicate 'subsystem == "local.downtab" AND category == "private-api"'` prints nothing on a supported macOS. A line `private symbol missing: <name>, its feature is off` means macOS removed a private API: the app keeps running, and apps living in other Spaces are no longer hidden.
 
+## Switcher: Window list
+
+Before starting: `make run`, Accessibility granted to Downtab. Open TextEdit with 3 windows titled apart (⌘N three times, type `one`, `two`, `three` and save each, or just tell them apart by content), arranged so each one is partly visible, then Safari with one window, then Notes, clicking each to bring it to the front. Keep ⌥ held during each step unless the step says to release it.
+
+1. In Notes, hold ⌥, press Tab until TextEdit is selected, press `↓`: a Window list drops under TextEdit's icon, with a caret pointing at it, a header with TextEdit's icon and `TextEdit · 3 windows`, and the 3 titles in TextEdit's front-to-back order, the first one highlighted in blue. TextEdit's badge turns blue with a white ring and `3`; its tile highlight gets fainter. Compare with `docs/prototype-switcher.html` (press `↓` there).
+2. Press `↓` twice: the highlight moves down to the last window; `↓` again keeps it there. Press `↑` until the first window, then `↑` once more: the Window list closes, TextEdit is selected at App level and its badge is back to white.
+3. Select Safari (one window) or an app with no windows and press `↓`: nothing happens. Press `Esc`.
+4. Hold ⌥, select TextEdit, `↓`, `↓` to the second window, release ⌥: only that window comes to the front and gets the keyboard focus (type a few letters: they land in it). TextEdit's other two windows stay behind the windows of other apps that covered them before.
+5. Repeat step 4 with `Enter` instead of releasing ⌥: same result, and releasing ⌥ afterwards does nothing more.
+6. In TextEdit (now frontmost), hold ⌥, press Tab then ⇧Tab to come back to TextEdit, press `↓`: the second window is highlighted, not the one you are in. Release ⌥: that window comes to the front.
+7. With the Window list open, press Tab: the list closes and the next app is selected. Press `Esc`: nothing changes.
+8. Minimize a TextEdit window (⌘M), wait one second, select it in the Window list and release ⌥: it comes back from the Dock and to the front.
+9. `log stream --predicate 'subsystem == "local.downtab" AND category == "focus"'` shows a `raise pid=... wid=... private=true ax=0` line for each window confirmed. `private=false` means a private API is missing: the window still comes forward, but with all of the app's windows, and `log show --last 1h --predicate 'subsystem == "local.downtab" AND category == "private-api"'` shows one `private symbol missing: <name>, its feature is off` line per missing symbol; the app keeps running.
+
 ## Switcher: accessibility
 
 Before starting: `make run`. Step 2 needs Accessibility Inspector, which ships with Xcode (`open -a "Accessibility Inspector"`); without Xcode run step 1 only.
@@ -93,3 +107,4 @@ Before starting: `make run`. Step 2 needs Accessibility Inspector, which ships w
    `sleep 3; osascript -e 'tell application "System Events" to tell process "Downtab" to get {role, description} of UI elements of UI element 1 of window 1'`
    It prints `AXImage` once per app and the app names, in the App row order. Press `Esc`.
 2. With Accessibility Inspector, point at the Switcher: the window is titled `Switcher`, it contains a list `App row`, and each entry is an `app` image labelled with the app name; only the selected entry has `Selected` set to true. Press `Esc`.
+3. With Accessibility Inspector, open an app's Window list (`↓`) and point at it: a list `Window list` whose entries are `window` texts labelled with the window titles; only the selected one has `Selected` set to true. Press `Esc`.

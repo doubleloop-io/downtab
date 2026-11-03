@@ -38,6 +38,8 @@ final class KeyboardInput {
         switch keyCode {
         case kVK_Escape: .escapePressed
         case kVK_Return, kVK_ANSI_KeypadEnter: .enterPressed
+        case kVK_DownArrow: .downPressed
+        case kVK_UpArrow: .upPressed
         default: nil
         }
     }

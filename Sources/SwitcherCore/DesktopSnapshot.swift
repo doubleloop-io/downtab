@@ -75,6 +75,7 @@ public struct DesktopApp: Equatable, Sendable {
     public let isRegular: Bool
     /// Hidden with ⌘H.
     public let isHidden: Bool
+    /// Front to back.
     public let windows: [DesktopWindow]
 
     public init(id: AppID, name: String, isRegular: Bool, isHidden: Bool, windows: [DesktopWindow]) {
