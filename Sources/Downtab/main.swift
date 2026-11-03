@@ -1,18 +1,23 @@
 import AppKit
 import BackgroundAdapters
+import SwitcherCore
 
 final class AppDelegate: NSObject, NSApplicationDelegate {
     private var statusItem: NSStatusItem?
     private let switcher = SwitcherController()
+    private let permission = PermissionMonitor()
     private let takeover = NativeShortcutTakeover()
     private let terminationSignals = TerminationSignals()
     private lazy var shortcuts = ShortcutSettings(keyboard: switcher.keyboard, takeover: takeover)
     private lazy var preferences = PreferencesWindow(settings: shortcuts)
+    private let permissionMissingItem = NSMenuItem(
+        title: "Accessibility Permission Missing…", action: #selector(openPreferences), keyEquivalent: "")
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         let item = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
-        item.button?.image = NSImage(systemSymbolName: "rectangle.stack", accessibilityDescription: "Downtab")
         let menu = NSMenu()
+        permissionMissingItem.target = self
+        menu.addItem(permissionMissingItem)
         menu.addItem(withTitle: "Preferences…", action: #selector(openPreferences), keyEquivalent: ",").target = self
         menu.addItem(.separator())
         menu.addItem(withTitle: "Quit Downtab", action: #selector(NSApplication.terminate(_:)), keyEquivalent: "q")
@@ -21,7 +26,28 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         // Native ⌘Tab and ⌘` stay off after Downtab exits unless it turns them back on.
         terminationSignals.install(cleanUp: takeover.restore)
         switcher.start()
-        shortcuts.registerStored()
+        LaunchAtLogin().applyStored()
+        permission.start { [weak self] change in self?.apply(change) }
+        // Guided setup: the Preferences show the missing permission highlighted.
+        if !permission.isGranted {
+            preferences.open()
+        }
+    }
+
+    private func apply(_ change: PermissionWatch.Change) {
+        let isGranted = change == .granted
+        if isGranted {
+            switcher.keyboard.startModifierRelease()
+            shortcuts.enable()
+        } else {
+            shortcuts.disable()
+        }
+        statusItem?.button?.image = NSImage(
+            systemSymbolName: isGranted ? "rectangle.stack" : "exclamationmark.triangle",
+            accessibilityDescription: isGranted ? "Downtab" : "Downtab: Accessibility permission missing"
+        )
+        permissionMissingItem.isHidden = isGranted
+        preferences.showPermission(isGranted: isGranted)
     }
 
     func applicationWillTerminate(_ notification: Notification) {

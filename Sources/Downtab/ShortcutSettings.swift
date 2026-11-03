@@ -25,6 +25,9 @@ final class ShortcutSettings {
     private(set) var current: Shortcuts
     /// Current shortcuts macOS refused to register, with or without ⇧: they do not open the Switcher.
     private(set) var failures: [ShortcutSlot: ShortcutRejection] = [:]
+    /// Without the Accessibility permission the Switcher cannot detect the Modifier release, so the shortcuts stay
+    /// off: a combination is registered only long enough to learn whether macOS accepts it.
+    private var isEnabled = false
 
     init(keyboard: KeyboardInput, takeover: NativeShortcutTakeover) {
         self.keyboard = keyboard
@@ -33,7 +36,13 @@ final class ShortcutSettings {
     }
 
     /// A stored shortcut that fails to register stays stored: the Preferences show the failure.
-    func registerStored() {
+    func enable() {
+        isEnabled = true
+        registerCurrent()
+    }
+
+    func disable() {
+        isEnabled = false
         registerCurrent()
     }
 
@@ -53,7 +62,7 @@ final class ShortcutSettings {
         guard outcome == .valid else { return outcome }
         var proposed = current
         proposed[slot] = recorded
-        let refused = keyboard.register(proposed)
+        let refused = register(proposed)
         let registration = ShortcutRules.checkRegistration(of: recorded, refused: refused)
         guard registration == .valid else {
             registerCurrent()
@@ -68,7 +77,7 @@ final class ShortcutSettings {
 
     /// Keeps the previous shortcuts when a default fails to register; returns the defaults' failures.
     func restoreDefaults() -> [ShortcutSlot: ShortcutRejection] {
-        let defaultFailures = Shortcuts.defaults.registrationFailures(refused: keyboard.register(.defaults))
+        let defaultFailures = Shortcuts.defaults.registrationFailures(refused: register(.defaults))
         guard defaultFailures.isEmpty else {
             registerCurrent()
             return defaultFailures
@@ -81,11 +90,19 @@ final class ShortcutSettings {
     }
 
     private func registerCurrent() {
-        failures = current.registrationFailures(refused: keyboard.register(current))
+        failures = current.registrationFailures(refused: register(current))
         takeOverNativeShortcuts()
     }
 
+    private func register(_ shortcuts: Shortcuts) -> Set<Shortcut> {
+        let refused = keyboard.register(shortcuts)
+        if !isEnabled { keyboard.suspendShortcuts() }
+        return refused
+    }
+
+    /// While the shortcuts are off, native ⌘Tab and ⌘` must work: nothing else would answer them.
     private func takeOverNativeShortcuts() {
-        takeover.turnOff(exactly: ShortcutRules.nativeShortcutsToTurnOff(for: current, failures: failures))
+        let natives = isEnabled ? ShortcutRules.nativeShortcutsToTurnOff(for: current, failures: failures) : []
+        takeover.turnOff(exactly: natives)
     }
 }

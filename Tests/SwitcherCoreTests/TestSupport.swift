@@ -206,3 +206,12 @@ private func behindAFrontmostApp(_ apps: [DesktopApp]) -> DesktopSnapshot {
 func appRowNames(of desktop: DesktopSnapshot) -> [String]? {
     opened(on: desktop).state.appRowNames
 }
+
+/// The default shortcuts' presses and a full release, for tests where the shortcuts are incidental.
+extension SwitcherEvent {
+    static let appShortcutPressed = SwitcherEvent.keyPressed(.defaultApp)
+    static let shiftAppShortcutPressed = SwitcherEvent.keyPressed(Shortcut.defaultApp.withShift)
+    static let windowShortcutPressed = SwitcherEvent.keyPressed(.defaultWindow)
+    static let shiftWindowShortcutPressed = SwitcherEvent.keyPressed(Shortcut.defaultWindow.withShift)
+    static let modifierReleased = SwitcherEvent.modifiersChanged(held: [])
+}

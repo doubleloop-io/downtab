@@ -30,6 +30,19 @@ Before starting: grant Accessibility to the terminal (System Settings › Privac
 1. Run `make bundle` twice. The `designated => ...` line is identical both times.
 2. Grant Accessibility (needed from now on to detect the ⌥ release) in System Settings › Privacy & Security › Accessibility, rebuild with `make run`, and check Downtab is still enabled there without granting again.
 
+## Accessibility permission
+
+Before starting: `make run` with Accessibility granted. Revoke and grant only by toggling Downtab in System Settings › Privacy & Security › Accessibility (never `tccutil reset`: it drops the grant of every build). Re-enable it at the end.
+
+1. Granted: the menu bar icon shows stacked rectangles and its menu has no `Accessibility Permission Missing…` item. The Preferences show `Accessibility: Granted`, with no highlight and no `Open System Settings` button.
+2. Turn Downtab off in the Accessibility list. Within about a second: the menu bar icon becomes a warning triangle, the menu starts with `Accessibility Permission Missing…` (it opens the Preferences), and the Preferences' Accessibility row turns into a yellow box reading `Not granted: the shortcuts do nothing until you allow Downtab in System Settings.` with an `Open System Settings` button.
+3. With the permission off, ⌥Tab and `` ⌥` `` do nothing: no Switcher appears and the front app does not change; in a text editor ⌥Tab types what it does without Downtab running.
+4. `make stop`, then `make run` with the permission still off: the Preferences open by themselves with the Accessibility row highlighted, and the menu bar icon is the warning triangle.
+5. Click `Open System Settings`: System Settings opens on Privacy & Security › Accessibility.
+6. Turn Downtab on there, without restarting it: within about a second the icon returns to stacked rectangles, the Preferences read `Granted` and the box loses its highlight, and ⌥Tab opens the Switcher, which stays open while ⌥ is held and confirms on its release.
+7. With the permission off, record a new App shortcut (e.g. ⌃Tab): it is accepted and stored but does nothing until the permission is turned back on; then it works. `Restore Defaults` afterwards.
+8. With VoiceOver on (⌘F5), point at the menu bar icon with the permission off: it reads `Downtab: Accessibility permission missing`. Turn VoiceOver off.
+
 ## Switcher: open and Cancel
 
 Before starting: `make run`, then open TextEdit, Safari and Notes in this order, clicking each to bring it to the front. In this section keep ⌥ held until `Esc`: releasing it confirms.
@@ -223,7 +236,7 @@ Before starting: `make run`, Accessibility granted to Downtab, a few apps open. 
 4. Click it and press ⌥⇧Tab: `⌥⇧Tab: ⇧ is reserved for going back: record the shortcut without it.`
 5. Click it and press `` ⌥` ``: `` ⌥`: The other shortcut already uses this combination. ``
 6. Click it and press ⌘Space: `⌘Space: macOS already uses this combination: choose another one.` Same for ⌃→. An app shortcut such as ⌘W is accepted: the field reads `⌘W`; press `Restore Defaults` before going on.
-7. Click it and press ⌃Tab: the message disappears and the field reads `⌃Tab`. Without restarting, switch apps with ⌃Tab (quick press: the previous app comes forward; until the Modifier follows custom shortcuts, a ⌃ shortcut confirms right away instead of keeping the Switcher open). ⌥Tab no longer opens the Switcher.
+7. Click it and press ⌃Tab: the message disappears and the field reads `⌃Tab`. Without restarting, switch apps with ⌃Tab (quick press: the previous app comes forward; held, the Switcher stays open until ⌃ is released). ⌥Tab no longer opens the Switcher.
 8. Click the Window shortcut field and press ⌃`` ` ``: it reads ``⌃` `` (or the layout's character). In an app with 2 windows, ⌃`` ` `` brings its other window forward; ⌃⇧`` ` `` its last one.
 9. `make stop`, then `make run` again and open the Preferences: they still show `⌃Tab` and ``⌃` ``, and ⌃Tab still switches apps.
 10. Click the App shortcut field, then click the Window shortcut field: the first one stops recording. Click the App shortcut field, then click another app's window: the field stops recording, and ⌃Tab works again.
@@ -232,6 +245,28 @@ Before starting: `make run`, Accessibility granted to Downtab, a few apps open. 
 13. A stored shortcut that fails to register at launch stays stored and is reported in the Preferences, with no fallback to the default: quit the hotkey app of step 12, record its hotkey (`⌥Space`) as the App shortcut, `make stop`, start the hotkey app, `make run`. ⌥Space opens the other app, not the Switcher; the Preferences show `⌥Space: macOS already uses this combination: choose another one.` under the App shortcut, which still reads `⌥Space`. Record another App shortcut: the message disappears. Skip if no such app is installed.
 14. Restore Defaults never stores a pair that fails to register: record `⌃Tab` and ``⌃` ``, then set the hotkey app of step 12 to ⌥Tab and click `Restore Defaults`: the fields keep `⌃Tab` and ``⌃` ``, ⌃Tab still switches apps, the App shortcut shows `⌥Tab: macOS already uses this combination: choose another one.`, and after `make stop` and `make run` the Preferences still show `⌃Tab`. Reset the hotkey app afterwards. Skip if no such app is installed.
 15. With VoiceOver on (⌘F5), move to a recorder field: it reads `App shortcut, ⌥Tab, button`; a rejection is announced. Turn VoiceOver off.
+
+## Switcher: mixed shortcuts
+
+Before starting: `make run`, Accessibility granted to Downtab. In the Preferences record App shortcut ⌥Tab and Window shortcut ⌃`` ` ``. Open Safari (or any app) with 3 windows and make it frontmost, with a few other apps open.
+
+1. Hold ⌥, press Tab: the Switcher opens at App level. Release ⌥: it confirms (the selected app comes forward).
+2. Hold ⌃, press `` ` ``: the Switcher opens on Safari's Window list on the second window. Release ⌃: that window comes forward.
+3. Hold ⌥, press Tab, `←` back to the frontmost app, `↓`: the Window list opens. Press `` ` `` (still ⌥ only): the selection advances in the Window list; ⇧`` ` `` goes back. Release ⌥: the selected window comes forward.
+4. Hold ⌃, press `` ` ``, then Tab (still ⌃ only): the Switcher goes to App level and advances; ⇧Tab goes back. Release ⌃: the selected app comes forward.
+5. Hold ⌥, press Tab, then add ⌃ and press `` ` `` (⌥⌃`` ` ``): nothing changes. Add and release ⇧: the Switcher stays open. Release ⌃: still open. Release ⌥: it confirms.
+6. Record App shortcut ⌥⌘Tab. Hold ⌥⌘, press Tab: the Switcher opens. Release only ⌘ (keep ⌥): it confirms. Repeat releasing only ⌥: it confirms. Press `Restore Defaults` afterwards.
+7. Kill the release tap (`pkill -USR1 -x Downtab`), then repeat step 2: releasing ⌃ still confirms, within a moment (fallback check); `log show --last 1m --predicate 'subsystem == "local.downtab"'` shows `modifier release confirmed by fallback check`. Relaunch with `make run` afterwards.
+
+## Launch at login
+
+Before starting: `defaults delete local.downtab launchAtLogin` (ignore "does not exist"), then `make run`. The login item points at the bundle that last registered it: run these checks from one checkout only.
+
+1. First launch turns it on: System Settings › General › Login Items & Extensions lists Downtab under `Open at Login`, enabled. The Preferences show `Launch at login` checked, under `Restore Defaults`, with no note below it.
+2. Uncheck `Launch at login`: Downtab disappears from `Open at Login` (reopen System Settings if it does not refresh). `defaults read local.downtab launchAtLogin` prints `0`. `make stop`, `make run`: the toggle is still unchecked and Downtab is still not listed.
+3. Check it again: Downtab is listed and enabled again; `defaults read local.downtab launchAtLogin` prints `1`.
+4. Log out and log back in: the Downtab icon appears in the menu bar without launching it by hand.
+5. Turn Downtab off in System Settings' `Open at Login` (if listed as a switch), then focus the Preferences: `Launch at login` stays checked and a note `Turned off in System Settings...` with `Open Login Items…` appears; the button opens Login Items. Turn it back on there and focus the Preferences: the note disappears. Skip if System Settings shows no switch for Downtab.
 
 ## Native ⌘Tab / ⌘` takeover and Emergency restore
 
@@ -247,7 +282,7 @@ Before starting: `make run`, Accessibility granted to Downtab, TextEdit, Safari 
 
 1. `make restore-status`: all `on`.
 2. Click the App shortcut field and press ⌘Tab: no native app switcher appears, the field reads `⌘Tab`, no message. `make restore-status`: `id=1` and `id=2` read `off`, `id=27` `on`.
-3. Close the Preferences. In Notes, quick-press ⌘Tab: the previous app comes forward through Downtab, and the native app switcher never appears. ⌘⇧Tab is not caught by the native switcher either. (Until the Modifier follows custom shortcuts, a ⌘ shortcut confirms right away instead of keeping the Switcher open.) ⌥Tab no longer opens the Switcher.
+3. Close the Preferences. In Notes, quick-press ⌘Tab: the previous app comes forward through Downtab, and the native app switcher never appears. ⌘⇧Tab is not caught by the native switcher either. Held, the Switcher stays open until ⌘ is released. ⌥Tab no longer opens the Switcher.
 4. Record ⌥Tab again as the App shortcut: native ⌘Tab works again right away, `make restore-status` shows all `on`.
 5. Record `` ⌘` `` as the Window shortcut: `id=27` reads `off`. In an app with 2 windows, `` ⌘` `` goes through Downtab. Record `` ⌥` `` again: `id=27` back `on`, native `` ⌘` `` cycles windows again.
 6. Quit restores: record ⌘Tab and `` ⌘` ``, then menu bar icon › `Quit Downtab`: `make restore-status` shows all `on` and native ⌘Tab works.
@@ -255,4 +290,4 @@ Before starting: `make run`, Accessibility granted to Downtab, TextEdit, Safari 
 8. Recording turns them off only while it lasts (leaving the Preferences stops recording, hence the delay): with ⌥Tab stored, run `sleep 5; make restore-status` and click the App shortcut field within 5 s: all `off`. Press `Esc` in the field, then `make restore-status`: all `on`. Click the field, then click another app's window: all `on`.
 9. Forced kill: record ⌘Tab, then `pkill -9 -x Downtab`. Native ⌘Tab stays off (`id=1` `off`, ⌘Tab shows no native switcher). `make restore`: native ⌘Tab works again. `make run` restarts with ⌘Tab taken over; set the defaults back with `Restore Defaults` and check all `on`.
 10. A native shortcut that was already off stays off after Downtab: in System Settings › Keyboard › Keyboard Shortcuts › Keyboard, turn off `Move focus to next window`; record `` ⌘` ``, then record `` ⌥` ``: `id=27` stays `off`. Turn the setting back on. Skip if the setting does not change `id=27`.
-
+11. Without the Accessibility permission the native ones answer: record ⌘Tab, then turn Downtab off in System Settings › Privacy & Security › Accessibility: `make restore-status` shows all `on` and native ⌘Tab works. Turn it back on: `id=1` `off` again, ⌘Tab goes through Downtab. `Restore Defaults` afterwards.

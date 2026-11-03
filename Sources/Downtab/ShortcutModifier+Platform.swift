@@ -31,4 +31,8 @@ extension ShortcutModifier {
         case .command: .command
         }
     }
+
+    static func held(in flags: NSEvent.ModifierFlags) -> Set<ShortcutModifier> {
+        Set(allCases.filter { flags.contains($0.eventFlag) })
+    }
 }
