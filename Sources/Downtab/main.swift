@@ -21,6 +21,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         item.menu = menu
         statusItem = item
         switcher.start()
+        LaunchAtLogin().applyStored()
         permission.start { [weak self] change in self?.apply(change) }
         // Guided setup: the Preferences show the missing permission highlighted.
         if !permission.isGranted {

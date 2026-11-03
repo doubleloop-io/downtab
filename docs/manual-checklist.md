@@ -246,3 +246,13 @@ Before starting: `make run`, Accessibility granted to Downtab, a few apps open. 
 14. Restore Defaults never stores a pair that fails to register: record `⌃Tab` and ``⌃` ``, then set the hotkey app of step 12 to ⌥Tab and click `Restore Defaults`: the fields keep `⌃Tab` and ``⌃` ``, ⌃Tab still switches apps, the App shortcut shows `⌥Tab: macOS already uses this combination: choose another one.`, and after `make stop` and `make run` the Preferences still show `⌃Tab`. Reset the hotkey app afterwards. Skip if no such app is installed.
 15. With VoiceOver on (⌘F5), move to a recorder field: it reads `App shortcut, ⌥Tab, button`; a rejection is announced. Turn VoiceOver off.
 
+
+## Launch at login
+
+Before starting: `defaults delete local.downtab launchAtLogin` (ignore "does not exist"), then `make run`. The login item points at the bundle that last registered it: run these checks from one checkout only.
+
+1. First launch turns it on: System Settings › General › Login Items & Extensions lists Downtab under `Open at Login`, enabled. The Preferences show `Launch at login` checked, under `Restore Defaults`, with no note below it.
+2. Uncheck `Launch at login`: Downtab disappears from `Open at Login` (reopen System Settings if it does not refresh). `defaults read local.downtab launchAtLogin` prints `0`. `make stop`, `make run`: the toggle is still unchecked and Downtab is still not listed.
+3. Check it again: Downtab is listed and enabled again; `defaults read local.downtab launchAtLogin` prints `1`.
+4. Log out and log back in: the Downtab icon appears in the menu bar without launching it by hand.
+5. Turn Downtab off in System Settings' `Open at Login` (if listed as a switch), then focus the Preferences: `Launch at login` stays checked and a note `Turned off in System Settings...` with `Open Login Items…` appears; the button opens Login Items. Turn it back on there and focus the Preferences: the note disappears. Skip if System Settings shows no switch for Downtab.

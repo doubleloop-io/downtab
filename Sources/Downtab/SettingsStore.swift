@@ -17,6 +17,16 @@ struct SettingsStore {
         }
     }
 
+    func launchAtLogin() -> Bool {
+        defaults.object(forKey: Self.launchAtLoginKey) as? Bool ?? true
+    }
+
+    func save(launchAtLogin: Bool) {
+        defaults.set(launchAtLogin, forKey: Self.launchAtLoginKey)
+    }
+
+    private static let launchAtLoginKey = "launchAtLogin"
+
     private func shortcut(for slot: ShortcutSlot) -> Shortcut {
         guard let data = defaults.data(forKey: slot.storageKey) else { return Shortcuts.defaults[slot] }
         do {
