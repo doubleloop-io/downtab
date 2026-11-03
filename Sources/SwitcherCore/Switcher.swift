@@ -12,6 +12,8 @@ public enum SwitcherEvent: Equatable, Sendable {
     case upPressed
     case leftPressed
     case rightPressed
+    /// `Switcher.showDelay` after opening, unless it already closed.
+    case showDelayElapsed
 }
 
 /// What closing the Switcher asks the app to do.
@@ -21,12 +23,43 @@ public enum FinalEffect: Equatable, Sendable {
     /// Confirm at App level: bring the app forward like the native switcher.
     case activateApp(AppID)
     /// Confirm at Window level: only that window comes forward, the app's other windows stay where they are.
-    case bringWindowToFront(WindowID, of: AppID)
+    case bringWindowToFront(WindowID, of: AppID, restoring: WindowRestoration = [])
+}
+
+/// What must be undone before the window can come forward.
+public struct WindowRestoration: OptionSet, Sendable {
+    public let rawValue: Int
+
+    public init(rawValue: Int) {
+        self.rawValue = rawValue
+    }
+
+    public static let unminimize = WindowRestoration(rawValue: 1 << 0)
+    /// Unhides the whole app: hiding is per app, not per window.
+    public static let unhide = WindowRestoration(rawValue: 1 << 1)
+}
+
+/// What confirming the window will do besides bringing it forward.
+public enum WindowLabel: Equatable, Sendable {
+    /// Restored from the Dock.
+    case minimized
+    /// Lives in a Space of its own: confirming moves there.
+    case fullScreen
+    /// Its app is hidden: confirming unhides the app.
+    case hidden
 }
 
 public struct WindowListEntry: Equatable, Sendable {
     public let id: WindowID
     public let title: String
+    public let labels: [WindowLabel]
+
+    var restoration: WindowRestoration {
+        var restoration: WindowRestoration = []
+        if labels.contains(.minimized) { restoration.insert(.unminimize) }
+        if labels.contains(.hidden) { restoration.insert(.unhide) }
+        return restoration
+    }
 }
 
 public struct AppRowEntry: Equatable, Sendable {
@@ -52,6 +85,9 @@ public struct DisplayedState: Equatable, Sendable {
     public let appRow: [AppRowEntry]
     public private(set) var selectedIndex: Int
     public private(set) var level: SelectionLevel
+    /// False until the show delay elapses: a quick press confirms without the Switcher ever appearing. Hidden, it
+    /// still takes every key, so none reaches the Frontmost app.
+    public private(set) var isVisible = false
     /// Fixed at opening, like the App row.
     let frontmostApp: AppID?
 
@@ -67,7 +103,10 @@ public struct DisplayedState: Equatable, Sendable {
     var confirmation: FinalEffect {
         switch level {
         case .app, .windowWithoutList: .activateApp(selectedEntry.id)
-        case .window(let index): .bringWindowToFront(selectedEntry.windows[index].id, of: selectedEntry.id)
+        case .window(let index):
+            .bringWindowToFront(
+                selectedEntry.windows[index].id, of: selectedEntry.id,
+                restoring: selectedEntry.windows[index].restoration)
         }
     }
 
@@ -124,6 +163,12 @@ public struct DisplayedState: Equatable, Sendable {
         return .window(selectedEntry.id == frontmostApp ? 1 : 0)
     }
 
+    func shown() -> DisplayedState {
+        var shown = self
+        shown.isVisible = true
+        return shown
+    }
+
     private func at(_ level: SelectionLevel) -> DisplayedState {
         var moved = self
         moved.level = level
@@ -137,6 +182,9 @@ public enum SwitcherState: Equatable, Sendable {
 }
 
 public struct Switcher: Sendable {
+    /// Like the native switcher: long enough that a quick press never flashes the Switcher. To tune with use.
+    public static let showDelay = Duration.milliseconds(100)
+
     public private(set) var state: SwitcherState = .closed
 
     public init() {}
@@ -154,7 +202,9 @@ public struct Switcher: Sendable {
         case .windowShortcutPressed, .shiftWindowShortcutPressed:
             moveWindowSelection(by: event == .windowShortcutPressed ? 1 : -1, desktop: desktop)
         case .downPressed, .upPressed, .leftPressed, .rightPressed:
-            moveWhileOpen { Self.moving($0, by: event) }
+            updateWhileOpen { Self.moving($0, by: event) }
+        case .showDelayElapsed:
+            updateWhileOpen { $0.shown() }
         }
         return nil
     }
@@ -171,7 +221,7 @@ public struct Switcher: Sendable {
         return .noChange
     }
 
-    private mutating func moveWhileOpen(_ move: (DisplayedState) -> DisplayedState) {
+    private mutating func updateWhileOpen(_ move: (DisplayedState) -> DisplayedState) {
         if case .open(let displayed) = state { state = .open(move(displayed)) }
     }
 

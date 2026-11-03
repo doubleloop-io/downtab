@@ -147,9 +147,19 @@ extension SwitcherState {
         return displayed.selectedEntry.windows.map(\.title)
     }
 
+    var windowListLabels: [[WindowLabel]]? {
+        guard case .open(let displayed) = self, case .window = displayed.level else { return nil }
+        return displayed.selectedEntry.windows.map(\.labels)
+    }
+
     var selectedWindowTitle: String? {
         guard case .open(let displayed) = self, case .window(let index) = displayed.level else { return nil }
         return displayed.selectedEntry.windows[index].title
+    }
+
+    var isVisible: Bool {
+        guard case .open(let displayed) = self else { return false }
+        return displayed.isVisible
     }
 
     var isAtAppLevel: Bool {

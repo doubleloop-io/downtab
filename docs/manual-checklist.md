@@ -41,7 +41,7 @@ Before starting: `make run`, then open TextEdit, Safari and Notes in this order,
 5. Make Safari full screen (green button), press ⌥Tab: the Switcher appears above the full-screen Safari. Press `Esc`: Safari is still full screen and frontmost.
 6. Switch to another Space (⌃→) and press ⌥Tab: the Switcher appears there too. Press `Esc`.
 7. With the Switcher open, press ⌥Tab again: the icons stay in the same order. Press `Esc`.
-8. Opening shows no delay: the Switcher appears as soon as ⌥Tab is pressed, even right after launching a new app.
+8. Opening shows only the show delay: holding ⌥ after ⌥Tab, the Switcher appears after about a tenth of a second, never later, even right after launching a new app.
 
 ## Switcher: cycle and Confirm at App level
 
@@ -56,6 +56,19 @@ Before starting: `make run`, Accessibility granted to Downtab, then open TextEdi
 7. Hold ⌥, press Tab, then press `Enter` without releasing ⌥: the highlighted app comes to the front and the Switcher closes. Releasing ⌥ afterwards does nothing more.
 8. Hide Safari (⌘H), then hold ⌥, select Safari and release: Safari comes back to the front.
 9. `log stream --predicate 'subsystem == "local.downtab"'` shows `modifier release tap started` at launch and an `activate pid=... ok=true` line for each Confirm.
+
+## Switcher: quick press
+
+Before starting: `make run`, Accessibility granted to Downtab, TextEdit with 2 windows (`one` in front, `two` behind), then Safari and Notes, clicking each to bring it to the front.
+
+1. In Notes, press ⌥Tab and release both keys quickly, several times in a row: the front app switches between Notes and Safari each time and the Switcher never flashes on screen, not even for a frame.
+2. Hold ⌥, press Tab and keep ⌥ held: the Switcher appears after a barely noticeable pause (about a tenth of a second). Press `Esc`.
+3. Click Notes. Hold ⌥, press Tab twice quickly and release ⌥ at once: TextEdit comes to the front without the Switcher appearing (if the whole sequence was quicker than the pause).
+4. Click TextEdit's `one` window. Press `` ⌥` `` and release both keys quickly: `two` comes to the front and the Switcher never flashes on screen. Press it again: `one` comes back.
+5. Hold ⌥, press `` ` `` and keep ⌥ held: the Switcher appears after the same pause with TextEdit's Window list open. Press `Esc`.
+6. In TextEdit open the Find bar (⌘F), cursor in it. Hold ⌥, press Tab and at once `Esc` (within a tenth of a second), then release ⌥: the Switcher never appears, TextEdit stays frontmost and its Find bar stays open (an `Esc` reaching TextEdit would close it). Type a few letters: they land in the Find bar, without clicking first.
+7. In TextEdit, hold ⌥, press Tab and at once `→`, then release ⌥: the third app of the App row comes to the front (Tab selected the second, `→` the next); no arrow moved TextEdit's text cursor.
+8. In TextEdit, hold ⌥, press Tab and at once `Enter`: the previously used app comes to the front and no new line is added to the TextEdit document.
 
 ## Switcher: MRU order
 
@@ -134,7 +147,7 @@ Before starting: `make run`, Accessibility granted to Downtab. Open TextEdit wit
 5. Repeat step 4 with `Enter` instead of releasing ⌥: same result, and releasing ⌥ afterwards does nothing more.
 6. In TextEdit (now frontmost), hold ⌥, press Tab then ⇧Tab to come back to TextEdit, press `↓`: the second window is highlighted, not the one you are in. Release ⌥: that window comes to the front.
 7. With the Window list open, press Tab: the list closes and the next app is selected. Press `Esc`: nothing changes.
-8. Minimize a TextEdit window (⌘M), wait one second, select it in the Window list and release ⌥: it comes back from the Dock and to the front.
+8. Minimize a TextEdit window (⌘M), wait one second, select it in the Window list and release ⌥: it comes back from the Dock and to the front. More in "Switcher: minimized, hidden and full-screen windows".
 9. `log stream --predicate 'subsystem == "local.downtab" AND category == "focus"'` shows a `raise pid=... wid=... private=true ax=0` line for each window confirmed. `private=false` means a private API is missing: the window still comes forward, but with all of the app's windows, and `log show --last 1h --predicate 'subsystem == "local.downtab" AND category == "private-api"'` shows one `private symbol missing: <name>, its feature is off` line per missing symbol; the app keeps running.
 
 ## Switcher: Window shortcut
@@ -151,6 +164,20 @@ Before starting: `make run`, Accessibility granted to Downtab. Open TextEdit wit
 8. Click TextEdit's `one` window. Hold ⌥, press `` ` ``, then `→`: TextEdit's list closes and Safari (one window) is selected without a Window list. Press `←`: TextEdit's Window list reopens. Press `Esc`.
 9. Click the Safari window (one window) and press `` ⌥` ``: no Switcher appears and nothing changes. Same with `` ⌥⇧` ``, and in an app with no windows (close all TextEdit windows with ⌘W, then press `` ⌥` `` in TextEdit).
 10. `log show --last 1h --predicate 'subsystem == "local.downtab" AND category == "keyboard"'` shows `` shortcut ⌥` registered `` and `` shortcut ⌥⇧` registered `` at launch, next to the ⌥Tab ones.
+
+## Switcher: minimized, hidden and full-screen windows
+
+Before starting: `make run`, Accessibility granted to Downtab, two Spaces (Mission Control, `+`). In Space 1 open TextEdit with 3 windows titled apart (`one`, `two`, `three`), then Notes, clicking each to bring it to the front. In a second terminal run `log stream --level info --predicate 'subsystem == "local.downtab" AND (category == "scan" OR category == "focus")'` and keep it open. Wait one second after each change before pressing ⌥Tab. Press `Esc` after each check unless the step says to release ⌥.
+
+1. Full-screen detection first (open risk in #1): make TextEdit's `one` window full screen (green button), go back to Space 1 (⌃←), wait one second. Hold ⌥, select TextEdit, press `↓`: `one` is listed with a `Full screen` tag after its title. If it has no tag, the detection failed: stop here and note it in the issue.
+2. Release ⌥ on `one`: macOS moves to its full-screen Space and `one` is frontmost with the keyboard focus (type a few letters: they land in it). If it does not move Space, or another TextEdit window comes forward instead, note it in the issue.
+3. From the full-screen `one`, hold ⌥ and press Tab: every running app with a Dock icon is in the App row, none has a Window count badge, and `↓` opens no Window list on any app. Press `Esc`, leave full screen (green button) and go back to Space 1.
+4. Minimize `two` (⌘M). Hold ⌥, select TextEdit, `↓`: `two` is last, its title greyed, with a `Minimized` tag; the tag turns white on blue when `two` is selected.
+5. Select `two` and release ⌥: it comes back from the Dock and to the front with the keyboard focus, in one gesture. The log shows `unminimize pid=... wid=... ax=0` then `raise pid=... wid=...`.
+6. Minimize `two` again. Move to Space 2 (⌃→), open two TextEdit windows there (⌘N twice). Hold ⌥, select TextEdit, `↓`: only the two windows of Space 2 are listed, no `two`. Close them (⌘W) and go back to Space 1 (⌃←).
+7. In TextEdit press ⌘H, then click Notes. Hold ⌥, select TextEdit, `↓`: every window has a `Hidden` tag; the minimized `two` has both `Minimized` and `Hidden`.
+8. Select `three` and release ⌥: TextEdit is no longer hidden, `three` comes to the front with the keyboard focus, and TextEdit's other windows reappear behind it, ideally behind Notes too (note in the issue if they come in front of Notes). The log shows `unhide pid=... ok=true` then `raise pid=... wid=...`.
+9. With Accessibility Inspector, point at a labelled entry of the Window list: its label is the title followed by the tags, e.g. `two, Minimized`.
 
 ## Switcher: cross-app navigation
 

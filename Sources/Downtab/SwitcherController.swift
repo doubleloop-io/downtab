@@ -10,6 +10,7 @@ final class SwitcherController {
     private let focuser = WindowFocuser()
     private let logger = Logger(subsystem: "local.downtab", category: "keyboard")
     private var missedReleaseCheck: Task<Void, Never>?
+    private var showDelay: Task<Void, Never>?
     private(set) lazy var keyboard = KeyboardInput { [weak self] event in self?.handle(event) }
 
     func start(shortcuts: Shortcuts) {
@@ -24,6 +25,7 @@ final class SwitcherController {
         if switcher.state != previous {
             render()
             updateMissedReleaseCheck()
+            updateShowDelay()
         }
         if let effect {
             Task { [focuser] in await focuser.perform(effect) }
@@ -36,6 +38,22 @@ final class SwitcherController {
             panel.hide()
         case .open(let displayed):
             panel.show(displayed, icon: tracker.icon(for:))
+        }
+    }
+
+    private func updateShowDelay() {
+        switch switcher.state {
+        case .closed:
+            showDelay?.cancel()
+            showDelay = nil
+        case .open:
+            guard showDelay == nil else { return }
+            showDelay = Task { [weak self] in
+                guard (try? await Task.sleep(for: Switcher.showDelay)) != nil else { return }
+                // Closing may have cancelled this delay while it was resuming.
+                guard !Task.isCancelled, let self else { return }
+                handle(.showDelayElapsed)
+            }
         }
     }
 
