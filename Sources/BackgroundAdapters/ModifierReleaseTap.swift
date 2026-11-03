@@ -2,20 +2,21 @@
 @preconcurrency import CoreFoundation
 import CoreGraphics
 import Foundation
+public import SwitcherCore
 import Synchronization
 import os
 
-/// Detects the Modifier (⌥) going up anywhere in the session.
+/// Reports the modifiers held whenever they change anywhere in the session, so a Modifier release is never missed.
 /// Listen-only and on its own thread, so a busy main thread can neither delay events nor get the tap disabled.
 public final class ModifierReleaseTap {
     /// Shared with the tap thread through the callback's context pointer.
     fileprivate final class Relay: Sendable {
-        let onRelease: @MainActor @Sendable () -> Void
+        let onChange: @MainActor @Sendable (Set<ShortcutModifier>) -> Void
         let port = Mutex<CFMachPort?>(nil)
         let logger = Logger(subsystem: "local.downtab", category: "keyboard")
 
-        init(onRelease: @escaping @MainActor @Sendable () -> Void) {
-            self.onRelease = onRelease
+        init(onChange: @escaping @MainActor @Sendable (Set<ShortcutModifier>) -> Void) {
+            self.onChange = onChange
         }
 
         /// The system disables a tap it deems slow; re-enabling from the tap thread needs no main-actor hop.
@@ -39,11 +40,21 @@ public final class ModifierReleaseTap {
         }
     }
 
-    /// ⌥, the only Modifier until shortcuts are configurable.
-    fileprivate static let modifier = CGEventFlags.maskAlternate
+    public static var heldModifiers: Set<ShortcutModifier> {
+        held(in: CGEventSource.flagsState(.combinedSessionState))
+    }
 
-    public static var isModifierDown: Bool {
-        CGEventSource.flagsState(.combinedSessionState).contains(modifier)
+    fileprivate static func held(in flags: CGEventFlags) -> Set<ShortcutModifier> {
+        Set(ShortcutModifier.allCases.filter { flags.contains(flag(of: $0)) })
+    }
+
+    private static func flag(of modifier: ShortcutModifier) -> CGEventFlags {
+        switch modifier {
+        case .control: .maskControl
+        case .option: .maskAlternate
+        case .shift: .maskShift
+        case .command: .maskCommand
+        }
     }
 
     private var relay: Relay?
@@ -51,8 +62,8 @@ public final class ModifierReleaseTap {
 
     public init() {}
 
-    public func start(onRelease: @escaping @MainActor @Sendable () -> Void) {
-        let relay = Relay(onRelease: onRelease)
+    public func start(onChange: @escaping @MainActor @Sendable (Set<ShortcutModifier>) -> Void) {
+        let relay = Relay(onChange: onChange)
         let mask = CGEventMask(1 << CGEventType.flagsChanged.rawValue)
         guard
             let port = CGEvent.tapCreate(
@@ -107,8 +118,9 @@ private func handleTapEvent(
         relay.reenable(disabledBy: "timeout")
     case .tapDisabledByUserInput:
         relay.reenable(disabledBy: "user input")
-    case .flagsChanged where !event.flags.contains(ModifierReleaseTap.modifier):
-        Task { @MainActor in relay.onRelease() }
+    case .flagsChanged:
+        let held = ModifierReleaseTap.held(in: event.flags)
+        Task { @MainActor in relay.onChange(held) }
     default:
         break
     }

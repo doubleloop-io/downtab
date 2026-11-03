@@ -87,7 +87,7 @@ final class ShortcutRecorderField: NSView {
             }
             return
         }
-        let modifiers = Self.modifiers(of: event.modifierFlags)
+        let modifiers = ShortcutModifier.held(in: event.modifierFlags)
         if keyCode == kVK_Escape && modifiers.isEmpty {
             cancelRecording()
             return
@@ -106,7 +106,7 @@ final class ShortcutRecorderField: NSView {
 
     override func flagsChanged(with event: NSEvent) {
         guard isRecording else { return super.flagsChanged(with: event) }
-        state = .recording(held: Self.modifiers(of: event.modifierFlags))
+        state = .recording(held: ShortcutModifier.held(in: event.modifierFlags))
     }
 
     // MARK: Drawing
@@ -164,9 +164,5 @@ final class ShortcutRecorderField: NSView {
         setAccessibilityValue(text.stringValue)
         needsDisplay = true
         noteFocusRingMaskChanged()
-    }
-
-    private static func modifiers(of flags: NSEvent.ModifierFlags) -> Set<ShortcutModifier> {
-        Set(ShortcutModifier.allCases.filter { flags.contains($0.eventFlag) })
     }
 }
