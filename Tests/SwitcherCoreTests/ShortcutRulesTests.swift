@@ -131,3 +131,14 @@ func everyRejectionHasAnEnglishMessage(rejection: ShortcutRejection, message: St
 
     #expect(outcome == .valid)
 }
+
+@Test func registrationFailuresNameOnlyTheSlotsMacOSRefused() {
+    let shortcuts = Shortcuts(
+        app: Shortcut(keyCode: KeyCode.tab, modifiers: [.option]),
+        window: Shortcut(keyCode: KeyCode.space, modifiers: [.option])
+    )
+
+    let failures = shortcuts.registrationFailures(refused: [shortcuts.window.withShift])
+
+    #expect(failures == [.window: .shiftVariantUsedBySystem])
+}

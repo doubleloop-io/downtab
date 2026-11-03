@@ -47,3 +47,16 @@ public enum ShortcutRules {
         return .valid
     }
 }
+
+extension Shortcuts {
+    /// The slots whose shortcut does not open the Switcher, given the combinations macOS refused to register.
+    public func registrationFailures(refused: Set<Shortcut>) -> [ShortcutSlot: ShortcutRejection] {
+        var failures: [ShortcutSlot: ShortcutRejection] = [:]
+        for slot in ShortcutSlot.allCases {
+            if case .rejected(let rejection) = ShortcutRules.checkRegistration(of: self[slot], refused: refused) {
+                failures[slot] = rejection
+            }
+        }
+        return failures
+    }
+}

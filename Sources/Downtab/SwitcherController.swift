@@ -13,9 +13,9 @@ final class SwitcherController {
     private var showDelay: Task<Void, Never>?
     private(set) lazy var keyboard = KeyboardInput { [weak self] event in self?.handle(event) }
 
-    func start(shortcuts: Shortcuts) {
+    func start() {
         tracker.start()
-        keyboard.start(shortcuts: shortcuts)
+        keyboard.start()
     }
 
     private func handle(_ event: SwitcherEvent) {

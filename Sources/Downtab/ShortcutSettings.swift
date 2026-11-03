@@ -23,10 +23,17 @@ final class ShortcutSettings {
     private let store = SettingsStore()
     private let keyboard: KeyboardInput
     private(set) var current: Shortcuts
+    /// Current shortcuts macOS refused to register, with or without ⇧: they do not open the Switcher.
+    private(set) var failures: [ShortcutSlot: ShortcutRejection] = [:]
 
     init(keyboard: KeyboardInput) {
         self.keyboard = keyboard
         current = store.shortcuts()
+    }
+
+    /// A stored shortcut that fails to register stays stored: the Preferences show the failure.
+    func registerStored() {
+        registerCurrent()
     }
 
     func suspendWhileRecording() {
@@ -34,7 +41,7 @@ final class ShortcutSettings {
     }
 
     func resumeAfterRecording() {
-        keyboard.register(current)
+        registerCurrent()
     }
 
     func record(_ recorded: Shortcut, for slot: ShortcutSlot) -> ShortcutOutcome {
@@ -43,24 +50,32 @@ final class ShortcutSettings {
         guard outcome == .valid else { return outcome }
         var proposed = current
         proposed[slot] = recorded
-        let registration = ShortcutRules.checkRegistration(of: recorded, refused: keyboard.register(proposed))
+        let refused = keyboard.register(proposed)
+        let registration = ShortcutRules.checkRegistration(of: recorded, refused: refused)
         guard registration == .valid else {
-            keyboard.register(current)
+            registerCurrent()
             return registration
         }
         current = proposed
+        failures = current.registrationFailures(refused: refused)
         store.save(current)
         return .valid
     }
 
-    /// Returns the slots whose default macOS refused to register.
-    func restoreDefaults() -> Set<ShortcutSlot> {
+    /// Keeps the previous shortcuts when a default fails to register; returns the defaults' failures.
+    func restoreDefaults() -> [ShortcutSlot: ShortcutRejection] {
+        let defaultFailures = Shortcuts.defaults.registrationFailures(refused: keyboard.register(.defaults))
+        guard defaultFailures.isEmpty else {
+            registerCurrent()
+            return defaultFailures
+        }
         current = .defaults
+        failures = [:]
         store.save(current)
-        let refused = keyboard.register(current)
-        return Set(
-            ShortcutSlot.allCases.filter {
-                ShortcutRules.checkRegistration(of: current[$0], refused: refused) != .valid
-            })
+        return [:]
+    }
+
+    private func registerCurrent() {
+        failures = current.registrationFailures(refused: keyboard.register(current))
     }
 }

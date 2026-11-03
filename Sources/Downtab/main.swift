@@ -15,7 +15,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         menu.addItem(withTitle: "Quit Downtab", action: #selector(NSApplication.terminate(_:)), keyEquivalent: "q")
         item.menu = menu
         statusItem = item
-        switcher.start(shortcuts: shortcuts.current)
+        switcher.start()
+        shortcuts.registerStored()
     }
 
     @objc private func openPreferences() {

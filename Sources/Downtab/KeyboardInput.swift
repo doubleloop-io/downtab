@@ -26,9 +26,9 @@ final class KeyboardInput {
         self.onEvent = onEvent
     }
 
-    func start(shortcuts: Shortcuts) {
+    /// Shortcuts open the Switcher once registered with `register(_:)`.
+    func start() {
         hotKeyPresses.install { [weak self] id in self?.shortcutPressed(id: id) }
-        register(shortcuts)
         modifierRelease.start { [weak self] in self?.onEvent(.modifierReleased) }
         // A local monitor sees keys sent to any of Downtab's windows: the Preferences need theirs.
         keyMonitor = NSEvent.addLocalMonitorForEvents(matching: .keyDown) { [weak self] event in
