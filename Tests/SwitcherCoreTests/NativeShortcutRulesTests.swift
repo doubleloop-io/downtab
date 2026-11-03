@@ -1,27 +1,24 @@
 import SwitcherCore
 import Testing
 
-private let commandTab = Shortcut(keyCode: KeyCode.tab, modifiers: [.command])
-private let commandGrave = Shortcut(keyCode: KeyCode.grave, modifiers: [.command])
-
 @Test func theDefaultShortcutsTurnNoNativeShortcutOff() {
     #expect(ShortcutRules.nativeShortcutsToTurnOff(for: .defaults).isEmpty)
 }
 
 @Test func commandTabAsAppShortcutTurnsNativeCommandTabOff() {
-    let shortcuts = Shortcuts(app: commandTab, window: .defaultWindow)
+    let shortcuts = Shortcuts(app: NativeShortcut.commandTab.shortcut, window: .defaultWindow)
 
     #expect(ShortcutRules.nativeShortcutsToTurnOff(for: shortcuts) == [.commandTab])
 }
 
 @Test func commandGraveAsWindowShortcutTurnsNativeCommandGraveOff() {
-    let shortcuts = Shortcuts(app: .defaultApp, window: commandGrave)
+    let shortcuts = Shortcuts(app: .defaultApp, window: NativeShortcut.commandGrave.shortcut)
 
     #expect(ShortcutRules.nativeShortcutsToTurnOff(for: shortcuts) == [.commandGrave])
 }
 
 @Test func aNativeShortcutIsTurnedOffWhicheverSlotHoldsIt() {
-    let shortcuts = Shortcuts(app: commandGrave, window: commandTab)
+    let shortcuts = Shortcuts(app: NativeShortcut.commandGrave.shortcut, window: NativeShortcut.commandTab.shortcut)
 
     #expect(ShortcutRules.nativeShortcutsToTurnOff(for: shortcuts) == [.commandTab, .commandGrave])
 }
@@ -39,7 +36,7 @@ func onlyExactlyCommandTabOrCommandGraveTurnsANativeShortcutOff(shortcut: Shortc
 }
 
 @Test func aShortcutMacOSRefusedToRegisterTurnsNoNativeShortcutOff() {
-    let shortcuts = Shortcuts(app: commandTab, window: commandGrave)
+    let shortcuts = Shortcuts(app: NativeShortcut.commandTab.shortcut, window: NativeShortcut.commandGrave.shortcut)
 
     let toTurnOff = ShortcutRules.nativeShortcutsToTurnOff(for: shortcuts, failures: [.app: .usedBySystem])
 
