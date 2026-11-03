@@ -1,12 +1,6 @@
 import SwitcherCore
 import Testing
 
-/// Another app is the Frontmost app, so the Switcher opens with the app under test selected.
-private func openedOn(_ app: DesktopApp) -> (Switcher, DesktopSnapshot) {
-    let desktop = DesktopSnapshot.with(apps: [.regular("Frontmost"), app])
-    return (opened(on: desktop), desktop)
-}
-
 @Test func downOnAnAppWithTwoWindowsOpensItsWindowListOnTheFirstWindow() {
     var (switcher, desktop) = openedOn(.regular("Safari", windows: [.window("A"), .window("B")]))
 
