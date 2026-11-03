@@ -94,7 +94,7 @@ Before starting: `make run`, then open TextEdit, Safari and Notes in this order.
 
 ## Switcher: which apps appear
 
-Before starting: `make run`, Accessibility granted to Downtab, two Spaces (Mission Control, `+`), TextEdit, Safari and Notes open with one window each in Space 1. Wait one second after each change before pressing ⌥Tab: the window list is refreshed every second. Press `Esc` after each check.
+Before starting: `make run`, Accessibility granted to Downtab, two Spaces (Mission Control, `+`), TextEdit, Safari and Notes open with one window each in Space 1. Wait one second after each change before pressing ⌥Tab: a change no window event reports (a window moved to another Space) is picked up by the scan that runs every second. Press `Esc` after each check.
 
 1. From Space 1, ⌥Tab shows TextEdit, Safari and Notes.
 2. Move the Notes window to Space 2 (drag it to Space 2 in Mission Control). From Space 1, ⌥Tab: Notes is not in the App row. From Space 2, ⌥Tab: Notes is there, TextEdit and Safari are not.
@@ -107,6 +107,19 @@ Before starting: `make run`, Accessibility granted to Downtab, two Spaces (Missi
 9. Two instances of the same app (e.g. `open -n -a TextEdit`): two TextEdit entries, each admitted on its own windows.
 10. With two displays, each showing a different Space: apps with windows on either display appear; an app whose only window is in a Space shown on neither display does not. A window on each display counts twice towards the badge.
 11. `log show --last 1h --predicate 'subsystem == "local.downtab" AND category == "private-api"'` prints nothing on a supported macOS. A line `private symbol missing: <name>, its feature is off` means macOS removed a private API: the app keeps running, and apps living in other Spaces are no longer hidden.
+
+## Switcher: fresh window list and frozen apps
+
+Before starting: `make run`, Accessibility granted to Downtab, TextEdit and Safari open with one window each in Space 1, a second Space. In a second terminal run `log stream --level info --predicate 'subsystem == "local.downtab" AND (category == "observer" OR category == "scan")'` and keep it open. Press `Esc` after each ⌥Tab.
+
+1. Right after `make run` the log shows `watching window events pid=...` once per app with a Dock icon.
+2. In TextEdit press ⌘N, then at once ⌥Tab: TextEdit has the `2` badge. The log shows `window event AXWindowCreated pid=...` followed by `scan changed pid=...` with TextEdit's pid (`pgrep -x TextEdit`).
+3. Close that window (⌘W), then at once ⌥Tab: the badge is gone. The log shows `window event AXUIElementDestroyed`.
+4. Save the TextEdit document under a new name: the log shows `window event AXTitleChanged`.
+5. Minimize the TextEdit window (⌘M): the log shows `window event AXWindowMiniaturized`. Restore it from the Dock: `window event AXWindowDeminiaturized`.
+6. Fallback scan: move the TextEdit window to Space 2 in Mission Control (no window event is raised for it). Within one second the log shows `scan changed pid=...` with TextEdit's pid and no `window event` line before it; from Space 1, ⌥Tab no longer shows TextEdit.
+7. Frozen app: move the TextEdit window back, then run `kill -STOP $(pgrep -x TextEdit)`. Press ⌥Tab several times: the Switcher opens at once every time, TextEdit still in the App row. Within a few seconds the log shows `scan no answer pid=...` with TextEdit's pid, once per second. Open and close a Safari window: Safari's badge still updates.
+8. Run `kill -CONT $(pgrep -x TextEdit)`: the `scan no answer` lines stop.
 
 ## Switcher: accessibility
 

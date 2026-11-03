@@ -3,7 +3,8 @@ import BackgroundAdapters
 import SwitcherCore
 
 /// Keeps an in-memory copy of the running apps, their MRU order and their windows, updated from NSWorkspace
-/// notifications and background scans, so taking a snapshot when the Switcher opens never queries other processes.
+/// notifications, Accessibility window events and background scans, so taking a snapshot when the Switcher opens
+/// never queries other processes.
 /// Translation only: which apps appear is decided by the core.
 final class DesktopTracker {
     private struct TrackedApp {
@@ -20,8 +21,13 @@ final class DesktopTracker {
     private var isScanning = false
     private var needsAnotherScan = false
     private var periodicScan: Task<Void, Never>?
+    private var windowEvents: WindowEventObserver?
+    private var watchedApps: Set<AppID> = []
 
     func start() {
+        let windowEvents = WindowEventObserver { [weak self] in self?.requestScan() }
+        windowEvents.start()
+        self.windowEvents = windowEvents
         let workspace = NSWorkspace.shared
         for app in workspace.runningApplications {
             track(app)
@@ -45,7 +51,7 @@ final class DesktopTracker {
                 MainActor.assumeIsolated { self?.requestScan() }
             },
         ]
-        // Windows opened, closed or moved by hand raise no NSWorkspace notification.
+        // Fallback: Accessibility misses some events, and a window moved to another Space raises none.
         periodicScan = Task { [weak self] in
             while !Task.isCancelled {
                 self?.requestScan()
@@ -98,6 +104,10 @@ final class DesktopTracker {
         isScanning = true
         // Agents never reach the App row: querying them would only slow the scan.
         let regularApps = mruOrder.apps.filter { apps[$0]?.process.activationPolicy == .regular }
+        // Here rather than at launch: an app can become regular after launching.
+        for app in regularApps where watchedApps.insert(app).inserted {
+            windowEvents?.watch(app)
+        }
         Task { [weak self, scanner] in
             let result = await scanner.scan(regularApps)
             guard let self else { return }
@@ -129,6 +139,7 @@ final class DesktopTracker {
         let id = AppID(app)
         apps[id] = nil
         mruOrder.recordQuit(of: id)
+        if watchedApps.remove(id) != nil { windowEvents?.unwatch(id) }
     }
 }
 
