@@ -1,6 +1,6 @@
 # Developer commands. CI only runs `build` and `test`: signing material never leaves this Mac.
 .DEFAULT_GOAL := help
-.PHONY: help setup-signing build test check-core lint format bundle run stop smoke restore restore-status
+.PHONY: help setup-signing build test check-core lint format icon bundle run stop smoke restore restore-status
 
 EXE := Downtab
 APP := build/$(EXE).app
@@ -25,12 +25,16 @@ help:
 	@echo "make check-core      fail if the Switcher core imports anything but Foundation or loads private APIs"
 	@echo "make lint            swift-format check (.swift-format) and SwiftLint (.swiftlint.yml); any violation fails"
 	@echo "make format          rewrite sources with swift-format"
+	@echo "make icon            render App/Icon/*.svg into App/AppIcon.icns (needs rsvg-convert)"
 	@echo "make bundle          release build, assemble and sign $(APP), copy Emergency restore to $(RESTORE)"
 	@echo "make run             bundle, then launch the app (quitting a running instance first)"
 	@echo "make stop            quit the running app"
 	@echo "make restore         Emergency restore: turn native ⌘Tab and ⌘\` back on, after a forced kill or a crash"
 	@echo "make restore-status  show whether native ⌘Tab and ⌘\` are on, changing nothing"
 	@echo "make smoke         bundle, launch, post ⌥/⌥Tab/⌥⇧Tab/⌥`/⌥⇧`/Esc, fail on a crash; must pass before closing an issue that touches the app"
+
+icon:
+	@scripts/make-icon.sh
 
 setup-signing:
 	@scripts/setup-signing.sh $(SIGNING_DIR) $(KEYCHAIN_PASSWORD)
@@ -61,9 +65,10 @@ bundle:
 	mkdir -p build
 	cp "$$(swift build -c release --show-bin-path)/EmergencyRestore" "$(RESTORE)"
 	rm -rf "$(APP)"
-	mkdir -p "$(APP)/Contents/MacOS"
+	mkdir -p "$(APP)/Contents/MacOS" "$(APP)/Contents/Resources"
 	cp "$$(swift build -c release --show-bin-path)/$(EXE)" "$(APP)/Contents/MacOS/$(EXE)"
 	cp App/Info.plist "$(APP)/Contents/Info.plist"
+	cp App/AppIcon.icns "$(APP)/Contents/Resources/AppIcon.icns"
 	@security unlock-keychain -p $(KEYCHAIN_PASSWORD) "$(KEYCHAIN)"
 	codesign --force --keychain "$(KEYCHAIN)" -s "$$(openssl x509 -in $(SIGNING_DIR)/cert.crt -noout -fingerprint -sha1 | cut -d= -f2 | tr -d :)" "$(APP)"
 	@codesign --verify "$(APP)" && codesign -d -r- "$(APP)" 2>&1 | grep designated

@@ -18,6 +18,7 @@ All commands go through `make` (run it with no target for the list). Prefer it o
 | `make check-core` | Fails if the Switcher core imports anything but Foundation, or loads private APIs. |
 | `make lint` | Format check with swift-format (`.swift-format`), then SwiftLint (pinned in `Package.swift`, rules in `.swiftlint.yml`). Any violation fails. |
 | `make format` | Rewrites sources with swift-format. |
+| `make icon` | Renders `App/Icon/*.svg` into `App/AppIcon.icns` (needs `rsvg-convert`). The `.icns` is committed; rerun only after editing an SVG. |
 | `make bundle` | Release build, assembles `build/Downtab.app` and signs it with the local certificate. |
 | `make run` | Quits a running instance, bundles, then launches the app. |
 | `make stop` | Quits the running app. |
