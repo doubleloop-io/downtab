@@ -1,22 +1,48 @@
 import AppKit
+import SwitcherCore
 
 final class AppDelegate: NSObject, NSApplicationDelegate {
     private var statusItem: NSStatusItem?
     private let switcher = SwitcherController()
+    private let permission = PermissionMonitor()
     private lazy var shortcuts = ShortcutSettings(keyboard: switcher.keyboard)
     private lazy var preferences = PreferencesWindow(settings: shortcuts)
+    private let permissionMissingItem = NSMenuItem(
+        title: "Accessibility Permission Missing…", action: #selector(openPreferences), keyEquivalent: "")
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         let item = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
-        item.button?.image = NSImage(systemSymbolName: "rectangle.stack", accessibilityDescription: "Downtab")
         let menu = NSMenu()
+        permissionMissingItem.target = self
+        menu.addItem(permissionMissingItem)
         menu.addItem(withTitle: "Preferences…", action: #selector(openPreferences), keyEquivalent: ",").target = self
         menu.addItem(.separator())
         menu.addItem(withTitle: "Quit Downtab", action: #selector(NSApplication.terminate(_:)), keyEquivalent: "q")
         item.menu = menu
         statusItem = item
         switcher.start()
-        shortcuts.registerStored()
+        LaunchAtLogin().applyStored()
+        permission.start { [weak self] change in self?.apply(change) }
+        // Guided setup: the Preferences show the missing permission highlighted.
+        if !permission.isGranted {
+            preferences.open()
+        }
+    }
+
+    private func apply(_ change: PermissionWatch.Change) {
+        let isGranted = change == .granted
+        if isGranted {
+            switcher.keyboard.startModifierRelease()
+            shortcuts.enable()
+        } else {
+            shortcuts.disable()
+        }
+        statusItem?.button?.image = NSImage(
+            systemSymbolName: isGranted ? "rectangle.stack" : "exclamationmark.triangle",
+            accessibilityDescription: isGranted ? "Downtab" : "Downtab: Accessibility permission missing"
+        )
+        permissionMissingItem.isHidden = isGranted
+        preferences.showPermission(isGranted: isGranted)
     }
 
     @objc private func openPreferences() {

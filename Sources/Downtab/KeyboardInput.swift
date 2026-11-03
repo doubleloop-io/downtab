@@ -25,13 +25,17 @@ final class KeyboardInput {
     /// Shortcuts open the Switcher once registered with `register(_:)`.
     func start() {
         hotKeyPresses.install { [weak self] id in self?.shortcutPressed(id: id) }
-        modifierRelease.start { [weak self] held in self?.onEvent(.modifiersChanged(held: held)) }
         // A local monitor sees keys sent to any of Downtab's windows: the Preferences need theirs.
         keyMonitor = NSEvent.addLocalMonitorForEvents(matching: .keyDown) { [weak self] event in
             guard let self, event.window is SwitcherPanel else { return event }
             onEvent(Self.panelEvent(for: event))
             return nil
         }
+    }
+
+    /// The Modifier release is detected only once the Accessibility permission is granted; calling again is harmless.
+    func startModifierRelease() {
+        modifierRelease.start { [weak self] held in self?.onEvent(.modifiersChanged(held: held)) }
     }
 
     /// A shortcut key the Carbon hot keys do not hold reaches the Switcher here, such as ⌥` opened with ⌥Tab

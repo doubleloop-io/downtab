@@ -62,7 +62,9 @@ public final class ModifierReleaseTap {
 
     public init() {}
 
+    /// Does nothing once the tap runs: the permission may be granted again after a revocation.
     public func start(onChange: @escaping @MainActor @Sendable (Set<ShortcutModifier>) -> Void) {
+        guard relay == nil else { return }
         let relay = Relay(onChange: onChange)
         let mask = CGEventMask(1 << CGEventType.flagsChanged.rawValue)
         guard
