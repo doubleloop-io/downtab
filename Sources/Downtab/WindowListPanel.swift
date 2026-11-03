@@ -163,7 +163,7 @@ private final class CaretBackground: FlippedView {
         path.appendArc(from: NSPoint(x: minX, y: bottom), to: NSPoint(x: minX, y: top), radius: radius)
         path.appendArc(from: NSPoint(x: minX, y: top), to: NSPoint(x: minX + radius, y: top), radius: radius)
         path.close()
-        Palette.fill.setFill()
+        Palette.windowListFill.setFill()
         path.fill()
         Palette.border.setStroke()
         path.lineWidth = 1
@@ -194,12 +194,4 @@ private enum Metrics {
     static let rowCornerRadius: CGFloat = 8
     static let rowFontSize: CGFloat = 13
     static let maxListHeight: CGFloat = 300
-}
-
-private enum Palette {
-    static let fill = NSColor(srgbRed: 36 / 255, green: 36 / 255, blue: 40 / 255, alpha: 0.96)
-    static let border = NSColor(white: 1, alpha: 0.12)
-    static let text = NSColor(srgbRed: 0xF5 / 255, green: 0xF5 / 255, blue: 0xF7 / 255, alpha: 1)
-    static let muted = NSColor(srgbRed: 0xA1 / 255, green: 0xA1 / 255, blue: 0xAA / 255, alpha: 1)
-    static let accent = NSColor(srgbRed: 0x0A / 255, green: 0x84 / 255, blue: 0xFF / 255, alpha: 1)
 }

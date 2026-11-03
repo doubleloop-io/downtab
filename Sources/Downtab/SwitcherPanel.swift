@@ -311,14 +311,3 @@ private enum Metrics {
         return floor(min(preferred, fitted))
     }
 }
-
-private enum Palette {
-    static let border = NSColor(white: 1, alpha: 0.12)
-    static let hudTint = NSColor(srgbRed: 30 / 255, green: 30 / 255, blue: 34 / 255, alpha: 0.8)
-    static let selectedTile = NSColor(white: 1, alpha: 0.2)
-    static let parentTile = NSColor(white: 1, alpha: 0.1)
-    static let text = NSColor(srgbRed: 0xF5 / 255, green: 0xF5 / 255, blue: 0xF7 / 255, alpha: 1)
-    static let accent = NSColor(srgbRed: 0x0A / 255, green: 0x84 / 255, blue: 0xFF / 255, alpha: 1)
-    static let badgeFill = text
-    static let badgeText = NSColor(srgbRed: 0x1C / 255, green: 0x1C / 255, blue: 0x1E / 255, alpha: 1)
-}
