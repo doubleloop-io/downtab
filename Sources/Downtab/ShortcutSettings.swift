@@ -46,7 +46,9 @@ final class ShortcutSettings {
         registerCurrent()
     }
 
-    /// Native ⌘Tab and ⌘` go off too: macOS would swallow them before the recorder sees them.
+    /// All native ⌘Tab and ⌘` go off, even those the current shortcuts do not take over: macOS would swallow them
+    /// before the recorder sees them. The recorder reports every end of recording, so `resumeAfterRecording` hands
+    /// them back at once.
     func suspendWhileRecording() {
         keyboard.suspendShortcuts()
         takeover.turnOff(exactly: Set(NativeShortcut.allCases))
