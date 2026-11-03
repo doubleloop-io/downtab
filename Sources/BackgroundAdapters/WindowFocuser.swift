@@ -17,8 +17,9 @@ public actor WindowFocuser {
         switch effect {
         case .noChange:
             break
-        case .activateApp(let id):
+        case .activateApp(let id, frontingWindow: let window):
             activate(id)
+            if let window { front(window, of: id) }
         case .bringWindowToFront(let window, of: let app, let restoration):
             await bringToFront(window, of: app, restoring: restoration, focusChange: latestFocusChange)
         }
@@ -37,6 +38,20 @@ public actor WindowFocuser {
             try? await Task.sleep(for: .milliseconds(300))
             logSpaces(afterActivating: app)
         }
+    }
+
+    /// After activation, so the whole app still comes forward: the fronted window makes the window server move to
+    /// its Space, which activation alone does not do from a full-screen Space for some apps (Miro).
+    private func front(_ windowID: WindowID, of app: AppID) {
+        let pid = app.processIdentifier
+        let wid = windowID.rawValue
+        let fronted = PrivateWindowFront.bringToFront(wid, of: pid)
+        // Accessibility does not list windows of other Spaces: often there is nothing to raise.
+        let raised = Self.element(of: windowID, in: app).map {
+            AXUIElementPerformAction($0, kAXRaiseAction as CFString).rawValue
+        }
+        logger.info(
+            "front after activate pid=\(pid) wid=\(wid) private=\(fronted) ax=\(raised.map(String.init) ?? "unlisted")")
     }
 
     /// Diagnosis aid: activation from a full-screen Space sometimes stays there (Miro), sometimes not (Slack).

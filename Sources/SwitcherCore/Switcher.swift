@@ -20,8 +20,9 @@ public enum SwitcherEvent: Equatable, Sendable {
 public enum FinalEffect: Equatable, Sendable {
     /// Cancel: focus stays where it was.
     case noChange
-    /// Confirm at App level: bring the app forward like the native switcher.
-    case activateApp(AppID)
+    /// Confirm at App level: bring the app forward like the native switcher. With a window, also bring that window
+    /// to the front: activation alone can leave macOS in the Current Space, the window moves it to the app's Space.
+    case activateApp(AppID, frontingWindow: WindowID? = nil)
     /// Confirm at Window level: only that window comes forward, the app's other windows stay where they are.
     case bringWindowToFront(WindowID, of: AppID, restoring: WindowRestoration = [])
 }
@@ -67,6 +68,8 @@ public struct AppRowEntry: Equatable, Sendable {
     public let name: String
     /// Front to back.
     public let windows: [WindowListEntry]
+    /// Nil unless the app has windows only in other Spaces.
+    let windowToFrontOnActivation: WindowID?
 
     /// Nil when the app has fewer than 2 windows: only an app with something to descend into gets a badge.
     public var windowCountBadge: Int? { windows.count >= 2 ? windows.count : nil }
@@ -102,7 +105,8 @@ public struct DisplayedState: Equatable, Sendable {
 
     var confirmation: FinalEffect {
         switch level {
-        case .app, .windowWithoutList: .activateApp(selectedEntry.id)
+        case .app, .windowWithoutList:
+            .activateApp(selectedEntry.id, frontingWindow: selectedEntry.windowToFrontOnActivation)
         case .window(let index):
             .bringWindowToFront(
                 selectedEntry.windows[index].id, of: selectedEntry.id,
