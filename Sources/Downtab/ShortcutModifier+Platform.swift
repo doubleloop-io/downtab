@@ -1,4 +1,5 @@
 import AppKit
+import BackgroundAdapters
 import Carbon
 import SwitcherCore
 
@@ -23,16 +24,8 @@ extension ShortcutModifier {
         }
     }
 
-    var eventFlag: NSEvent.ModifierFlags {
-        switch self {
-        case .control: .control
-        case .option: .option
-        case .shift: .shift
-        case .command: .command
-        }
-    }
-
+    // AppKit's modifier flags are the Quartz event flags under another type: both come from the same IOKit masks.
     static func held(in flags: NSEvent.ModifierFlags) -> Set<ShortcutModifier> {
-        Set(allCases.filter { flags.contains($0.eventFlag) })
+        held(in: CGEventFlags(rawValue: UInt64(flags.rawValue)))
     }
 }

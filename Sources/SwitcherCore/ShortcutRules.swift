@@ -66,7 +66,7 @@ extension ShortcutRules {
     /// registered, so a refused shortcut never leaves the native one off.
     public static func nativeShortcutsToTurnOff(
         for shortcuts: Shortcuts,
-        failures: [ShortcutSlot: ShortcutRejection] = [:]
+        failures: [ShortcutSlot: ShortcutRejection]
     ) -> Set<NativeShortcut> {
         let registered = ShortcutSlot.allCases.filter { failures[$0] == nil }.map { shortcuts[$0] }
         return Set(NativeShortcut.allCases.filter { registered.contains($0.shortcut) })

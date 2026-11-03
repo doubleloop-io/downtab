@@ -1,8 +1,6 @@
 import AppKit
 import SwitcherCore
 
-/// The Accessibility permission status, the App shortcut and Window shortcut recorders, with their rejection
-/// messages and Restore Defaults, then the launch at login toggle.
 final class PreferencesWindow: NSWindow, NSWindowDelegate {
     private static let accessibilitySettings = URL(
         string: "x-apple.systempreferences:com.apple.preference.security?Privacy_Accessibility")
@@ -82,10 +80,7 @@ final class PreferencesWindow: NSWindow, NSWindowDelegate {
         permissionStatus.preferredMaxLayoutWidth = Layout.fieldColumnWidth - 2 * Layout.permissionPadding
         openSystemSettings.target = self
         openSystemSettings.action = #selector(openAccessibilitySettings)
-        let stack = NSStackView(views: [permissionStatus, openSystemSettings])
-        stack.orientation = .vertical
-        stack.alignment = .leading
-        stack.spacing = 6
+        let stack = Self.leadingColumn([permissionStatus, openSystemSettings], spacing: 6)
         permissionBox.boxType = .custom
         permissionBox.cornerRadius = 6
         permissionBox.borderWidth = 1
@@ -95,55 +90,9 @@ final class PreferencesWindow: NSWindow, NSWindowDelegate {
         return permissionBox
     }
 
-    /// Two columns: trailing-aligned labels, then fields with their messages, the hint and Restore Defaults.
     private func makeContent() -> NSView {
-        let hint = NSTextField(
-            wrappingLabelWithString: "Click a field, then type the new shortcut. Esc cancels. "
-                + "The same shortcut with ⇧ goes back."
-        )
-        hint.font = .systemFont(ofSize: NSFont.smallSystemFontSize)
-        hint.textColor = .secondaryLabelColor
-        hint.preferredMaxLayoutWidth = Layout.fieldColumnWidth
-        let restore = NSButton(title: "Restore Defaults", target: self, action: #selector(restoreDefaults))
-        launchAtLoginToggle.target = self
-        launchAtLoginToggle.action = #selector(toggleLaunchAtLogin)
-
-        let grid = NSGridView(
-            views: [[NSTextField(labelWithString: "Accessibility:"), makePermissionBox()]]
-                + ShortcutSlot.allCases.flatMap(rows(for:)) + [
-                    [NSGridCell.emptyContentView, hint],
-                    [NSGridCell.emptyContentView, restore],
-                    [NSGridCell.emptyContentView, launchAtLoginToggle],
-                    [NSGridCell.emptyContentView, makeApprovalNote()],
-                ]
-        )
+        let grid = makeGrid()
         grid.translatesAutoresizingMaskIntoConstraints = false
-        grid.rowSpacing = 0
-        grid.columnSpacing = 8
-        grid.yPlacement = .center
-        grid.column(at: 0).xPlacement = .trailing
-        grid.column(at: 1).xPlacement = .leading
-        grid.column(at: 1).width = Layout.fieldColumnWidth
-        grid.row(at: 0).yPlacement = .top
-        grid.cell(atColumnIndex: 1, rowIndex: 0).xPlacement = .fill
-        let firstShortcutRow = 1
-        for (index, slot) in ShortcutSlot.allCases.enumerated() {
-            let shortcutRow = firstShortcutRow + 2 * index
-            grid.row(at: shortcutRow).topPadding = index == 0 ? Layout.permissionGap : Layout.rowGap
-            let messageRow = grid.row(at: shortcutRow + 1)
-            messageRow.topPadding = Layout.messageGap
-            messageRow.isHidden = true
-            messageRows[slot] = messageRow
-        }
-        let hintIndex = firstShortcutRow + 2 * ShortcutSlot.allCases.count
-        grid.row(at: hintIndex).topPadding = Layout.hintGap
-        grid.row(at: hintIndex + 1).topPadding = Layout.buttonGap
-        grid.row(at: hintIndex + 2).topPadding = Layout.sectionGap
-        let approvalRow = grid.row(at: hintIndex + 3)
-        approvalRow.topPadding = Layout.messageGap
-        approvalRow.isHidden = true
-        launchAtLoginApprovalRow = approvalRow
-
         let content = NSView()
         content.addSubview(grid)
         NSLayoutConstraint.activate([
@@ -153,6 +102,64 @@ final class PreferencesWindow: NSWindow, NSWindowDelegate {
             grid.bottomAnchor.constraint(equalTo: content.bottomAnchor, constant: -Layout.margin),
         ])
         return content
+    }
+
+    private func makeGrid() -> NSGridView {
+        let grid = NSGridView()
+        @discardableResult func addRow(_ label: String?, _ field: NSView, topPadding: CGFloat) -> NSGridRow {
+            let labelView = label.map { NSTextField(labelWithString: $0) } ?? NSGridCell.emptyContentView
+            let row = grid.addRow(with: [labelView, field])
+            row.topPadding = topPadding
+            return row
+        }
+
+        let permissionRow = addRow("Accessibility:", makePermissionBox(), topPadding: 0)
+        permissionRow.yPlacement = .top
+        permissionRow.cell(at: 1).xPlacement = .fill
+        for slot in ShortcutSlot.allCases {
+            let (recorder, message) = makeRecorder(for: slot)
+            let isFirst = slot == ShortcutSlot.allCases.first
+            addRow("\(slot.name):", recorder, topPadding: isFirst ? Layout.permissionGap : Layout.rowGap)
+            let messageRow = addRow(nil, message, topPadding: Layout.messageGap)
+            messageRow.isHidden = true
+            messageRows[slot] = messageRow
+        }
+        let hint = Self.note(
+            "Click a field, then type the new shortcut. Esc cancels. The same shortcut with ⇧ goes back.",
+            color: .secondaryLabelColor)
+        addRow(nil, hint, topPadding: Layout.hintGap)
+        let restore = NSButton(title: "Restore Defaults", target: self, action: #selector(restoreDefaults))
+        addRow(nil, restore, topPadding: Layout.buttonGap)
+        launchAtLoginToggle.target = self
+        launchAtLoginToggle.action = #selector(toggleLaunchAtLogin)
+        addRow(nil, launchAtLoginToggle, topPadding: Layout.sectionGap)
+        let approvalRow = addRow(nil, makeApprovalNote(), topPadding: Layout.messageGap)
+        approvalRow.isHidden = true
+        launchAtLoginApprovalRow = approvalRow
+
+        grid.rowSpacing = 0
+        grid.columnSpacing = 8
+        grid.yPlacement = .center
+        grid.column(at: 0).xPlacement = .trailing
+        grid.column(at: 1).xPlacement = .leading
+        grid.column(at: 1).width = Layout.fieldColumnWidth
+        return grid
+    }
+
+    private static func note(_ text: String, color: NSColor) -> NSTextField {
+        let note = NSTextField(wrappingLabelWithString: text)
+        note.font = .systemFont(ofSize: NSFont.smallSystemFontSize)
+        note.textColor = color
+        note.preferredMaxLayoutWidth = Layout.fieldColumnWidth
+        return note
+    }
+
+    private static func leadingColumn(_ views: [NSView], spacing: CGFloat) -> NSStackView {
+        let stack = NSStackView(views: views)
+        stack.orientation = .vertical
+        stack.alignment = .leading
+        stack.spacing = spacing
+        return stack
     }
 
     /// Sizes the window to its content, keeping its top edge where it is.
@@ -167,7 +174,7 @@ final class PreferencesWindow: NSWindow, NSWindowDelegate {
         )
     }
 
-    private func rows(for slot: ShortcutSlot) -> [[NSView]] {
+    private func makeRecorder(for slot: ShortcutSlot) -> (ShortcutRecorderField, NSTextField) {
         let recorder = ShortcutRecorderField(shortcut: settings.current[slot], accessibilityName: slot.name)
         recorder.onRecordingChanged = { [weak self] recording in
             guard let self else { return }
@@ -180,16 +187,10 @@ final class PreferencesWindow: NSWindow, NSWindowDelegate {
             }
         }
         recorder.onRecord = { [weak self] shortcut in self?.record(shortcut, for: slot) }
-        let message = NSTextField(wrappingLabelWithString: "")
-        message.font = .systemFont(ofSize: NSFont.smallSystemFontSize)
-        message.textColor = .systemRed
-        message.preferredMaxLayoutWidth = Layout.fieldColumnWidth
+        let message = Self.note("", color: .systemRed)
         recorders[slot] = recorder
         messages[slot] = message
-        return [
-            [NSTextField(labelWithString: "\(slot.name):"), recorder],
-            [NSGridCell.emptyContentView, message],
-        ]
+        return (recorder, message)
     }
 
     private func record(_ shortcut: Shortcut, for slot: ShortcutSlot) {
@@ -202,19 +203,11 @@ final class PreferencesWindow: NSWindow, NSWindowDelegate {
     }
 
     private func makeApprovalNote() -> NSView {
-        let note = NSTextField(
-            wrappingLabelWithString: "Turned off in System Settings. "
-                + "Turn Downtab on in Login Items to launch it at login."
-        )
-        note.font = .systemFont(ofSize: NSFont.smallSystemFontSize)
-        note.textColor = .secondaryLabelColor
-        note.preferredMaxLayoutWidth = Layout.fieldColumnWidth
+        let note = Self.note(
+            "Turned off in System Settings. Turn Downtab on in Login Items to launch it at login.",
+            color: .secondaryLabelColor)
         let open = NSButton(title: "Open Login Items…", target: self, action: #selector(openLoginItems))
-        let stack = NSStackView(views: [note, open])
-        stack.orientation = .vertical
-        stack.alignment = .leading
-        stack.spacing = Layout.messageGap
-        return stack
+        return Self.leadingColumn([note, open], spacing: Layout.messageGap)
     }
 
     @objc private func toggleLaunchAtLogin() {

@@ -40,7 +40,7 @@ custom_rules:
     severity: error
   no_dispatch:
     name: Grand Central Dispatch
-    regex: '\b(DispatchQueue|DispatchGroup|DispatchSemaphore)\b'
+    regex: '\b(DispatchQueue|DispatchGroup|DispatchSemaphore|DispatchSource)\b'
     message: "Use async/await, actors or @MainActor; justify a GCD-only adapter API with swiftlint:disable:next"
     severity: error
   no_print:

@@ -6,7 +6,9 @@ import SwitcherCore
 // `--status` only reads, changing nothing.
 
 private func say(_ line: String) {
-    FileHandle.standardOutput.write(Data((line + "\n").utf8))
+    // A terminal tool: its output is for the user reading the terminal, not for the unified log.
+    // swiftlint:disable:next no_print
+    print(line)
 }
 
 private func describe(_ enabled: Bool?) -> String {

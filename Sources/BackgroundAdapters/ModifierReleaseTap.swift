@@ -41,20 +41,7 @@ public final class ModifierReleaseTap {
     }
 
     public static var heldModifiers: Set<ShortcutModifier> {
-        held(in: CGEventSource.flagsState(.combinedSessionState))
-    }
-
-    fileprivate static func held(in flags: CGEventFlags) -> Set<ShortcutModifier> {
-        Set(ShortcutModifier.allCases.filter { flags.contains(flag(of: $0)) })
-    }
-
-    private static func flag(of modifier: ShortcutModifier) -> CGEventFlags {
-        switch modifier {
-        case .control: .maskControl
-        case .option: .maskAlternate
-        case .shift: .maskShift
-        case .command: .maskCommand
-        }
+        ShortcutModifier.held(in: CGEventSource.flagsState(.combinedSessionState))
     }
 
     private var relay: Relay?
@@ -98,6 +85,8 @@ public final class ModifierReleaseTap {
     /// `pkill -USR1 -x Downtab` disables the tap, since macOS disabling it cannot be provoked on demand.
     private func listenForSimulatedDisable(_ relay: Relay) {
         signal(SIGUSR1, SIG_IGN)
+        // Signal handlers may only call async-signal-safe functions; a dispatch source runs this one as normal code.
+        // swiftlint:disable:next no_dispatch
         let source = DispatchSource.makeSignalSource(signal: SIGUSR1, queue: .global())
         source.setEventHandler { relay.simulateDisable() }
         source.resume()
@@ -121,7 +110,7 @@ private func handleTapEvent(
     case .tapDisabledByUserInput:
         relay.reenable(disabledBy: "user input")
     case .flagsChanged:
-        let held = ModifierReleaseTap.held(in: event.flags)
+        let held = ShortcutModifier.held(in: event.flags)
         Task { @MainActor in relay.onChange(held) }
     default:
         break
