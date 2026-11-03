@@ -100,12 +100,10 @@ public final class WindowEventObserver: Sendable {
     }
 
     private func runObserverThread() {
-        let runLoop = CFRunLoopGetCurrent()
         // Without a source the run loop would return at once, before any app is watched.
-        let keepAlive = CFRunLoopTimerCreateWithHandler(nil, .greatestFiniteMagnitude, 0, 0, 0) { _ in }
-        CFRunLoopAddTimer(runLoop, keepAlive, .defaultMode)
+        RunLoop.current.add(NSMachPort(), forMode: .default)
         let pending = thread.withLock { state in
-            state.runLoop = runLoop
+            state.runLoop = CFRunLoopGetCurrent()
             defer { state.pending = [] }
             return state.pending
         }
