@@ -14,14 +14,15 @@ Checks run by hand on the real app. No Swift knowledge needed: every step is a t
 
 Before starting: grant Accessibility to the terminal (System Settings › Privacy & Security › Accessibility), so it can post keystrokes. Must pass before closing an issue that touches the app.
 
-1. `make smoke` ends with `smoke ok`. It launches the app, presses ⌥, ⌥Tab, ⌥⇧Tab, `` ⌥` ``, `` ⌥⇧` `` and `Esc` by itself (the front app may change), and quits the app at the end.
+1. The shortcuts are the defaults (Preferences › `Restore Defaults`): the smoke presses ⌥Tab and `` ⌥` `` only.
+2. `make smoke` ends with `smoke ok`. It launches the app, presses ⌥, ⌥Tab, ⌥⇧Tab, `` ⌥` ``, `` ⌥⇧` `` and `Esc` by itself (the front app may change), and quits the app at the end.
 
 ## App launch
 
 1. `make run` ends with a line `designated => identifier "local.downtab" and certificate leaf = H"..."` and `running: ...`.
 2. A Downtab icon (stacked rectangles) appears in the menu bar.
 3. No Downtab icon appears in the Dock, and Downtab is not listed in ⌘Tab.
-4. Click the menu bar icon: the menu shows `Quit Downtab`. Click it: the icon disappears.
+4. Click the menu bar icon: the menu shows `Preferences…` and `Quit Downtab`. Click `Quit Downtab`: the icon disappears.
 5. Run `make run` again, then `make stop`: it prints `stopped` and the icon disappears.
 
 ## Signing survives rebuilds
@@ -182,3 +183,22 @@ Before starting: `make run`. Step 2 needs Accessibility Inspector, which ships w
    It prints `AXImage` once per app and the app names, in the App row order. Press `Esc`.
 2. With Accessibility Inspector, point at the Switcher: the window is titled `Switcher`, it contains a list `App row`, and each entry is an `app` image labelled with the app name; only the selected entry has `Selected` set to true. Press `Esc`.
 3. With Accessibility Inspector, open an app's Window list (`↓`) and point at it: a list `Window list` whose entries are `window` texts labelled with the window titles; only the selected one has `Selected` set to true. Press `Esc`.
+
+## Preferences: shortcuts
+
+Before starting: `make run`, Accessibility granted to Downtab, a few apps open. Open the Preferences from the menu bar icon (`Preferences…`): a `Downtab Preferences` window shows `App shortcut: ⌥Tab` and `` Window shortcut: ⌥` `` (on a non-US layout the Window shortcut shows the character of the key left of `1`, e.g. `\` on Italian), a hint line and a `Restore Defaults` button. In the commands below, `defaults read local.downtab` prints the stored shortcuts.
+
+1. Click the App shortcut field: it gets an accent border and reads `Type shortcut`. Hold ⌃ and ⌥: it reads `⌃⌥`. Press `Esc` with nothing held: it reads `⌥Tab` again, no message.
+2. Click the App shortcut field and press ⌥Tab: no Switcher opens (shortcuts are off while recording), the field reads `⌥Tab` again.
+3. Click the App shortcut field and press Tab alone: a red message `Tab: Add a modifier: ⌘, ⌥ or ⌃.` appears under it, the field keeps `⌥Tab`.
+4. Click it and press ⌥⇧Tab: `⌥⇧Tab: ⇧ is reserved for going back: record the shortcut without it.`
+5. Click it and press `` ⌥` ``: `` ⌥`: The other shortcut already uses this combination. ``
+6. Click it and press ⌘Space: `⌘Space: macOS already uses this combination: choose another one.` Same for ⌘Tab, ⌃→ and ⌘Q (Downtab does not quit).
+7. Click it and press ⌃Tab: the message disappears and the field reads `⌃Tab`. Without restarting, switch apps with ⌃Tab (quick press: the previous app comes forward; until the Modifier follows custom shortcuts, a ⌃ shortcut confirms right away instead of keeping the Switcher open). ⌥Tab no longer opens the Switcher.
+8. Click the Window shortcut field and press ⌃`` ` ``: it reads ``⌃` `` (or the layout's character). In an app with 2 windows, ⌃`` ` `` brings its other window forward; ⌃⇧`` ` `` its last one.
+9. `make stop`, then `make run` again and open the Preferences: they still show `⌃Tab` and ``⌃` ``, and ⌃Tab still switches apps.
+10. Click the App shortcut field, then click the Window shortcut field: the first one stops recording. Click the App shortcut field, then click another app's window: the field stops recording, and ⌃Tab works again.
+11. Click `Restore Defaults`: the fields read `⌥Tab` and `` ⌥` `` and both work again right away. Restart (`make run`): still the defaults.
+12. A shortcut another app holds is reported as used by the system: in another app that registers a global hotkey (e.g. Raycast or Alfred, `⌥Space`), record that hotkey: `macOS already uses this combination: choose another one.` and the field keeps its shortcut; `log show --last 5m --predicate 'subsystem == "local.downtab" AND category == "keyboard"'` shows `shortcut ⌥Space failed: -9878`. Skip if no such app is installed.
+13. With VoiceOver on (⌘F5), move to a recorder field: it reads `App shortcut, ⌥Tab, button`; a rejection is announced. Turn VoiceOver off.
+

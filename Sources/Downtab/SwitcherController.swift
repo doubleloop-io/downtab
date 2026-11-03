@@ -10,11 +10,11 @@ final class SwitcherController {
     private let focuser = WindowFocuser()
     private let logger = Logger(subsystem: "local.downtab", category: "keyboard")
     private var missedReleaseCheck: Task<Void, Never>?
-    private lazy var keyboard = KeyboardInput { [weak self] event in self?.handle(event) }
+    private(set) lazy var keyboard = KeyboardInput { [weak self] event in self?.handle(event) }
 
-    func start() {
+    func start(shortcuts: Shortcuts) {
         tracker.start()
-        keyboard.start()
+        keyboard.start(shortcuts: shortcuts)
     }
 
     private func handle(_ event: SwitcherEvent) {
