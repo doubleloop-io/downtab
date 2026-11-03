@@ -33,7 +33,11 @@ extension DesktopSnapshot {
         let reachable = app.windows.filter(isReachable)
         let minimizedLast = reachable.filter { !$0.isMinimized } + reachable.filter(\.isMinimized)
         return minimizedLast.compactMap { window in
-            window.id.map { WindowListEntry(id: $0, title: window.title, labels: labels(of: window, in: app)) }
+            window.id.map {
+                WindowListEntry(
+                    id: $0, title: window.title.isEmpty ? "Untitled" : window.title,
+                    labels: labels(of: window, in: app))
+            }
         }
     }
 
