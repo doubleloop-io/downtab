@@ -13,7 +13,7 @@ final class DesktopTracker {
     }
 
     private var apps: [AppID: TrackedApp] = [:]
-    private var mruOrder: [AppID] = []
+    private var mruOrder = MRUOrder(running: [], windowOwnersFrontToBack: [], frontmost: nil)
     private var observers: [any NSObjectProtocol] = []
     private let scanner = WindowScanner()
     private var scan: WindowScan?
@@ -26,10 +26,11 @@ final class DesktopTracker {
         for app in workspace.runningApplications {
             track(app)
         }
-        // Until MRU seeding exists, only the frontmost app has a known position: first.
-        if let frontmost = workspace.frontmostApplication {
-            recordActivation(of: frontmost)
-        }
+        mruOrder = MRUOrder(
+            running: workspace.runningApplications.map(AppID.init),
+            windowOwnersFrontToBack: OnScreenWindowOrder.ownersFrontToBack(),
+            frontmost: workspace.frontmostApplication.map(AppID.init)
+        )
         let center = workspace.notificationCenter
         observers = [
             observe(NSWorkspace.didLaunchApplicationNotification, on: center) { tracker, app in tracker.track(app) },
@@ -54,7 +55,7 @@ final class DesktopTracker {
     }
 
     func snapshot() -> DesktopSnapshot {
-        let desktopApps = mruOrder.compactMap { id in
+        let desktopApps = mruOrder.apps.compactMap { id in
             apps[id].map { app in
                 DesktopApp(
                     id: id, name: app.name, isRegular: app.process.activationPolicy == .regular,
@@ -63,7 +64,7 @@ final class DesktopTracker {
         }
         return DesktopSnapshot(
             apps: desktopApps,
-            mruOrder: mruOrder,
+            mruOrder: mruOrder.apps,
             currentSpaces: scan?.currentSpaces ?? [],
             frontmostApp: NSWorkspace.shared.frontmostApplication.map(AppID.init)
         )
@@ -96,7 +97,7 @@ final class DesktopTracker {
         }
         isScanning = true
         // Agents never reach the App row: querying them would only slow the scan.
-        let regularApps = mruOrder.filter { apps[$0]?.process.activationPolicy == .regular }
+        let regularApps = mruOrder.apps.filter { apps[$0]?.process.activationPolicy == .regular }
         Task { [weak self, scanner] in
             let result = await scanner.scan(regularApps)
             guard let self else { return }
@@ -114,22 +115,20 @@ final class DesktopTracker {
         guard apps[id] == nil else { return }
         let name = app.localizedName ?? app.bundleURL?.deletingPathExtension().lastPathComponent ?? ""
         apps[id] = TrackedApp(process: app, name: name)
-        mruOrder.append(id)
+        mruOrder.recordLaunch(of: id)
         requestScan()
     }
 
     private func recordActivation(of app: NSRunningApplication) {
         track(app)
-        let id = AppID(app)
-        mruOrder.removeAll { $0 == id }
-        mruOrder.insert(id, at: 0)
+        mruOrder.recordActivation(of: AppID(app))
         requestScan()
     }
 
     private func forget(_ app: NSRunningApplication) {
         let id = AppID(app)
         apps[id] = nil
-        mruOrder.removeAll { $0 == id }
+        mruOrder.recordQuit(of: id)
     }
 }
 
