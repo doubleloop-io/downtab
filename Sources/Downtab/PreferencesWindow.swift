@@ -1,8 +1,6 @@
 import AppKit
 import SwitcherCore
 
-/// The Accessibility permission status, the App shortcut and Window shortcut recorders, with their rejection
-/// messages and Restore Defaults, then the launch at login toggle.
 final class PreferencesWindow: NSWindow, NSWindowDelegate {
     private static let accessibilitySettings = URL(
         string: "x-apple.systempreferences:com.apple.preference.security?Privacy_Accessibility")

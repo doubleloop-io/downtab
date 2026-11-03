@@ -310,7 +310,6 @@ public struct Switcher: Sendable {
     }
 }
 
-/// A shortcut key press the Switcher acts on.
 private struct ShortcutPress {
     let slot: ShortcutSlot
     /// Held with ⇧: moves the selection back.

@@ -8,7 +8,6 @@ final class PermissionMonitor {
     private var polling: Task<Void, Never>?
     private(set) var isGranted = false
 
-    /// Reports the current state right away, then each change.
     func start(onChange: @escaping (PermissionWatch.Change) -> Void) {
         check(onChange)
         polling = Task { [weak self] in

@@ -1,7 +1,6 @@
 import ServiceManagement
 import os
 
-/// Keeps Downtab's login item in line with the Settings store, on by default.
 struct LaunchAtLogin {
     enum Status {
         case on
