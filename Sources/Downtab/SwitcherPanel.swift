@@ -56,6 +56,9 @@ final class SwitcherPanel: NSPanel {
         if let selectedTile = views.first(where: \.isSelected) {
             placeSelectedName(under: selectedTile)
         }
+        // Before the show delay the panel is key but transparent: keys pressed then reach the Switcher, not the
+        // Frontmost app, and a quick press never flashes it.
+        alphaValue = displayed.isVisible ? 1 : 0
         makeKeyAndOrderFront(nil)
         showWindowList(of: displayed, under: views.first(where: \.isSelected), icon: icon)
     }
@@ -73,6 +76,8 @@ final class SwitcherPanel: NSPanel {
         let tileInWindow = tile.convert(tile.bounds, to: nil)
         let anchor = NSPoint(x: frame.minX + tileInWindow.midX, y: frame.minY)
         let entry = displayed.selectedEntry
+        // A child window does not inherit its parent's transparency.
+        windowList.alphaValue = alphaValue
         windowList.show(entry, selectedWindow: selectedWindow, icon: icon(entry.id), below: anchor, on: screen)
         if windowList.parent == nil {
             // A child window moves and closes with the Switcher.

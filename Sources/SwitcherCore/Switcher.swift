@@ -12,6 +12,8 @@ public enum SwitcherEvent: Equatable, Sendable {
     case upPressed
     case leftPressed
     case rightPressed
+    /// `Switcher.showDelay` after opening, unless it already closed.
+    case showDelayElapsed
 }
 
 /// What closing the Switcher asks the app to do.
@@ -83,6 +85,9 @@ public struct DisplayedState: Equatable, Sendable {
     public let appRow: [AppRowEntry]
     public private(set) var selectedIndex: Int
     public private(set) var level: SelectionLevel
+    /// False until the show delay elapses: a quick press confirms without the Switcher ever appearing. Hidden, it
+    /// still takes every key, so none reaches the Frontmost app.
+    public private(set) var isVisible = false
     /// Fixed at opening, like the App row.
     let frontmostApp: AppID?
 
@@ -158,6 +163,12 @@ public struct DisplayedState: Equatable, Sendable {
         return .window(selectedEntry.id == frontmostApp ? 1 : 0)
     }
 
+    func shown() -> DisplayedState {
+        var shown = self
+        shown.isVisible = true
+        return shown
+    }
+
     private func at(_ level: SelectionLevel) -> DisplayedState {
         var moved = self
         moved.level = level
@@ -171,6 +182,9 @@ public enum SwitcherState: Equatable, Sendable {
 }
 
 public struct Switcher: Sendable {
+    /// Like the native switcher: long enough that a quick press never flashes the Switcher. To tune with use.
+    public static let showDelay = Duration.milliseconds(100)
+
     public private(set) var state: SwitcherState = .closed
 
     public init() {}
@@ -188,7 +202,9 @@ public struct Switcher: Sendable {
         case .windowShortcutPressed, .shiftWindowShortcutPressed:
             moveWindowSelection(by: event == .windowShortcutPressed ? 1 : -1, desktop: desktop)
         case .downPressed, .upPressed, .leftPressed, .rightPressed:
-            moveWhileOpen { Self.moving($0, by: event) }
+            updateWhileOpen { Self.moving($0, by: event) }
+        case .showDelayElapsed:
+            updateWhileOpen { $0.shown() }
         }
         return nil
     }
@@ -205,7 +221,7 @@ public struct Switcher: Sendable {
         return .noChange
     }
 
-    private mutating func moveWhileOpen(_ move: (DisplayedState) -> DisplayedState) {
+    private mutating func updateWhileOpen(_ move: (DisplayedState) -> DisplayedState) {
         if case .open(let displayed) = state { state = .open(move(displayed)) }
     }
 

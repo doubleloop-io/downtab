@@ -40,7 +40,7 @@ Before starting: `make run`, then open TextEdit, Safari and Notes in this order,
 5. Make Safari full screen (green button), press ⌥Tab: the Switcher appears above the full-screen Safari. Press `Esc`: Safari is still full screen and frontmost.
 6. Switch to another Space (⌃→) and press ⌥Tab: the Switcher appears there too. Press `Esc`.
 7. With the Switcher open, press ⌥Tab again: the icons stay in the same order. Press `Esc`.
-8. Opening shows no delay: the Switcher appears as soon as ⌥Tab is pressed, even right after launching a new app.
+8. Opening shows only the show delay: holding ⌥ after ⌥Tab, the Switcher appears after about a tenth of a second, never later, even right after launching a new app.
 
 ## Switcher: cycle and Confirm at App level
 
@@ -55,6 +55,19 @@ Before starting: `make run`, Accessibility granted to Downtab, then open TextEdi
 7. Hold ⌥, press Tab, then press `Enter` without releasing ⌥: the highlighted app comes to the front and the Switcher closes. Releasing ⌥ afterwards does nothing more.
 8. Hide Safari (⌘H), then hold ⌥, select Safari and release: Safari comes back to the front.
 9. `log stream --predicate 'subsystem == "local.downtab"'` shows `modifier release tap started` at launch and an `activate pid=... ok=true` line for each Confirm.
+
+## Switcher: quick press
+
+Before starting: `make run`, Accessibility granted to Downtab, TextEdit with 2 windows (`one` in front, `two` behind), then Safari and Notes, clicking each to bring it to the front.
+
+1. In Notes, press ⌥Tab and release both keys quickly, several times in a row: the front app switches between Notes and Safari each time and the Switcher never flashes on screen, not even for a frame.
+2. Hold ⌥, press Tab and keep ⌥ held: the Switcher appears after a barely noticeable pause (about a tenth of a second). Press `Esc`.
+3. Click Notes. Hold ⌥, press Tab twice quickly and release ⌥ at once: TextEdit comes to the front without the Switcher appearing (if the whole sequence was quicker than the pause).
+4. Click TextEdit's `one` window. Press `` ⌥` `` and release both keys quickly: `two` comes to the front and the Switcher never flashes on screen. Press it again: `one` comes back.
+5. Hold ⌥, press `` ` `` and keep ⌥ held: the Switcher appears after the same pause with TextEdit's Window list open. Press `Esc`.
+6. In TextEdit open the Find bar (⌘F), cursor in it. Hold ⌥, press Tab and at once `Esc` (within a tenth of a second), then release ⌥: the Switcher never appears, TextEdit stays frontmost and its Find bar stays open (an `Esc` reaching TextEdit would close it). Type a few letters: they land in the Find bar, without clicking first.
+7. In TextEdit, hold ⌥, press Tab and at once `→`, then release ⌥: the third app of the App row comes to the front (Tab selected the second, `→` the next); no arrow moved TextEdit's text cursor.
+8. In TextEdit, hold ⌥, press Tab and at once `Enter`: the previously used app comes to the front and no new line is added to the TextEdit document.
 
 ## Switcher: MRU order
 

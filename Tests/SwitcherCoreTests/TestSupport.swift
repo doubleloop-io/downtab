@@ -157,6 +157,11 @@ extension SwitcherState {
         return displayed.selectedEntry.windows[index].title
     }
 
+    var isVisible: Bool {
+        guard case .open(let displayed) = self else { return false }
+        return displayed.isVisible
+    }
+
     var isAtAppLevel: Bool {
         guard case .open(let displayed) = self else { return false }
         return displayed.level == .app
