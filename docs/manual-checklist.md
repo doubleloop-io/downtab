@@ -220,7 +220,7 @@ Before starting: `make run`, Accessibility granted to Downtab, a few apps open. 
 3. Click the App shortcut field and press Tab alone: a red message `Tab: Add a modifier: ⌘, ⌥ or ⌃.` appears under it, the field keeps `⌥Tab`.
 4. Click it and press ⌥⇧Tab: `⌥⇧Tab: ⇧ is reserved for going back: record the shortcut without it.`
 5. Click it and press `` ⌥` ``: `` ⌥`: The other shortcut already uses this combination. ``
-6. Click it and press ⌘Space: `⌘Space: macOS already uses this combination: choose another one.` Same for ⌘Tab, ⌃→ and ⌘Q (Downtab does not quit).
+6. Click it and press ⌘Space: `⌘Space: macOS already uses this combination: choose another one.` Same for ⌘Tab and ⌃→. An app shortcut such as ⌘W is accepted: the field reads `⌘W`; press `Restore Defaults` before going on.
 7. Click it and press ⌃Tab: the message disappears and the field reads `⌃Tab`. Without restarting, switch apps with ⌃Tab (quick press: the previous app comes forward; until the Modifier follows custom shortcuts, a ⌃ shortcut confirms right away instead of keeping the Switcher open). ⌥Tab no longer opens the Switcher.
 8. Click the Window shortcut field and press ⌃`` ` ``: it reads ``⌃` `` (or the layout's character). In an app with 2 windows, ⌃`` ` `` brings its other window forward; ⌃⇧`` ` `` its last one.
 9. `make stop`, then `make run` again and open the Preferences: they still show `⌃Tab` and ``⌃` ``, and ⌃Tab still switches apps.

@@ -18,10 +18,6 @@ final class ShortcutSettings {
         Shortcut(keyCode: kVK_LeftArrow, modifiers: [.control]),
         Shortcut(keyCode: kVK_RightArrow, modifiers: [.control]),
         Shortcut(keyCode: kVK_ANSI_Q, modifiers: [.command, .control]),
-        Shortcut(keyCode: kVK_ANSI_Q, modifiers: [.command]),
-        Shortcut(keyCode: kVK_ANSI_H, modifiers: [.command]),
-        Shortcut(keyCode: kVK_ANSI_M, modifiers: [.command]),
-        Shortcut(keyCode: kVK_ANSI_W, modifiers: [.command]),
     ]
 
     private let store = SettingsStore()
