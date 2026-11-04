@@ -19,7 +19,7 @@ Before starting: grant Accessibility to the terminal (System Settings › Privac
 
 ## App launch
 
-1. `make run` ends with a line `designated => identifier "local.downtab" and certificate leaf = H"..."` and `running: ...`.
+1. `make run` ends with a line `designated => identifier "io.github.iacoware.downtab" and certificate leaf = H"..."` and `running: ...`.
 2. A Downtab icon (stacked rectangles) appears in the menu bar.
 3. No Downtab icon appears in the Dock, and Downtab is not listed in ⌘Tab.
 4. Click the menu bar icon: the menu shows `Preferences…` and `Quit Downtab`. Click `Quit Downtab`: the icon disappears.
@@ -68,7 +68,7 @@ Before starting: `make run`, Accessibility granted to Downtab, then open TextEdi
 6. Hold ⌥ and ⇧, press Tab: the Switcher opens on the last icon. Press `Esc`.
 7. Hold ⌥, press Tab, then press `Enter` without releasing ⌥: the highlighted app comes to the front and the Switcher closes. Releasing ⌥ afterwards does nothing more.
 8. Hide Safari (⌘H), then hold ⌥, select Safari and release: Safari comes back to the front.
-9. `log stream --predicate 'subsystem == "local.downtab"'` shows `modifier release tap started` at launch and an `activate pid=... ok=true` line for each Confirm.
+9. `log stream --predicate 'subsystem == "io.github.iacoware.downtab"'` shows `modifier release tap started` at launch and an `activate pid=... ok=true` line for each Confirm.
 
 ## Switcher: quick press
 
@@ -97,7 +97,7 @@ Before starting: `make stop`, then open TextEdit, Safari and Notes with one wind
 
 ## Switcher: Modifier release never missed
 
-Before starting: `make run`, Accessibility granted to Downtab, then open TextEdit, Safari and Notes in this order. In a second terminal run `log stream --predicate 'subsystem == "local.downtab" AND category == "keyboard"'` and keep it open.
+Before starting: `make run`, Accessibility granted to Downtab, then open TextEdit, Safari and Notes in this order. In a second terminal run `log stream --predicate 'subsystem == "io.github.iacoware.downtab" AND category == "keyboard"'` and keep it open.
 
 1. In Notes, hold ⌥, press Tab, release ⌥: Safari comes to the front. The log shows no `fallback check` line.
 2. Run `pkill -USR1 -x Downtab`: the log shows `modifier release tap disabled by simulation`, and Downtab keeps running.
@@ -133,11 +133,11 @@ Before starting: `make run`, Accessibility granted to Downtab, two Spaces (Missi
 8. From the full-screen TextEdit, ⌥Tab: every running app with a Dock icon is in the App row, including those with windows only in Space 2.
 9. Two instances of the same app (e.g. `open -n -a TextEdit`): two TextEdit entries, each admitted on its own windows.
 10. With two displays, each showing a different Space: apps with windows on either display appear; an app whose only window is in a Space shown on neither display does not. A window on each display counts twice towards the badge.
-11. `log show --last 1h --predicate 'subsystem == "local.downtab" AND category == "private-api"'` prints nothing on a supported macOS. A line `private symbol missing: <name>, its feature is off` means macOS removed a private API: the app keeps running, and apps living in other Spaces are no longer hidden.
+11. `log show --last 1h --predicate 'subsystem == "io.github.iacoware.downtab" AND category == "private-api"'` prints nothing on a supported macOS. A line `private symbol missing: <name>, its feature is off` means macOS removed a private API: the app keeps running, and apps living in other Spaces are no longer hidden.
 
 ## Switcher: fresh window list and frozen apps
 
-Before starting: `make run`, Accessibility granted to Downtab, TextEdit and Safari open with one window each in Space 1, a second Space. In a second terminal run `log stream --level info --predicate 'subsystem == "local.downtab" AND (category == "observer" OR category == "scan")'` and keep it open. Press `Esc` after each ⌥Tab.
+Before starting: `make run`, Accessibility granted to Downtab, TextEdit and Safari open with one window each in Space 1, a second Space. In a second terminal run `log stream --level info --predicate 'subsystem == "io.github.iacoware.downtab" AND (category == "observer" OR category == "scan")'` and keep it open. Press `Esc` after each ⌥Tab.
 
 1. Right after `make run` the log shows `watching window events pid=...` once per app with a Dock icon. An app that refuses shows `window events unavailable pid=... <step> error=...` instead, repeated at most every 5 s.
 2. In TextEdit press ⌘N, then at once ⌥Tab: TextEdit has the `2` badge. The log shows `window event AXWindowCreated pid=...` followed by `scan changed pid=...` with TextEdit's pid (`pgrep -x TextEdit`).
@@ -161,7 +161,7 @@ Before starting: `make run`, Accessibility granted to Downtab. Open TextEdit wit
 6. In TextEdit (now frontmost), hold ⌥, press Tab then ⇧Tab to come back to TextEdit, press `↓`: the second window is highlighted, not the one you are in. Release ⌥: that window comes to the front.
 7. With the Window list open, press Tab: the list closes and the next app is selected. Press `Esc`: nothing changes.
 8. Minimize a TextEdit window (⌘M), wait one second, select it in the Window list and release ⌥: it comes back from the Dock and to the front. More in "Switcher: minimized, hidden and full-screen windows".
-9. `log stream --predicate 'subsystem == "local.downtab" AND category == "focus"'` shows a `raise pid=... wid=... private=true ax=0` line for each window confirmed. `private=false` means a private API is missing: the window still comes forward, but with all of the app's windows, and `log show --last 1h --predicate 'subsystem == "local.downtab" AND category == "private-api"'` shows one `private symbol missing: <name>, its feature is off` line per missing symbol; the app keeps running.
+9. `log stream --predicate 'subsystem == "io.github.iacoware.downtab" AND category == "focus"'` shows a `raise pid=... wid=... private=true ax=0` line for each window confirmed. `private=false` means a private API is missing: the window still comes forward, but with all of the app's windows, and `log show --last 1h --predicate 'subsystem == "io.github.iacoware.downtab" AND category == "private-api"'` shows one `private symbol missing: <name>, its feature is off` line per missing symbol; the app keeps running.
 
 ## Switcher: Window shortcut
 
@@ -176,11 +176,11 @@ Before starting: `make run`, Accessibility granted to Downtab. Open TextEdit wit
 7. Hold ⌥, press `` ` ``, then Tab: the Window list closes and Safari is selected. Release ⌥: Safari comes to the front.
 8. Click TextEdit's `one` window. Hold ⌥, press `` ` ``, then `→`: TextEdit's list closes and Safari (one window) is selected without a Window list. Press `←`: TextEdit's Window list reopens. Press `Esc`.
 9. Click the Safari window (one window) and press `` ⌥` ``: no Switcher appears and nothing changes. Same with `` ⌥⇧` ``, and in an app with no windows (close all TextEdit windows with ⌘W, then press `` ⌥` `` in TextEdit).
-10. `log show --last 1h --predicate 'subsystem == "local.downtab" AND category == "keyboard"'` shows `` shortcut ⌥` registered `` and `` shortcut ⌥⇧` registered `` at launch, next to the ⌥Tab ones.
+10. `log show --last 1h --predicate 'subsystem == "io.github.iacoware.downtab" AND category == "keyboard"'` shows `` shortcut ⌥` registered `` and `` shortcut ⌥⇧` registered `` at launch, next to the ⌥Tab ones.
 
 ## Switcher: minimized, hidden and full-screen windows
 
-Before starting: `make run`, Accessibility granted to Downtab, two Spaces (Mission Control, `+`). In Space 1 open TextEdit with 3 windows titled apart (`one`, `two`, `three`), then Notes, clicking each to bring it to the front. In a second terminal run `log stream --level info --predicate 'subsystem == "local.downtab" AND (category == "scan" OR category == "focus")'` and keep it open. Wait one second after each change before pressing ⌥Tab. Press `Esc` after each check unless the step says to release ⌥.
+Before starting: `make run`, Accessibility granted to Downtab, two Spaces (Mission Control, `+`). In Space 1 open TextEdit with 3 windows titled apart (`one`, `two`, `three`), then Notes, clicking each to bring it to the front. In a second terminal run `log stream --level info --predicate 'subsystem == "io.github.iacoware.downtab" AND (category == "scan" OR category == "focus")'` and keep it open. Wait one second after each change before pressing ⌥Tab. Press `Esc` after each check unless the step says to release ⌥.
 
 1. Full-screen detection first (open risk in #1): make TextEdit's `one` window full screen (green button), go back to Space 1 (⌃←), wait one second. Hold ⌥, select TextEdit, press `↓`: `one` is listed with a `Full screen` tag after its title. If it has no tag, the detection failed: stop here and note it in the issue.
 2. Release ⌥ on `one`: macOS moves to its full-screen Space and `one` is frontmost with the keyboard focus (type a few letters: they land in it). If it does not move Space, or another TextEdit window comes forward instead, note it in the issue.
@@ -228,7 +228,7 @@ Before starting: `make run`. Step 2 needs Accessibility Inspector, which ships w
 
 ## Preferences: shortcuts
 
-Before starting: `make run`, Accessibility granted to Downtab, a few apps open. Open the Preferences from the menu bar icon (`Preferences…`): a `Downtab Preferences` window shows `App shortcut: ⌥Tab` and `` Window shortcut: ⌥` `` (on a non-US layout the Window shortcut shows the character of the key left of `1`, e.g. `\` on Italian), a hint line and a `Restore Defaults` button. Layout: labels trailing-aligned and level with their fields, both fields the same width, the hint and `Restore Defaults` under the fields in the same column, the window sized to its content; no field is focused or recording when the window opens; it reads well in both light and dark mode. In the commands below, `defaults read local.downtab` prints the stored shortcuts.
+Before starting: `make run`, Accessibility granted to Downtab, a few apps open. Open the Preferences from the menu bar icon (`Preferences…`): a `Downtab Preferences` window shows `App shortcut: ⌥Tab` and `` Window shortcut: ⌥` `` (on a non-US layout the Window shortcut shows the character of the key left of `1`, e.g. `\` on Italian), a hint line and a `Restore Defaults` button. Layout: labels trailing-aligned and level with their fields, both fields the same width, the hint and `Restore Defaults` under the fields in the same column, the window sized to its content; no field is focused or recording when the window opens; it reads well in both light and dark mode. In the commands below, `defaults read io.github.iacoware.downtab` prints the stored shortcuts.
 
 1. Click the App shortcut field: it gets an accent border and tint and reads `Type shortcut…`. Hold ⌃ and ⌥: it reads `⌃⌥`. Press `Esc` with nothing held: it reads `⌥Tab` again, no message.
 2. Click the App shortcut field and press ⌥Tab: no Switcher opens (shortcuts are off while recording), the field reads `⌥Tab` again.
@@ -241,7 +241,7 @@ Before starting: `make run`, Accessibility granted to Downtab, a few apps open. 
 9. `make stop`, then `make run` again and open the Preferences: they still show `⌃Tab` and ``⌃` ``, and ⌃Tab still switches apps.
 10. Click the App shortcut field, then click the Window shortcut field: the first one stops recording. Click the App shortcut field, then click another app's window: the field stops recording, and ⌃Tab works again.
 11. Click `Restore Defaults`: the fields read `⌥Tab` and `` ⌥` `` and both work again right away. Restart (`make run`): still the defaults.
-12. A shortcut another app holds is reported as used by the system: in another app that registers a global hotkey (e.g. Raycast or Alfred, `⌥Space`), record that hotkey: `macOS already uses this combination: choose another one.` and the field keeps its shortcut; `log show --last 5m --predicate 'subsystem == "local.downtab" AND category == "keyboard"'` shows `shortcut ⌥Space failed: -9878`. If the app holds only the ⇧ variant (e.g. `⌥⇧Space`), recording `⌥Space` shows `⌥Space: macOS already uses this combination with ⇧: choose another one.` and the log shows `shortcut ⌥⇧Space failed`. Skip if no such app is installed.
+12. A shortcut another app holds is reported as used by the system: in another app that registers a global hotkey (e.g. Raycast or Alfred, `⌥Space`), record that hotkey: `macOS already uses this combination: choose another one.` and the field keeps its shortcut; `log show --last 5m --predicate 'subsystem == "io.github.iacoware.downtab" AND category == "keyboard"'` shows `shortcut ⌥Space failed: -9878`. If the app holds only the ⇧ variant (e.g. `⌥⇧Space`), recording `⌥Space` shows `⌥Space: macOS already uses this combination with ⇧: choose another one.` and the log shows `shortcut ⌥⇧Space failed`. Skip if no such app is installed.
 13. A stored shortcut that fails to register at launch stays stored and is reported in the Preferences, with no fallback to the default: quit the hotkey app of step 12, record its hotkey (`⌥Space`) as the App shortcut, `make stop`, start the hotkey app, `make run`. ⌥Space opens the other app, not the Switcher; the Preferences show `⌥Space: macOS already uses this combination: choose another one.` under the App shortcut, which still reads `⌥Space`. Record another App shortcut: the message disappears. Skip if no such app is installed.
 14. Restore Defaults never stores a pair that fails to register: record `⌃Tab` and ``⌃` ``, then set the hotkey app of step 12 to ⌥Tab and click `Restore Defaults`: the fields keep `⌃Tab` and ``⌃` ``, ⌃Tab still switches apps, the App shortcut shows `⌥Tab: macOS already uses this combination: choose another one.`, and after `make stop` and `make run` the Preferences still show `⌃Tab`. Reset the hotkey app afterwards. Skip if no such app is installed.
 15. With VoiceOver on (⌘F5), move to a recorder field: it reads `App shortcut, ⌥Tab, button`; a rejection is announced. Turn VoiceOver off.
@@ -256,15 +256,15 @@ Before starting: `make run`, Accessibility granted to Downtab. In the Preference
 4. Hold ⌃, press `` ` ``, then Tab (still ⌃ only): the Switcher goes to App level and advances; ⇧Tab goes back. Release ⌃: the selected app comes forward.
 5. Hold ⌥, press Tab, then add ⌃ and press `` ` `` (⌥⌃`` ` ``): nothing changes. Add and release ⇧: the Switcher stays open. Release ⌃: still open. Release ⌥: it confirms.
 6. Record App shortcut ⌥⌘Tab. Hold ⌥⌘, press Tab: the Switcher opens. Release only ⌘ (keep ⌥): it confirms. Repeat releasing only ⌥: it confirms. Press `Restore Defaults` afterwards.
-7. Kill the release tap (`pkill -USR1 -x Downtab`), then repeat step 2: releasing ⌃ still confirms, within a moment (fallback check); `log show --last 1m --predicate 'subsystem == "local.downtab"'` shows `modifier release confirmed by fallback check`. Relaunch with `make run` afterwards.
+7. Kill the release tap (`pkill -USR1 -x Downtab`), then repeat step 2: releasing ⌃ still confirms, within a moment (fallback check); `log show --last 1m --predicate 'subsystem == "io.github.iacoware.downtab"'` shows `modifier release confirmed by fallback check`. Relaunch with `make run` afterwards.
 
 ## Launch at login
 
-Before starting: `defaults delete local.downtab launchAtLogin` (ignore "does not exist"), then `make run`. The login item points at the bundle that last registered it: run these checks from one checkout only.
+Before starting: `defaults delete io.github.iacoware.downtab launchAtLogin` (ignore "does not exist"), then `make run`. The login item points at the bundle that last registered it: run these checks from one checkout only.
 
 1. First launch turns it on: System Settings › General › Login Items & Extensions lists Downtab under `Open at Login`, enabled. The Preferences show `Launch at login` checked, under `Restore Defaults`, with no note below it.
-2. Uncheck `Launch at login`: Downtab disappears from `Open at Login` (reopen System Settings if it does not refresh). `defaults read local.downtab launchAtLogin` prints `0`. `make stop`, `make run`: the toggle is still unchecked and Downtab is still not listed.
-3. Check it again: Downtab is listed and enabled again; `defaults read local.downtab launchAtLogin` prints `1`.
+2. Uncheck `Launch at login`: Downtab disappears from `Open at Login` (reopen System Settings if it does not refresh). `defaults read io.github.iacoware.downtab launchAtLogin` prints `0`. `make stop`, `make run`: the toggle is still unchecked and Downtab is still not listed.
+3. Check it again: Downtab is listed and enabled again; `defaults read io.github.iacoware.downtab launchAtLogin` prints `1`.
 4. Log out and log back in: the Downtab icon appears in the menu bar without launching it by hand.
 5. Turn Downtab off in System Settings' `Open at Login` (if listed as a switch), then focus the Preferences: `Launch at login` stays checked and a note `Turned off in System Settings...` with `Open Login Items…` appears; the button opens Login Items. Turn it back on there and focus the Preferences: the note disappears. Skip if System Settings shows no switch for Downtab.
 

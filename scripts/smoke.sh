@@ -14,7 +14,7 @@ crash_reports() { find "$REPORTS" -maxdepth 1 -name "$EXE*" 2>/dev/null | sort; 
 fail() { echo "smoke failed: $*"; exit 1; }
 
 crash_reports >"$WORK/before"
-log stream --level info --predicate 'subsystem == "local.downtab"' >"$WORK/log" &
+log stream --level info --predicate 'subsystem == "io.github.iacoware.downtab"' >"$WORK/log" &
 LOG_PID=$!
 sleep 1
 

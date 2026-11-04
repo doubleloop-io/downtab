@@ -8,7 +8,7 @@ final class KeyboardInput {
     private static let shortcutSignature = OSType(0x4454_4142)  // "DTAB"
 
     private let onEvent: (SwitcherEvent) -> Void
-    private let logger = Logger(subsystem: "local.downtab", category: "keyboard")
+    private let logger = Logger(subsystem: "io.github.iacoware.downtab", category: "keyboard")
     private let modifierRelease = ModifierReleaseTap()
     private let escapeTap = EscapeKeyTap()
     private let hotKeyPresses = HotKeyPressHandler()

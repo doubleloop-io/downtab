@@ -8,7 +8,7 @@ final class SwitcherController {
     private let tracker = DesktopTracker()
     private let panel = SwitcherPanel()
     private let focuser = WindowFocuser()
-    private let logger = Logger(subsystem: "local.downtab", category: "keyboard")
+    private let logger = Logger(subsystem: "io.github.iacoware.downtab", category: "keyboard")
     private var missedReleaseCheck: Task<Void, Never>?
     private var showDelay: Task<Void, Never>?
     private(set) lazy var keyboard = KeyboardInput { [weak self] event in self?.handle(event) }

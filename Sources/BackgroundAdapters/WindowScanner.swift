@@ -13,7 +13,7 @@ public struct WindowScan: Sendable {
 /// Reads the windows of every app as raw facts, merging what Accessibility and the window server each know.
 /// Opening the Switcher must never await a scan: it reads the copy the last scan left.
 public actor WindowScanner {
-    private let logger = Logger(subsystem: "local.downtab", category: "scan")
+    private let logger = Logger(subsystem: "io.github.iacoware.downtab", category: "scan")
     private let query = TimeboxedQuery<AppID, [DesktopWindow]>()
     private var windowsByApp: [AppID: [DesktopWindow]] = [:]
     private var latestScan: Task<WindowScan, Never>?

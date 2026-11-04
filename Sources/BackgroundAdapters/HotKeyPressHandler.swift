@@ -12,7 +12,7 @@ public final class HotKeyPressHandler {
         }
     }
 
-    private let logger = Logger(subsystem: "local.downtab", category: "keyboard")
+    private let logger = Logger(subsystem: "io.github.iacoware.downtab", category: "keyboard")
     private var relay: Relay?
     private var handler: EventHandlerRef?
 

@@ -9,7 +9,7 @@ public enum PrivateSymbol {
         case skyLight
     }
 
-    private static let logger = Logger(subsystem: "local.downtab", category: "private-api")
+    private static let logger = Logger(subsystem: "io.github.iacoware.downtab", category: "private-api")
 
     /// Returns nil, after logging one line (to `logMissing` when given, else to the unified log), when the symbol
     /// is not there.

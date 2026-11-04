@@ -6,7 +6,7 @@ import os
 /// Executes the final effect off the main thread, so a slow target app never stalls the Switcher.
 /// An actor, so effects start in order.
 public actor WindowFocuser {
-    private let logger = Logger(subsystem: "local.downtab", category: "focus")
+    private let logger = Logger(subsystem: "io.github.iacoware.downtab", category: "focus")
     /// Bumped by every focus change: a retry waiting across its sleep must not undo a newer one.
     private var latestFocusChange = 0
 

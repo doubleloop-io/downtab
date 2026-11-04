@@ -13,7 +13,7 @@ public final class ModifierReleaseTap {
     fileprivate final class Relay: Sendable {
         let onChange: @MainActor @Sendable (Set<ShortcutModifier>) -> Void
         let port = Mutex<CFMachPort?>(nil)
-        let logger = Logger(subsystem: "local.downtab", category: "keyboard")
+        let logger = Logger(subsystem: "io.github.iacoware.downtab", category: "keyboard")
 
         init(onChange: @escaping @MainActor @Sendable (Set<ShortcutModifier>) -> Void) {
             self.onChange = onChange

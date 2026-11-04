@@ -16,7 +16,7 @@ public final class EscapeKeyTap: Sendable {
         let isCapturing = Mutex(false)
         /// Esc's key up follows its key down out of the Frontmost app, even once the Switcher closed.
         let isSwallowingKeyUp = Mutex(false)
-        let logger = Logger(subsystem: "local.downtab", category: "keyboard")
+        let logger = Logger(subsystem: "io.github.iacoware.downtab", category: "keyboard")
 
         init(onEscape: @escaping @MainActor @Sendable () -> Void) {
             self.onEscape = onEscape
