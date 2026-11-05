@@ -21,7 +21,8 @@ final class SwitcherController {
     private func handle(_ event: SwitcherEvent) {
         let previous = switcher.state
         switcher.shortcuts = keyboard.shortcuts
-        let effect = switcher.handle(event, desktop: tracker.snapshot())
+        let desktop = tracker.snapshot(freshWindowOrder: mayOpen(previous, event))
+        let effect = switcher.handle(event, desktop: desktop)
         // Re-showing an unchanged state would move the panel to the pointer's current display.
         if switcher.state != previous {
             render()
@@ -32,6 +33,13 @@ final class SwitcherController {
         if let effect {
             Task { [focuser] in await focuser.perform(effect) }
         }
+    }
+
+    /// Only a shortcut pressed while closed opens. The App row is fixed at opening, so the window server is not
+    /// queried on every keypress while open, nor on every modifier change while closed.
+    private func mayOpen(_ state: SwitcherState, _ event: SwitcherEvent) -> Bool {
+        guard state == .closed, case .keyPressed = event else { return false }
+        return true
     }
 
     private func render() {

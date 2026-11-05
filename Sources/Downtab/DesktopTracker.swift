@@ -1,6 +1,7 @@
 import AppKit
 import BackgroundAdapters
 import SwitcherCore
+import os
 
 /// Keeps an in-memory copy of the running apps, their MRU order and their windows, updated from NSWorkspace
 /// notifications, Accessibility window events and background scans, so taking a snapshot when the Switcher opens
@@ -22,6 +23,7 @@ final class DesktopTracker {
     private var needsAnotherScan = false
     private var periodicScan: Task<Void, Never>?
     private var windowEvents: WindowEventObserver?
+    private let logger = Logger(subsystem: "io.github.iacoware.downtab", category: "scan")
 
     func start() {
         let windowEvents = WindowEventObserver { [weak self] in self?.requestScan() }
@@ -59,12 +61,18 @@ final class DesktopTracker {
         }
     }
 
-    func snapshot() -> DesktopSnapshot {
+    /// `freshWindowOrder` reorders the scanned windows by the window server's current front-to-back order: a
+    /// window switch inside an app raises no event, so the last scan may still list the previous front window
+    /// first (issue #29). Only the order is fresh; everything else about the windows comes from the scan.
+    func snapshot(freshWindowOrder: Bool) -> DesktopSnapshot {
+        let ranks = freshWindowOrder ? measuredWindowRanks() : nil
         let desktopApps = mruOrder.apps.compactMap { id in
             apps[id].map { app in
-                DesktopApp(
+                let scanned = scan?.windowsByApp[id] ?? []
+                return DesktopApp(
                     id: id, name: app.name, isRegular: app.process.activationPolicy == .regular,
-                    isHidden: app.process.isHidden, windows: scan?.windowsByApp[id] ?? [])
+                    isHidden: app.process.isHidden,
+                    windows: ranks.map { scanned.orderedFrontToBack(onScreenRanks: $0) } ?? scanned)
             }
         }
         return DesktopSnapshot(
@@ -74,6 +82,14 @@ final class DesktopTracker {
             isActiveSpaceFullScreen: scan?.isActiveSpaceFullScreen ?? false,
             frontmostApp: NSWorkspace.shared.frontmostApplication.map(AppID.init)
         )
+    }
+
+    private func measuredWindowRanks() -> [WindowID: Int] {
+        let began = ContinuousClock.now
+        let ranks = OnScreenWindowOrder.windowRanks()
+        logger.debug(
+            "window order windows=\(ranks.count) took=\(ContinuousClock.now - began, privacy: .public)")
+        return ranks
     }
 
     func icon(for id: AppID) -> NSImage? {

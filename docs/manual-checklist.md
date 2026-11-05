@@ -179,7 +179,10 @@ Before starting: `make run`, Accessibility granted to Downtab. Open TextEdit wit
 7. Hold ⌥, press `` ` ``, then Tab: the Window list closes and Safari is selected. Release ⌥: Safari comes to the front.
 8. Click TextEdit's `one` window. Hold ⌥, press `` ` ``, then `→`: TextEdit's list closes and Safari (one window) is selected without a Window list. Press `←`: TextEdit's Window list reopens. Press `Esc`.
 9. Click the Safari window (one window) and press `` ⌥` ``: no Switcher appears and nothing changes. Same with `` ⌥⇧` ``, and in an app with no windows (close all TextEdit windows with ⌘W, then press `` ⌥` `` in TextEdit).
-10. `log show --last 1h --predicate 'subsystem == "io.github.iacoware.downtab" AND category == "keyboard"'` shows `` shortcut ⌥` registered `` and `` shortcut ⌥⇧` registered `` at launch, next to the ⌥Tab ones.
+10. Rapid presses: close the `three` window (⌘W), so TextEdit has 2 windows. Press `` ⌥` `` and release it 10 times in a row, less than a second apart: the 2 windows alternate in front every time, with no press that changes nothing.
+11. Click TextEdit's back window, then press `` ⌥` `` at once: the window that was in front before the click comes forward. Hold ⌥ and press `` ` ``: the Window list shows the clicked window first. Press `Esc`.
+12. `log stream --level debug --predicate 'subsystem == "io.github.iacoware.downtab" AND category == "scan"'` shows a `window order windows=... took=...` line at each opening; `took` stays in the low milliseconds, even with many windows open.
+13. `log show --last 1h --predicate 'subsystem == "io.github.iacoware.downtab" AND category == "keyboard"'` shows `` shortcut ⌥` registered `` and `` shortcut ⌥⇧` registered `` at launch, next to the ⌥Tab ones.
 
 ## Switcher: minimized and hidden windows
 
