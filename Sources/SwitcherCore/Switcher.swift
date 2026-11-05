@@ -42,8 +42,6 @@ public struct WindowRestoration: OptionSet, Sendable {
 public enum WindowLabel: Equatable, Sendable {
     /// Restored from the Dock.
     case minimized
-    /// Lives in a Space of its own: confirming moves there.
-    case fullScreen
     /// Its app is hidden: confirming unhides the app.
     case hidden
 }

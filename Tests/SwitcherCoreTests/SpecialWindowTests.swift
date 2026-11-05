@@ -24,14 +24,22 @@ import Testing
     #expect(switcher.state.windowListTitles == ["Here", "Minimized here", "Minimized in no Space"])
 }
 
-@Test func windowListLabelsMinimizedAndFullScreenWindows() {
+@Test func windowListLabelsMinimizedWindows() {
+    let windows: [DesktopWindow] = [.window("Plain"), .window("Minimized", isMinimized: true)]
+
+    let (switcher, _) = atWindowLevel(on: [.regular("TextEdit", windows: windows)])
+
+    #expect(switcher.state.windowListLabels == [[], [.minimized]])
+}
+
+@Test func fullScreenWindowsAreLeftOutOfTheWindowList() {
     let windows: [DesktopWindow] = [
-        .window("Plain"), .window("Full", in: [3], isFullScreen: true), .window("Minimized", isMinimized: true),
+        .window("Plain"), .window("Full", in: [3], isFullScreen: true), .window("Other"),
     ]
 
     let (switcher, _) = atWindowLevel(on: [.regular("TextEdit", windows: windows)])
 
-    #expect(switcher.state.windowListLabels == [[], [.fullScreen], [.minimized]])
+    #expect(switcher.state.windowListTitles == ["Plain", "Other"])
 }
 
 @Test func everyWindowOfAHiddenAppIsLabelledHidden() {
