@@ -4,6 +4,8 @@ User-facing changes to Downtab. Format: [Keep a Changelog](https://keepachangelo
 
 ## [Unreleased]
 
+## [0.1.1] - 2026-11-06
+
 ### Fixed
 
 - Preferences: the missing Accessibility permission notice no longer overlaps the shortcut fields.
