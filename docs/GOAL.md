@@ -24,7 +24,8 @@ Scelta la variante A di `prototype-ui-variants.html`: lista sotto l'icona. La gr
 
 - Le app senza finestre nel Current Space, ma con finestre in altri Space, non compaiono: attivarle farebbe cambiare Space. Le app senza alcuna finestra restano, come nel nativo.
 - Eccezione: un'app la cui unica finestra è a schermo intero compare, come nel nativo, e attivarla porta al suo Space.
-- Una finestra a schermo intero compare nella Window list con l'etichetta "Full screen"; sceglierla cambia Space.
+- Una finestra a schermo intero non compare mai in una Window list: la si raggiunge dall'App level.
+- La Window list segue l'ordine MRU: la finestra usata più di recente prima, le minimizzate in fondo.
 - Da un'app a schermo intero compaiono tutte le app, come nel nativo, ma senza Window list: solo App level. Da rivedere con l'uso.
 - Le finestre minimizzate del Current Space compaiono nella lista con l'etichetta "Minimized". Quelle di altri Space no: il ripristino le riporta nel loro Space, senza effetti visibili.
 - Le app nascoste (⌘H) compaiono con le loro finestre e l'etichetta "Hidden"; scegliere una finestra la mostra.

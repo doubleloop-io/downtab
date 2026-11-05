@@ -160,7 +160,7 @@ Before starting: `make run`, Accessibility granted to Downtab. Open TextEdit wit
 5. Repeat step 4 with `Enter` instead of releasing ⌥: same result, and releasing ⌥ afterwards does nothing more.
 6. In TextEdit (now frontmost), hold ⌥, press Tab then ⇧Tab to come back to TextEdit, press `↓`: the second window is highlighted, not the one you are in. Release ⌥: that window comes to the front.
 7. With the Window list open, press Tab: the list closes and the next app is selected. Press `Esc`: nothing changes.
-8. Minimize a TextEdit window (⌘M), wait one second, select it in the Window list and release ⌥: it comes back from the Dock and to the front. More in "Switcher: minimized, hidden and full-screen windows".
+8. Minimize a TextEdit window (⌘M), wait one second, select it in the Window list and release ⌥: it comes back from the Dock and to the front. More in "Switcher: minimized and hidden windows".
 9. Click TextEdit's back window (the last one in its Window list) to raise it, wait one second. Hold ⌥, select TextEdit, `↓`: that window is now first in the list, the one in front before it second. Press `Esc`.
 10. `log stream --predicate 'subsystem == "io.github.iacoware.downtab" AND category == "focus"'` shows a `raise pid=... wid=... private=true ax=0` line for each window confirmed. `private=false` means a private API is missing: the window still comes forward, but with all of the app's windows, and `log show --last 1h --predicate 'subsystem == "io.github.iacoware.downtab" AND category == "private-api"'` shows one `private symbol missing: <name>, its feature is off` line per missing symbol; the app keeps running.
 
@@ -179,12 +179,12 @@ Before starting: `make run`, Accessibility granted to Downtab. Open TextEdit wit
 9. Click the Safari window (one window) and press `` ⌥` ``: no Switcher appears and nothing changes. Same with `` ⌥⇧` ``, and in an app with no windows (close all TextEdit windows with ⌘W, then press `` ⌥` `` in TextEdit).
 10. `log show --last 1h --predicate 'subsystem == "io.github.iacoware.downtab" AND category == "keyboard"'` shows `` shortcut ⌥` registered `` and `` shortcut ⌥⇧` registered `` at launch, next to the ⌥Tab ones.
 
-## Switcher: minimized, hidden and full-screen windows
+## Switcher: minimized and hidden windows
 
 Before starting: `make run`, Accessibility granted to Downtab, two Spaces (Mission Control, `+`). In Space 1 open TextEdit with 3 windows titled apart (`one`, `two`, `three`), then Notes, clicking each to bring it to the front. In a second terminal run `log stream --level info --predicate 'subsystem == "io.github.iacoware.downtab" AND (category == "scan" OR category == "focus")'` and keep it open. Wait one second after each change before pressing ⌥Tab. Press `Esc` after each check unless the step says to release ⌥.
 
-1. Full-screen detection first (open risk in #1): make TextEdit's `one` window full screen (green button), go back to Space 1 (⌃←), wait one second. Hold ⌥, select TextEdit, press `↓`: `one` is listed with a `Full screen` tag after its title. If it has no tag, the detection failed: stop here and note it in the issue.
-2. Release ⌥ on `one`: macOS moves to its full-screen Space and `one` is frontmost with the keyboard focus (type a few letters: they land in it). If it does not move Space, or another TextEdit window comes forward instead, note it in the issue.
+1. Make TextEdit's `one` window full screen (green button), go back to Space 1 (⌃←), wait one second. Hold ⌥, select TextEdit, press `↓`: `one` is not in the Window list, only `two` and `three` are. Full-screen windows never appear in a Window list. Press `Esc`.
+2. Move to `one`'s full-screen Space (⌃→). Reaching it from the Switcher goes through App level: checked in "Switcher: which apps appear", step 7.
 3. From the full-screen `one`, hold ⌥ and press Tab: every running app with a Dock icon is in the App row, none has a Window count badge, and `↓` opens no Window list on any app. Press `Esc`.
    Select Notes and release ⌥: macOS moves to Space 1 and Notes is frontmost. The log shows `front after activate pid=... wid=... private=true ax=0 via=...`: `via=listed` or `via=remote` (found among the app's Accessibility elements). `ax=unlisted via=remote-missed` or `via=remote-unavailable` means the window was not raised: note it in the issue. If macOS stays in the full-screen Space (note it in the issue, with the `focus` log lines), wait one second and ⌥Tab again: the App row still lists every running app with a Dock icon, not only TextEdit.
    Repeat from `one` with an app that does not bring a window forward on activation, ideally Miro, Orca, cmux or Notion Calendar, with its windows only in Space 1: releasing ⌥ on it moves to Space 1 and its frontmost window is in front with the keyboard focus. Leave full screen (green button) and go back to Space 1.
