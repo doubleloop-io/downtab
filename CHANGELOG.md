@@ -4,6 +4,8 @@ User-facing changes to Downtab. Format: [Keep a Changelog](https://keepachangelo
 
 ## [Unreleased]
 
+## [0.1.2] - 2026-11-06
+
 ### Added
 
 - `About Downtab` in the menu bar menu shows the installed version and build.
