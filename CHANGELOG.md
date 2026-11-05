@@ -4,6 +4,10 @@ User-facing changes to Downtab. Format: [Keep a Changelog](https://keepachangelo
 
 ## [Unreleased]
 
+### Fixed
+
+- Window shortcut: pressed again quickly, it now always switches to the other window instead of sometimes doing nothing.
+
 ## [0.1.1] - 2026-11-06
 
 ### Fixed
