@@ -1,17 +1,20 @@
 # Developer commands. CI only runs `build` and `test`: signing material never leaves this Mac.
 .DEFAULT_GOAL := help
-.PHONY: help setup-signing build test check-core test-versioning lint format icon bundle run stop smoke restore restore-status \
+.PHONY: help setup-signing build test check-core test-versioning lint format icon bundle package run stop smoke restore restore-status \
 	version release
 
 EXE := Downtab
 APP := build/$(EXE).app
 RESTORE := build/EmergencyRestore
+ZIP := build/$(EXE).zip
 # Signing material lives in the main checkout, shared by its worktrees: one certificate, one Accessibility grant.
 MAIN_CHECKOUT := $(shell common=$$(git rev-parse --path-format=absolute --git-common-dir 2>/dev/null) \
 	&& dirname "$$common" || pwd)
 SIGNING_DIR := $(MAIN_CHECKOUT)/.signing
 KEYCHAIN := $(SIGNING_DIR)/downtab.keychain-db
 KEYCHAIN_PASSWORD := downtab
+SIGN = codesign --force --keychain "$(KEYCHAIN)" \
+	-s "$$(openssl x509 -in $(SIGNING_DIR)/cert.crt -noout -fingerprint -sha1 | cut -d= -f2 | tr -d :)"
 
 # Workaround: with Swift 6.4's default build system, any `swift build` before `swift test` drops the
 # Swift Testing macro plugin path ("plugin for module 'TestingMacros' not found"). Passing it explicitly
@@ -27,14 +30,16 @@ help:
 	@echo "make lint            swift-format check (.swift-format) and SwiftLint (.swiftlint.yml); any violation fails"
 	@echo "make format          rewrite sources with swift-format"
 	@echo "make icon            render App/Icon/*.svg into App/AppIcon.icns (needs rsvg-convert)"
-	@echo "make bundle          release build, assemble and sign $(APP), copy Emergency restore to $(RESTORE)"
+	@echo "make bundle          release build, assemble and sign $(APP), copy and sign Emergency restore as $(RESTORE)"
+	@echo "make package         bundle, then zip $(APP) and $(RESTORE) as $(ZIP) (Downtab/ folder), checking signatures"
 	@echo "make run             bundle, then launch the app (quitting a running instance first)"
 	@echo "make stop            quit the running app"
 	@echo "make restore         Emergency restore: turn native ⌘Tab and ⌘\` back on, after a forced kill or a crash"
 	@echo "make restore-status  show whether native ⌘Tab and ⌘\` are on, changing nothing"
 	@echo "make smoke           bundle, launch, post ⌥/⌥Tab/⌥⇧Tab/⌥\`/⌥⇧\`/Esc, fail on a crash; must pass before closing an issue that touches the app"
 	@echo "make version V=X.Y.Z close the [Unreleased] changelog section as X.Y.Z and write X.Y.Z to VERSION; commits nothing"
-	@echo "make release         refuse unless on a clean, full main with a bumped VERSION, its changelog section and passing tests"
+	@echo "make release         refuse unless on a clean, full main with a bumped VERSION, its changelog section and passing tests;"
+	@echo "                     then package, tag vX.Y.Z, push the tag, publish the release with $(ZIP) in iacoware/downtab-app"
 	@echo
 	@echo "Release: 1. add user-facing entries under ## [Unreleased] in CHANGELOG.md while working"
 	@echo "         2. make version V=X.Y.Z, commit on main"
@@ -84,7 +89,8 @@ bundle:
 	@scripts/stamp-version.sh "$(APP)/Contents/Info.plist"
 	cp App/AppIcon.icns "$(APP)/Contents/Resources/AppIcon.icns"
 	@security unlock-keychain -p $(KEYCHAIN_PASSWORD) "$(KEYCHAIN)"
-	codesign --force --keychain "$(KEYCHAIN)" -s "$$(openssl x509 -in $(SIGNING_DIR)/cert.crt -noout -fingerprint -sha1 | cut -d= -f2 | tr -d :)" "$(APP)"
+	$(SIGN) "$(APP)"
+	$(SIGN) "$(RESTORE)"
 	@codesign --verify "$(APP)" && codesign -d -r- "$(APP)" 2>&1 | grep designated
 
 # Quit first: `open` would reactivate a still-exiting instance instead of launching the new build.
@@ -117,7 +123,10 @@ smoke: stop bundle
 version:
 	@scripts/bump-version.sh "$(V)"
 
-# Packaging and publishing land with #23: until then the target stops after the checks.
+package: bundle
+	@scripts/package.sh "$(APP)" "$(RESTORE)" "$(ZIP)"
+
 release:
 	@scripts/release-check.sh
-	@echo "packaging and publishing not implemented yet (#23)"; exit 1
+	@$(MAKE) --no-print-directory package
+	@scripts/release-publish.sh "$(ZIP)"

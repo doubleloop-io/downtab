@@ -11,11 +11,17 @@ TODAY=$(date +%F)
 
 failed() { echo "FAIL: $1"; failures=$((failures + 1)); }
 
-# Stubs: `gh release view` answers from $GH_RELEASES, `make test` exits with $MAKE_TEST_EXIT.
+# Stubs: `gh release view` answers from $GH_RELEASES; `gh release create` logs its arguments to $ROOT/gh-create
+# and its notes to $ROOT/gh-notes, then exits with $GH_CREATE_EXIT; `make test` exits with $MAKE_TEST_EXIT.
 mkdir -p "$ROOT/bin"
-cat >"$ROOT/bin/gh" <<'STUB'
+cat >"$ROOT/bin/gh" <<STUB
 #!/usr/bin/env bash
-[[ " ${GH_RELEASES:-} " == *" $3 "* ]] && { echo "$3"; exit 0; }
+if [ "\$2" = create ]; then
+  echo "\$*" >"$ROOT/gh-create"
+  while [ \$# -gt 0 ]; do [ "\$1" = --notes-file ] && cat "\$2" >"$ROOT/gh-notes"; shift; done
+  exit "\${GH_CREATE_EXIT:-0}"
+fi
+[[ " \${GH_RELEASES:-} " == *" \$3 "* ]] && { echo "\$3"; exit 0; }
 echo "release not found"; exit 1
 STUB
 cat >"$ROOT/bin/make" <<'STUB'
@@ -140,6 +146,32 @@ echo 0.2.0 >VERSION && commit_all
 expect_refusal "release without changelog section" "no entries under ## [0.2.0]" "$SCRIPTS/release-check.sh"
 printf '# Changelog\n\n## [Unreleased]\n\n## [0.2.0] - %s\n\n### Added\n\n## [0.1.0] - 2026-01-01\n\n- First thing\n' "$TODAY" >CHANGELOG.md && commit_all
 expect_refusal "release with empty changelog section" "no entries under ## [0.2.0]" "$SCRIPTS/release-check.sh"
+
+# release notes: the version's section without its heading
+new_repo
+printf '# Changelog\n\n## [Unreleased]\n\n## [0.2.0] - 2026-02-01\n\n### Added\n\n- New thing\n\n### Fixed\n\n- Old bug\n\n## [0.1.0] - 2026-01-01\n\n- First thing\n' >CHANGELOG.md
+notes=$(source "$SCRIPTS/lib/version.sh" && changelog_section 0.2.0)
+[ "$notes" = "$(printf '### Added\n\n- New thing\n\n### Fixed\n\n- Old bug')" ] || failed "changelog section: $notes"
+
+# release publishing: tags, pushes the tag, creates the public release with the zip and the notes
+new_repo
+"$SCRIPTS/bump-version.sh" 0.2.0 >/dev/null && commit_all
+origin=$(mktemp -d "$ROOT/origin.XXXX")
+git init -q --bare "$origin" && git remote add origin "$origin"
+expect_refusal "publish without zip" "missing" "$SCRIPTS/release-publish.sh" "$ROOT/Downtab.zip"
+touch "$ROOT/Downtab.zip"
+expect_success "publish" "$SCRIPTS/release-publish.sh" "$ROOT/Downtab.zip"
+git -C "$origin" rev-parse --quiet --verify refs/tags/v0.2.0 >/dev/null || failed "publish did not push tag v0.2.0"
+[ "$(cat "$ROOT/gh-create")" = "release create v0.2.0 $ROOT/Downtab.zip --repo iacoware/downtab-app --title Downtab 0.2.0 --notes-file $(sed -n 's/.*--notes-file //p' "$ROOT/gh-create")" ] \
+  || failed "publish gh arguments: $(cat "$ROOT/gh-create")"
+[ "$(cat "$ROOT/gh-notes")" = "$(printf '### Added\n\n- New thing')" ] || failed "publish notes: $(cat "$ROOT/gh-notes")"
+
+new_repo
+"$SCRIPTS/bump-version.sh" 0.2.0 >/dev/null && commit_all
+origin=$(mktemp -d "$ROOT/origin.XXXX")
+git init -q --bare "$origin" && git remote add origin "$origin"
+GH_CREATE_EXIT=1 expect_refusal "publish when gh fails" "tag v0.2.0 pushed but the release failed" \
+  "$SCRIPTS/release-publish.sh" "$ROOT/Downtab.zip"
 
 if [ "$failures" -gt 0 ]; then echo "versioning: $failures failed"; exit 1; fi
 echo "versioning ok"

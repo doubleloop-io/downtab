@@ -1,6 +1,8 @@
 # Sourced by the versioning scripts. Paths are relative to the repo root (the scripts' working directory).
 VERSION_FILE=VERSION
 CHANGELOG_FILE=CHANGELOG.md
+# Public: hosts the download page and the releases, while this repo stays private.
+RELEASE_REPO=iacoware/downtab-app
 SEMVER_PATTERN='^(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)$'
 
 fail() { echo "$*" >&2; exit 1; }
@@ -43,5 +45,15 @@ changelog_entries() {
     index($0, heading) == 1 { inside = 1; next }
     inside && /^## / { exit }
     inside && /^[-*] / { print }
+  ' "$CHANGELOG_FILE" 2>/dev/null
+}
+
+# Prints a changelog section without its heading or surrounding blank lines: the release notes.
+changelog_section() {
+  awk -v heading="## [$1]" '
+    index($0, heading) == 1 { inside = 1; next }
+    inside && /^## / { exit }
+    inside && NF { while (blanks > 0) { print ""; blanks-- } print; started = 1; next }
+    inside && started { blanks++ }
   ' "$CHANGELOG_FILE" 2>/dev/null
 }
