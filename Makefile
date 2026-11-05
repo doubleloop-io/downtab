@@ -1,6 +1,7 @@
 # Developer commands. CI only runs `build` and `test`: signing material never leaves this Mac.
 .DEFAULT_GOAL := help
-.PHONY: help setup-signing build test check-core lint format icon bundle run stop smoke restore restore-status
+.PHONY: help setup-signing build test check-core test-versioning lint format icon bundle run stop smoke restore restore-status \
+	version release
 
 EXE := Downtab
 APP := build/$(EXE).app
@@ -32,6 +33,13 @@ help:
 	@echo "make restore         Emergency restore: turn native ⌘Tab and ⌘\` back on, after a forced kill or a crash"
 	@echo "make restore-status  show whether native ⌘Tab and ⌘\` are on, changing nothing"
 	@echo "make smoke           bundle, launch, post ⌥/⌥Tab/⌥⇧Tab/⌥\`/⌥⇧\`/Esc, fail on a crash; must pass before closing an issue that touches the app"
+	@echo "make version V=X.Y.Z close the [Unreleased] changelog section as X.Y.Z and write X.Y.Z to VERSION; commits nothing"
+	@echo "make release         refuse unless on a clean, full main with a bumped VERSION, its changelog section and passing tests"
+	@echo
+	@echo "Release: 1. add user-facing entries under ## [Unreleased] in CHANGELOG.md while working"
+	@echo "         2. make version V=X.Y.Z, commit on main"
+	@echo "         3. make smoke (manual, needs Accessibility)"
+	@echo "         4. make release (from main)"
 
 icon:
 	@scripts/make-icon.sh
@@ -42,8 +50,11 @@ setup-signing:
 build:
 	swift build $(SWIFT_FLAGS)
 
-test: check-core lint
+test: check-core test-versioning lint
 	swift test $(SWIFT_FLAGS)
+
+test-versioning:
+	@scripts/test-versioning.sh
 
 check-core:
 	@scripts/check-core.sh
@@ -58,8 +69,10 @@ lint:
 	swift format lint --strict --recursive $(FORMAT_PATHS)
 	TOOLCHAIN_DIR="$$(cd "$$(dirname "$$(xcrun -f swift)")/../.." && pwd)" swift package plugin --allow-writing-to-package-directory swiftlint --strict --quiet
 
+# Checks VERSION and the build number before the slow release build; stamp-version.sh writes them after it.
 bundle:
 	@test -f "$(KEYCHAIN)" || { echo "signing missing: run make setup-signing"; exit 1; }
+	@bash -c 'source scripts/lib/version.sh && read_version >/dev/null && build_number >/dev/null'
 	swift build -c release --product $(EXE) $(SWIFT_FLAGS)
 	swift build -c release --product EmergencyRestore $(SWIFT_FLAGS)
 	mkdir -p build
@@ -68,6 +81,7 @@ bundle:
 	mkdir -p "$(APP)/Contents/MacOS" "$(APP)/Contents/Resources"
 	cp "$$(swift build -c release --show-bin-path)/$(EXE)" "$(APP)/Contents/MacOS/$(EXE)"
 	cp App/Info.plist "$(APP)/Contents/Info.plist"
+	@scripts/stamp-version.sh "$(APP)/Contents/Info.plist"
 	cp App/AppIcon.icns "$(APP)/Contents/Resources/AppIcon.icns"
 	@security unlock-keychain -p $(KEYCHAIN_PASSWORD) "$(KEYCHAIN)"
 	codesign --force --keychain "$(KEYCHAIN)" -s "$$(openssl x509 -in $(SIGNING_DIR)/cert.crt -noout -fingerprint -sha1 | cut -d= -f2 | tr -d :)" "$(APP)"
@@ -99,3 +113,11 @@ restore-status: $(RESTORE)
 # Local only: posting synthetic events needs the Accessibility permission for the terminal.
 smoke: stop bundle
 	@scripts/smoke.sh "$(APP)"
+
+version:
+	@scripts/bump-version.sh "$(V)"
+
+# Packaging and publishing land with #23: until then the target stops after the checks.
+release:
+	@scripts/release-check.sh
+	@echo "packaging and publishing not implemented yet (#23)"; exit 1
