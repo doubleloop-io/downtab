@@ -19,11 +19,12 @@ All commands go through `make` (run it with no target for the list). Prefer it o
 | `make lint` | Format check with swift-format (`.swift-format`), then SwiftLint (pinned in `Package.swift`, rules in `.swiftlint.yml`). Any violation fails. |
 | `make format` | Rewrites sources with swift-format. |
 | `make icon` | Renders `App/Icon/*.svg` into `App/AppIcon.icns` (needs `rsvg-convert`). The `.icns` is committed; rerun only after editing an SVG. |
-| `make bundle` | Release build, assembles `build/Downtab.app`, stamps the version (see Versioning) and signs it with the local certificate. |
+| `make bundle` | Release build, assembles `build/Downtab.app`, stamps the version (see Versioning) and signs it and `build/EmergencyRestore` with the local certificate. |
+| `make package` | Bundles, then zips `Downtab/Downtab.app` and `Downtab/EmergencyRestore` into `build/Downtab.zip`, and checks both signatures survive unzipping. |
 | `make run` | Quits a running instance, bundles, then launches the app. |
 | `make stop` | Quits the running app. |
 | `make version V=X.Y.Z` | Closes `## [Unreleased]` in `CHANGELOG.md` as `## [X.Y.Z] - <today>` and writes `X.Y.Z` to `VERSION`. Refuses a malformed or non-greater `V`, or an empty `[Unreleased]`. Commits nothing. |
-| `make release` | Refuses unless on `main`, clean, not shallow, `VERSION` greater than every `v*` tag, no tag or public release for it yet, a non-empty changelog section for it, and `make test` passing. Packaging and publishing: #23. |
+| `make release` | Refuses unless on `main`, clean, not shallow, `VERSION` greater than every `v*` tag, no tag or public release for it yet, a non-empty changelog section for it, and `make test` passing. Then packages, tags `vX.Y.Z`, pushes the tag and publishes the release in `iacoware/downtab-app` (see Distribution). |
 
 ## Versioning
 
@@ -37,6 +38,15 @@ Release:
 2. `make version V=X.Y.Z`, commit on `main`.
 3. `make smoke` (manual, needs Accessibility).
 4. `make release` (from `main`).
+
+## Distribution
+
+This repo is private, so friends download from the public repo [`iacoware/downtab-app`](https://github.com/iacoware/downtab-app):
+
+- Its GitHub Pages site (served from `main`, root) is the download page. `index.html` is a copy of `docs/downtab-landing.html`, next to `downtab-landing-screenshot.jpg` from `docs/`: edit them here, then copy both there.
+- Its releases carry `Downtab.zip`, published by `make release` with the version's `CHANGELOG.md` section as notes. Stable link: `https://github.com/iacoware/downtab-app/releases/latest/download/Downtab.zip`.
+- Apple Silicon only, self-signed, not notarized: the page explains clearing the quarantine with `xattr`.
+- If `make release` fails after pushing the tag, it prints the `gh release create` command to finish by hand.
 
 ## Layout
 
