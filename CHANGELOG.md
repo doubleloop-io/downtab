@@ -4,6 +4,8 @@ User-facing changes to Downtab. Format: [Keep a Changelog](https://keepachangelo
 
 ## [Unreleased]
 
+## [0.1.0] - 2026-11-05
+
 ### Added
 
 - App switcher with ⌥Tab / ⌥⇧Tab: apps in most recently used order, like the native ⌘Tab.
