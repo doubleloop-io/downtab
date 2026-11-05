@@ -1,7 +1,7 @@
 # Developer commands. CI only runs `build` and `test`: signing material never leaves this Mac.
 .DEFAULT_GOAL := help
-.PHONY: help setup-signing build test check-core test-versioning lint format icon bundle package run stop smoke restore restore-status \
-	version release
+.PHONY: help setup-signing build test check-core test-versioning test-publish-site lint format icon bundle package run stop smoke restore restore-status \
+	version release publish-site
 
 EXE := Downtab
 APP := build/$(EXE).app
@@ -40,6 +40,7 @@ help:
 	@echo "make version V=X.Y.Z close the [Unreleased] changelog section as X.Y.Z and write X.Y.Z to VERSION; commits nothing"
 	@echo "make release         refuse unless on a clean, full main with a bumped VERSION, its changelog section and passing tests;"
 	@echo "                     then package, tag vX.Y.Z, push the tag, publish the release with $(ZIP) in iacoware/downtab-app"
+	@echo "make publish-site    from a clean main: copy the download page in website/ to the iacoware/downtab-app Pages site, push"
 	@echo
 	@echo "Release: 1. add user-facing entries under ## [Unreleased] in CHANGELOG.md while working"
 	@echo "         2. make version V=X.Y.Z, commit on main"
@@ -55,11 +56,14 @@ setup-signing:
 build:
 	swift build $(SWIFT_FLAGS)
 
-test: check-core test-versioning lint
+test: check-core test-versioning test-publish-site lint
 	swift test $(SWIFT_FLAGS)
 
 test-versioning:
 	@scripts/test-versioning.sh
+
+test-publish-site:
+	@scripts/test-publish-site.sh
 
 check-core:
 	@scripts/check-core.sh
@@ -130,3 +134,6 @@ release:
 	@scripts/release-check.sh
 	@$(MAKE) --no-print-directory package
 	@scripts/release-publish.sh "$(ZIP)"
+
+publish-site:
+	@scripts/publish-site.sh
