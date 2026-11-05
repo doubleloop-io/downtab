@@ -43,7 +43,7 @@ Release:
 
 This repo is private, so friends download from the public repo [`iacoware/downtab-app`](https://github.com/iacoware/downtab-app):
 
-- Its GitHub Pages site (served from `main`, root) is the download page. `index.html` is a copy of `docs/downtab-landing.html`, next to `downtab-landing-screenshot.jpg` from `docs/`: edit them here, then copy both there.
+- Its GitHub Pages site (served from `main`, root) is the download page. `index.html` is a copy of `website/downtab-landing.html`, next to `downtab-landing-screenshot.jpg` from `website/`: edit them here, then copy both there.
 - Its releases carry `Downtab.zip`, published by `make release` with the version's `CHANGELOG.md` section as notes. Stable link: `https://github.com/iacoware/downtab-app/releases/latest/download/Downtab.zip`.
 - Apple Silicon only, self-signed, not notarized: the page explains clearing the quarantine with `xattr`.
 - If `make release` fails after pushing the tag, it prints the `gh release create` command to finish by hand.
@@ -55,6 +55,7 @@ This repo is private, so friends download from the public repo [`iacoware/downta
 - `App/Info.plist`: bundle metadata (`LSUIElement`, no Dock icon); no version keys, `make bundle` stamps them.
 - `Makefile`, `scripts/`: developer commands; `scripts/` holds the steps too long for a Makefile recipe.
 - `docs/manual-checklist.md`: checks to run by hand on the real app.
+- `website/`: the download page and its screenshot.
 - `spike/`: the throwaway spike, kept as a reference.
 
 ## Signing and permissions
