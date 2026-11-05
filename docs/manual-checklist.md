@@ -22,8 +22,10 @@ Before starting: grant Accessibility to the terminal (System Settings › Privac
 1. `make run` ends with a line `designated => identifier "io.github.iacoware.downtab" and certificate leaf = H"..."` and `running: ...`.
 2. A Downtab icon (stacked rectangles) appears in the menu bar.
 3. No Downtab icon appears in the Dock, and Downtab is not listed in ⌘Tab.
-4. Click the menu bar icon: the menu shows `Preferences…` and `Quit Downtab`. Click `Quit Downtab`: the icon disappears.
-5. Run `make run` again, then `make stop`: it prints `stopped` and the icon disappears.
+4. Click the menu bar icon: the menu shows `About Downtab`, `Preferences…` and `Quit Downtab`, in this order.
+5. Click `About Downtab`: the standard About panel opens in front of other windows, with the Downtab name and icon, and a version and build matching `defaults read "$PWD/build/Downtab.app/Contents/Info" CFBundleShortVersionString` and `CFBundleVersion`. Close it.
+6. Click `Quit Downtab`: the icon disappears.
+7. Run `make run` again, then `make stop`: it prints `stopped` and the icon disappears.
 
 ## Signing survives rebuilds
 

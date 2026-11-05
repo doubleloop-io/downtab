@@ -18,6 +18,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         let menu = NSMenu()
         permissionMissingItem.target = self
         menu.addItem(permissionMissingItem)
+        menu.addItem(withTitle: "About Downtab", action: #selector(openAbout), keyEquivalent: "").target = self
         menu.addItem(withTitle: "Preferences…", action: #selector(openPreferences), keyEquivalent: ",").target = self
         menu.addItem(.separator())
         menu.addItem(withTitle: "Quit Downtab", action: #selector(NSApplication.terminate(_:)), keyEquivalent: "q")
@@ -52,6 +53,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     func applicationWillTerminate(_ notification: Notification) {
         takeover.restore()
+    }
+
+    @objc private func openAbout() {
+        // An agent app is not active when its menu bar menu is used: without activating, the panel opens behind other windows.
+        NSApp.activate()
+        NSApp.orderFrontStandardAboutPanel(nil)
     }
 
     @objc private func openPreferences() {
