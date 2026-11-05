@@ -3,10 +3,10 @@ import SwitcherCore
 
 final class PreferencesWindow: NSWindow, NSWindowDelegate {
     private static let accessibilitySettings = URL(
-        string: "x-apple.systempreferences:com.apple.preference.security?Privacy_Accessibility")
+        string: "x-apple.systempreferences:com.apple.settings.PrivacySecurity.extension?Privacy_Accessibility")
 
     private let settings: ShortcutSettings
-    private let permissionBox = NSBox()
+    private let permissionBox = HighlightBox()
     private let permissionStatus = NSTextField(wrappingLabelWithString: "")
     private let openSystemSettings = NSButton(title: "Open System Settings", target: nil, action: nil)
     private let launchAtLogin = LaunchAtLogin()
@@ -43,12 +43,7 @@ final class PreferencesWindow: NSWindow, NSWindowDelegate {
             ? "Granted"
             : "Not granted: the shortcuts do nothing until you allow Downtab in System Settings."
         permissionStatus.textColor = isGranted ? .secondaryLabelColor : .labelColor
-        permissionBox.fillColor = isGranted ? .clear : .systemYellow.withAlphaComponent(0.25)
-        permissionBox.borderColor = isGranted ? .clear : .systemYellow
-        // Without the highlight, "Granted" must sit where the other fields start, not inset by the box padding.
-        let padding = isGranted ? 0 : Layout.permissionPadding
-        permissionBox.borderWidth = isGranted ? 0 : 1
-        permissionBox.contentViewMargins = NSSize(width: padding, height: padding)
+        permissionBox.isHighlighted = !isGranted
         openSystemSettings.isHidden = isGranted
         fitToContent()
     }
@@ -84,10 +79,9 @@ final class PreferencesWindow: NSWindow, NSWindowDelegate {
         permissionStatus.preferredMaxLayoutWidth = Layout.fieldColumnWidth - 2 * Layout.permissionPadding
         openSystemSettings.target = self
         openSystemSettings.action = #selector(openAccessibilitySettings)
-        let stack = Self.leadingColumn([permissionStatus, openSystemSettings], spacing: 6)
-        permissionBox.boxType = .custom
-        permissionBox.cornerRadius = 6
-        permissionBox.contentView = stack
+        permissionBox.setContent(
+            Self.leadingColumn([permissionStatus, openSystemSettings], spacing: 6),
+            padding: Layout.permissionPadding)
         permissionBox.setAccessibilityLabel("Accessibility permission")
         return permissionBox
     }
@@ -272,5 +266,42 @@ final class PreferencesWindow: NSWindow, NSWindowDelegate {
             notification: .announcementRequested,
             userInfo: [.announcement: text, .priority: NSAccessibilityPriorityLevel.high.rawValue]
         )
+    }
+}
+
+/// A yellow rounded highlight around its content. NSBox ignores Auto Layout for its content view, so the
+/// grid sized it to a single line and the wrapped status overflowed onto the shortcut rows.
+private final class HighlightBox: NSView {
+    private var paddingConstraints: [NSLayoutConstraint] = []
+    private var padding: CGFloat = 0
+
+    /// Without the highlight, the content must sit where the other fields start, not inset by the padding.
+    var isHighlighted = false {
+        didSet {
+            for constraint in paddingConstraints { constraint.constant = isHighlighted ? padding : 0 }
+            needsDisplay = true
+        }
+    }
+
+    func setContent(_ content: NSView, padding: CGFloat) {
+        self.padding = padding
+        content.translatesAutoresizingMaskIntoConstraints = false
+        addSubview(content)
+        paddingConstraints = [
+            content.topAnchor.constraint(equalTo: topAnchor),
+            content.leadingAnchor.constraint(equalTo: leadingAnchor),
+            trailingAnchor.constraint(equalTo: content.trailingAnchor),
+            bottomAnchor.constraint(equalTo: content.bottomAnchor),
+        ]
+        NSLayoutConstraint.activate(paddingConstraints)
+    }
+
+    override func draw(_ dirtyRect: NSRect) {
+        guard isHighlighted else { return }
+        let path = NSBezierPath(roundedRect: bounds.insetBy(dx: 0.5, dy: 0.5), xRadius: 6, yRadius: 6)
+        NSColor.systemYellow.withAlphaComponent(0.25).setFill()
+        path.fill()
+        NSColor.systemYellow.setStroke()
+        path.stroke()
     }
 }
