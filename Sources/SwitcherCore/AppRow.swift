@@ -56,14 +56,13 @@ extension DesktopSnapshot {
     private func labels(of window: DesktopWindow, in app: DesktopApp) -> [WindowLabel] {
         [
             window.isMinimized ? .minimized : nil,
-            window.isFullScreen ? .fullScreen : nil,
             app.isHidden ? .hidden : nil,
         ].compactMap(\.self)
     }
 
-    /// A window the Switcher can bring forward without leaving the Current Space, or a full-screen one.
+    /// A window the Switcher can bring forward without leaving the Current Space.
     private func isReachable(_ window: DesktopWindow) -> Bool {
-        window.isRealWindow && (window.spaces.isEmpty || window.isIn(currentSpaces) || window.isFullScreen)
+        window.isRealWindow && (window.spaces.isEmpty || window.isIn(currentSpaces))
     }
 }
 

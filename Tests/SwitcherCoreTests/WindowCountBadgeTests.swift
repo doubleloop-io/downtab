@@ -49,9 +49,11 @@ import Testing
     #expect(opened(on: desktop).state.windowCountBadge(of: "Safari") == 2)
 }
 
-@Test func windowsInNoSpaceAndFullScreenWindowsCountTowardsTheBadge() {
+@Test func windowsInNoSpaceCountTowardsTheBadgeButFullScreenWindowsDoNot() {
     let desktop = DesktopSnapshot.with(
-        apps: [.regular("Safari", windows: [.window(in: []), .window(in: [7], isFullScreen: true)])],
+        apps: [
+            .regular("Safari", windows: [.window(in: []), .window(in: []), .window(in: [7], isFullScreen: true)])
+        ],
         currentSpaces: [1]
     )
 

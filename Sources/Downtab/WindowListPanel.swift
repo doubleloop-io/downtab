@@ -189,7 +189,6 @@ extension WindowLabel {
     fileprivate var text: String {
         switch self {
         case .minimized: "Minimized"
-        case .fullScreen: "Full screen"
         case .hidden: "Hidden"
         }
     }
