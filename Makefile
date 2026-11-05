@@ -31,7 +31,7 @@ help:
 	@echo "make stop            quit the running app"
 	@echo "make restore         Emergency restore: turn native ⌘Tab and ⌘\` back on, after a forced kill or a crash"
 	@echo "make restore-status  show whether native ⌘Tab and ⌘\` are on, changing nothing"
-	@echo "make smoke         bundle, launch, post ⌥/⌥Tab/⌥⇧Tab/⌥`/⌥⇧`/Esc, fail on a crash; must pass before closing an issue that touches the app"
+	@echo "make smoke           bundle, launch, post ⌥/⌥Tab/⌥⇧Tab/⌥\`/⌥⇧\`/Esc, fail on a crash; must pass before closing an issue that touches the app"
 
 icon:
 	@scripts/make-icon.sh
