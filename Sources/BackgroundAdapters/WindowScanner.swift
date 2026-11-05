@@ -38,8 +38,11 @@ public actor WindowScanner {
         let began = ContinuousClock.now
         let spaces = PrivateSpaces.displaySpaces()
         let serverWindows = Self.serverWindowsByProcess()
+        let ranks = OnScreenWindowOrder.windowRanks()
         let result = await query.run(apps, within: Self.appDeadline) { app in
-            Self.windows(of: app, serverWindows: serverWindows[app.processIdentifier] ?? [:], spaces: spaces)
+            Self.windows(
+                of: app, serverWindows: serverWindows[app.processIdentifier] ?? [:], onScreenRanks: ranks,
+                spaces: spaces)
         }
         log(result, previous: windowsByApp, took: ContinuousClock.now - began)
         windowsByApp = result.answers
@@ -71,7 +74,8 @@ public actor WindowScanner {
 
     private static func windows(
         of app: AppID,
-        serverWindows: [CGWindowID: ServerWindow],
+        serverWindows: [CGWindowID: WindowSize],
+        onScreenRanks: [WindowID: Int],
         spaces: PrivateSpaces.DisplaySpaces
     ) -> [DesktopWindow]? {
         let element = Accessibility.application(app.processIdentifier)
@@ -95,44 +99,28 @@ public actor WindowScanner {
                     isMinimized: AXAttribute.bool(of: window, kAXMinimizedAttribute),
                     isFullScreen: AXAttribute.bool(of: window, fullScreenAttribute)
                         || !windowSpaces.isDisjoint(with: spaces.fullScreen),
-                    size: id.flatMap { serverWindows[$0]?.size } ?? WindowSize(width: 0, height: 0)
+                    size: id.flatMap { serverWindows[$0] } ?? WindowSize(width: 0, height: 0)
                 ))
         }
         // Accessibility does not list normal windows of other Spaces: only the window server knows them.
-        for (id, server) in serverWindows where !listed.contains(id) {
+        for (id, size) in serverWindows where !listed.contains(id) {
             let windowSpaces = PrivateSpaces.spaces(of: id)
             windows.append(
                 DesktopWindow(
                     id: WindowID(id), title: "", role: nil, subrole: nil,
                     spaces: Set(windowSpaces.map(SpaceID.init)), isMinimized: false,
-                    isFullScreen: !windowSpaces.isDisjoint(with: spaces.fullScreen), size: server.size
+                    isFullScreen: !windowSpaces.isDisjoint(with: spaces.fullScreen), size: size
                 ))
         }
         // Accessibility's order is up to each app.
-        return windows.sorted { lhs, rhs in
-            onScreenRank(of: lhs, in: serverWindows) < onScreenRank(of: rhs, in: serverWindows)
-        }
+        return windows.orderedFrontToBack(onScreenRanks: onScreenRanks)
     }
 
-    private static func onScreenRank(of window: DesktopWindow, in serverWindows: [CGWindowID: ServerWindow]) -> Int {
-        window.id.flatMap { serverWindows[$0.rawValue]?.onScreenRank } ?? Int.max
-    }
-
-    private struct ServerWindow {
-        let size: WindowSize
-        /// Position among on-screen windows, front to back.
-        let onScreenRank: Int?
-    }
-
-    /// Only the on-screen list is front to back: the full one is in no useful order (issue #26). For on-screen
-    /// windows that order is MRU, since focusing a window raises it.
-    private static func serverWindowsByProcess() -> [pid_t: [CGWindowID: ServerWindow]] {
-        let onScreen = WindowServerList.normalWindows(includingOffScreen: false).map(\.id)
-        let ranks = Dictionary(zip(onScreen, onScreen.indices), uniquingKeysWith: { first, _ in first })
-        var result: [pid_t: [CGWindowID: ServerWindow]] = [:]
+    private static func serverWindowsByProcess() -> [pid_t: [CGWindowID: WindowSize]] {
+        var result: [pid_t: [CGWindowID: WindowSize]] = [:]
         for window in WindowServerList.normalWindows(includingOffScreen: true) {
-            let size = WindowSize(width: window.bounds.width, height: window.bounds.height)
-            result[window.ownerPID, default: [:]][window.id] = ServerWindow(size: size, onScreenRank: ranks[window.id])
+            result[window.ownerPID, default: [:]][window.id] = WindowSize(
+                width: window.bounds.width, height: window.bounds.height)
         }
         return result
     }
