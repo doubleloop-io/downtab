@@ -1,0 +1,245 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light dark">
+<title>Downtab: a window-aware app switcher for macOS</title>
+<meta name="description" content="A macOS app switcher that works like ⌘Tab, and lets you drop down to a single window of an app.">
+<meta property="og:title" content="Downtab for macOS">
+<meta property="og:description" content="A macOS app switcher that works like ⌘Tab, and lets you drop down to a single window of an app.">
+<meta property="og:type" content="website">
+<meta name="twitter:card" content="summary">
+<style>
+:root {
+  --font-sans: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", Arial, sans-serif;
+  --font-display: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Helvetica Neue", Arial, sans-serif;
+  --font-mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  --background: oklch(0.985 0.002 270);
+  --foreground: oklch(0.2 0.005 270);
+  --card: oklch(1 0 0);
+  --primary: oklch(0.56 0.21 278);
+  --primary-foreground: oklch(0.99 0 0);
+  --muted-foreground: oklch(0.5 0.01 270);
+  --accent: oklch(0.94 0.03 278);
+  --accent-foreground: oklch(0.4 0.18 278);
+  --border: oklch(0.91 0.004 270);
+  --code: oklch(0.955 0.003 270);
+  --code-foreground: oklch(0.25 0.005 270);
+  --hero-glow: radial-gradient(60% 50% at 50% 0%, oklch(0.56 0.21 278 / 0.12), transparent 70%);
+  --shadow-panel: 0 30px 80px -20px oklch(0.2 0.02 270 / 0.3), 0 0 0 0.5px oklch(0.2 0.005 270 / 0.12);
+  --shadow-button: 0 8px 24px -8px oklch(0.56 0.21 278 / 0.6);
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --background: oklch(0.17 0.004 270);
+    --foreground: oklch(0.96 0.002 270);
+    --card: oklch(0.21 0.005 270);
+    --primary: oklch(0.66 0.19 278);
+    --muted-foreground: oklch(0.7 0.01 270);
+    --accent: oklch(0.3 0.08 278);
+    --accent-foreground: oklch(0.85 0.1 278);
+    --border: oklch(1 0 0 / 10%);
+    --code: oklch(0.23 0.005 270);
+    --code-foreground: oklch(0.92 0.002 270);
+    --hero-glow: radial-gradient(60% 50% at 50% 0%, oklch(0.66 0.19 278 / 0.18), transparent 70%);
+    --shadow-panel: 0 30px 80px -20px oklch(0 0 0 / 0.7), 0 0 0 0.5px oklch(1 0 0 / 0.15);
+  }
+}
+*, *::before, *::after { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; }
+body {
+  margin: 0;
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-sans);
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+}
+h1, h2, h3, p, ol { margin: 0; }
+a { color: inherit; }
+svg.i { width: 1em; height: 1em; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; flex-shrink: 0; }
+.muted { color: var(--muted-foreground); }
+
+header { background-image: var(--hero-glow); padding: 5rem 1.5rem 5rem; text-align: center; }
+.app-icon { display: block; width: 6rem; height: 6rem; margin: 0 auto; filter: drop-shadow(0 20px 13px rgb(0 0 0 / 0.03)) drop-shadow(0 8px 5px rgb(0 0 0 / 0.08)); }
+h1 { margin-top: 2rem; font-family: var(--font-display); font-size: 3rem; line-height: 1; font-weight: 600; letter-spacing: -0.025em; }
+.tagline { max-width: 36rem; margin: 1.25rem auto 0; font-size: 1.125rem; }
+.cta { margin-top: 2.25rem; display: flex; flex-direction: column; align-items: center; gap: 1rem; }
+.btn {
+  display: inline-flex; align-items: center; gap: 0.5rem;
+  border-radius: 9999px; background: var(--primary); color: var(--primary-foreground);
+  padding: 0.875rem 1.75rem; font-size: 1rem; font-weight: 500; text-decoration: none;
+  box-shadow: var(--shadow-button); transition: transform 0.15s;
+}
+.btn:hover { transform: scale(1.03); }
+.btn svg.i { width: 1.25rem; height: 1.25rem; }
+.meta { font-size: 0.875rem; }
+.meta a { color: var(--accent-foreground); text-decoration: none; white-space: nowrap; }
+.meta a:hover { text-decoration: underline; }
+.meta svg.i { width: 0.75rem; height: 0.75rem; vertical-align: -1px; }
+.shot { display: block; width: 100%; max-width: 64rem; height: auto; margin: 4rem auto 0; border-radius: 1rem; box-shadow: var(--shadow-panel); }
+
+main { max-width: 64rem; margin: 0 auto; padding: 0 1.5rem; }
+section { padding: 4rem 0; }
+h2 { font-family: var(--font-display); font-size: 1.875rem; line-height: 1.2; font-weight: 600; letter-spacing: -0.025em; }
+h3 { font-size: 1rem; font-weight: 500; }
+.center { text-align: center; }
+.subhead { margin: 1rem auto 0; max-width: 40rem; line-height: 1.8; }
+.features {
+  margin-top: 3rem; display: grid; gap: 1px; overflow: hidden;
+  border: 1px solid var(--border); border-radius: 1.375rem; background: var(--border);
+}
+.features > div { background: var(--card); padding: 1.5rem; }
+.features p { margin-top: 0.375rem; font-size: 0.875rem; line-height: 1.625; }
+.keys { margin-top: 2.5rem; display: flex; flex-wrap: wrap; justify-content: center; gap: 0.75rem 2rem; font-size: 0.875rem; }
+.keys > span { display: flex; align-items: center; gap: 0.5rem; }
+kbd {
+  display: inline-flex; min-width: 1.75rem; align-items: center; justify-content: center;
+  border-radius: 0.375rem; border: 1px solid var(--border); background: var(--card);
+  padding: 0.125rem 0.5rem; font-family: var(--font-sans); font-size: 0.8125rem;
+  color: var(--foreground); box-shadow: 0 1px 0 0 var(--border);
+}
+
+.border-top { border-top: 1px solid var(--border); }
+.steps { list-style: none; padding: 0; margin-top: 2rem; display: grid; gap: 2rem; }
+.steps li { display: grid; gap: 1rem; }
+.num {
+  display: flex; width: 2.25rem; height: 2.25rem; align-items: center; justify-content: center;
+  border-radius: 9999px; background: var(--accent); color: var(--accent-foreground);
+  font-size: 0.875rem; font-weight: 600;
+}
+.steps p { margin-top: 0.25rem; max-width: 42rem; line-height: 1.625; }
+
+.cmd {
+  display: flex; align-items: center; gap: 0.75rem; max-width: 42rem;
+  border-radius: 0.625rem; background: var(--code); color: var(--code-foreground);
+  padding: 0.75rem 1rem; font-family: var(--font-mono); font-size: 0.875rem;
+}
+.cmd .prompt { user-select: none; opacity: 0.5; }
+.cmd code { flex: 1; overflow-x: auto; white-space: nowrap; font-family: inherit; }
+.cmd button {
+  flex-shrink: 0; display: flex; padding: 0; border: 0; background: none; color: inherit;
+  cursor: pointer; opacity: 0.6; transition: opacity 0.15s;
+}
+.cmd button:hover { opacity: 1; }
+.cmd svg.i { width: 1rem; height: 1rem; }
+.cmd .ok { display: none; }
+.cmd.copied .ok { display: block; }
+.cmd.copied .cp { display: none; }
+.mt-3 { margin-top: 0.75rem; }
+
+.restore { margin-bottom: 6rem; border: 1px solid var(--border); border-radius: 1.375rem; background: var(--card); padding: 2rem; }
+.restore h2 { font-size: 1.5rem; }
+.restore .cmd { max-width: 36rem; }
+.restore summary { display: flex; align-items: center; justify-content: space-between; gap: 1rem; cursor: pointer; list-style: none; }
+.restore summary::-webkit-details-marker { display: none; }
+.restore .chev { width: 1.25rem; height: 1.25rem; color: var(--muted-foreground); transition: transform 0.2s; }
+.restore[open] .chev { transform: rotate(180deg); }
+code.inline { font-family: var(--font-mono); }
+
+footer { border-top: 1px solid var(--border); padding: 2.5rem 1.5rem; text-align: center; font-size: 0.875rem; }
+footer a { text-decoration: none; }
+footer a:hover { text-decoration: underline; }
+
+@media (min-width: 640px) {
+  header { padding-top: 7rem; }
+  .app-icon { width: 7rem; height: 7rem; }
+  h1 { font-size: 4.5rem; }
+  .tagline { font-size: 1.25rem; }
+  h2 { font-size: 2.25rem; }
+  .restore h2 { font-size: 1.5rem; }
+  .features { grid-template-columns: 1fr 1fr; }
+  .steps li { grid-template-columns: 3rem 1fr; }
+}
+</style>
+</head>
+<body>
+<header>
+  <svg class="app-icon" viewBox="50 50 412 412" role="img" aria-label="Downtab icon">
+    <defs>
+      <linearGradient id="dt-ground" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0" stop-color="#F2F2F2"/>
+        <stop offset="1" stop-color="#DADADA"/>
+      </linearGradient>
+      <clipPath id="dt-front"><rect x="106" y="200" width="300" height="195" rx="22"/></clipPath>
+    </defs>
+    <rect x="50" y="50" width="412" height="412" rx="92" fill="url(#dt-ground)"/>
+    <rect x="161" y="110" width="190" height="120" rx="18" fill="#BDBDBD"/>
+    <rect x="133" y="166" width="245" height="145" rx="20" fill="#000000"/>
+    <rect x="133" y="152" width="245" height="145" rx="20" fill="#969696"/>
+    <rect x="106" y="200" width="300" height="195" rx="22" fill="#FFFFFF"/>
+    <rect x="106" y="200" width="300" height="45" fill="#5E5CE6" clip-path="url(#dt-front)"/>
+  </svg>
+  <h1>Downtab</h1>
+  <p class="tagline muted">A macOS app switcher that works like ⌘Tab, and lets you drop down to a single window of an app.</p>
+  <div class="cta">
+    <a class="btn" href="https://github.com/iacoware/downtab-app/releases/latest/download/Downtab.zip">
+      <svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="15" y2="3"/></svg>
+      Download for Mac
+    </a>
+    <p class="meta muted">
+      macOS 15 or later · Apple Silicon only ·
+      <a href="https://github.com/iacoware/downtab-app/releases">Release notes <svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M15 3h6v6"/><path d="M10 14 21 3"/><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/></svg></a>
+    </p>
+  </div>
+  <img class="shot" src="downtab-landing-screenshot.jpg" width="1860" height="530"
+       alt="Downtab switcher: Visual Studio Code selected, with its Window list of eight windows open below the app row">
+</header>
+
+<main>
+  <section>
+    <h2 class="center">The ⌘Tab you know. One level deeper.</h2>
+    <p class="subhead center muted">Entirely keyboard-driven: <kbd>⌥Tab</kbd>, <kbd>Tab</kbd>, <kbd>Tab</kbd>, <kbd>↓</kbd>, <kbd>↓</kbd>, release. Your hands never leave the keys. Make the shortcuts yours.</p>
+    <div class="features">
+      <div><h3>Feels like ⌘Tab</h3><p class="muted">Hold ⌥ and press Tab: apps in most-recently-used order, exactly like the native switcher.</p></div>
+      <div><h3>Drop down to a window</h3><p class="muted">Press ↓ on an app with two or more windows to open its Window list, then pick just the one you want.</p></div>
+      <div><h3>Window count badge</h3><p class="muted">A small number on the icon tells you which apps have more than one window.</p></div>
+      <div><h3>Window shortcut</h3><p class="muted">⌥` opens the switcher on the current app with its windows already listed. Press again to move on, ⇧ to go back.</p></div>
+      <div><h3>Current Space only</h3><p class="muted">Only windows on the Spaces you're looking at, on every display. The switcher shows up on the screen with the pointer.</p></div>
+      <div><h3>Minimized, hidden, full screen</h3><p class="muted">Labelled in the list. Pick one and it comes back, or takes you to its full-screen Space.</p></div>
+      <div><h3>Quick press</h3><p class="muted">Tap and release fast to jump straight back to the previous app, without the switcher ever appearing.</p></div>
+      <div><h3>Titles, no thumbnails</h3><p class="muted">No Screen Recording permission, no capture lag.</p></div>
+    </div>
+  </section>
+
+  <section class="border-top install">
+    <h2>Install</h2>
+    <ol class="steps">
+      <li><span class="num">1</span><div><h3>Download and unzip</h3><p class="muted">Unzipping Downtab.zip gives you a Downtab folder with Downtab.app and EmergencyRestore.</p></div></li>
+      <li><span class="num">2</span><div><h3>Move it to Applications</h3><p class="muted">Drag Downtab.app into your Applications folder.</p></div></li>
+      <li><span class="num">3</span><div><h3>Get past Gatekeeper</h3><p class="muted">Downtab isn't notarized, so macOS blocks it the first time. Right-click the app → Open. Or, before moving it, clear the quarantine on the whole extracted folder (it covers EmergencyRestore too):</p>
+        <div class="cmd mt-3"><span class="prompt">$</span><code>xattr -dr com.apple.quarantine ~/Downloads/Downtab</code><button type="button" aria-label="Copy command"><svg class="i cp" viewBox="0 0 24 24" aria-hidden="true"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg><svg class="i ok" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg></button></div>
+      </div></li>
+      <li><span class="num">4</span><div><h3>Grant Accessibility</h3><p class="muted">System Settings → Privacy &amp; Security → Accessibility, then turn on Downtab. Updates keep the permission, as long as they're signed with the same certificate.</p></div></li>
+    </ol>
+  </section>
+
+  <details class="restore">
+    <summary><h2>Troubleshooting</h2><svg class="i chev" viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></summary>
+    <h3 style="margin-top:1.5rem;font-size:1.125rem;font-weight:600">⌘Tab is broken</h3>
+    <p class="muted" style="margin-top:0.5rem">Only needed if you set ⌘Tab or ⌘` as a Downtab shortcut. The defaults, ⌥Tab and ⌥`, never touch them.</p>
+    <p style="margin-top:1rem;max-width:42rem;line-height:1.625">After a crash or a forced quit, the native ⌘Tab / ⌘` can stay off. Double-click EmergencyRestore, or run it in Terminal from the Downtab folder, to turn them back on.</p>
+    <div class="cmd" style="margin-top:1rem"><span class="prompt">$</span><code>./EmergencyRestore</code><button type="button" aria-label="Copy command"><svg class="i cp" viewBox="0 0 24 24" aria-hidden="true"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg><svg class="i ok" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg></button></div>
+    <div class="cmd" style="margin-top:0.5rem"><span class="prompt">$</span><code>./EmergencyRestore --status</code><button type="button" aria-label="Copy command"><svg class="i cp" viewBox="0 0 24 24" aria-hidden="true"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg><svg class="i ok" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg></button></div>
+    <p class="muted" style="margin-top:0.5rem;font-size:0.875rem"><code class="inline">--status</code> only shows whether they're on or off, without changing anything.</p>
+  </details>
+</main>
+
+<footer class="muted">
+  Made for friends · <a href="https://github.com/iacoware/downtab-app/releases">All releases</a>
+</footer>
+
+<script>
+document.querySelectorAll(".cmd button").forEach(function (btn) {
+  btn.addEventListener("click", function () {
+    var box = btn.closest(".cmd");
+    var text = box.querySelector("code").textContent;
+    if (navigator.clipboard) navigator.clipboard.writeText(text);
+    box.classList.add("copied");
+    setTimeout(function () { box.classList.remove("copied"); }, 1500);
+  });
+});
+</script>
+</body>
+</html>
