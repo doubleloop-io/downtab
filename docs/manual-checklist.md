@@ -161,7 +161,8 @@ Before starting: `make run`, Accessibility granted to Downtab. Open TextEdit wit
 6. In TextEdit (now frontmost), hold ⌥, press Tab then ⇧Tab to come back to TextEdit, press `↓`: the second window is highlighted, not the one you are in. Release ⌥: that window comes to the front.
 7. With the Window list open, press Tab: the list closes and the next app is selected. Press `Esc`: nothing changes.
 8. Minimize a TextEdit window (⌘M), wait one second, select it in the Window list and release ⌥: it comes back from the Dock and to the front. More in "Switcher: minimized, hidden and full-screen windows".
-9. `log stream --predicate 'subsystem == "io.github.iacoware.downtab" AND category == "focus"'` shows a `raise pid=... wid=... private=true ax=0` line for each window confirmed. `private=false` means a private API is missing: the window still comes forward, but with all of the app's windows, and `log show --last 1h --predicate 'subsystem == "io.github.iacoware.downtab" AND category == "private-api"'` shows one `private symbol missing: <name>, its feature is off` line per missing symbol; the app keeps running.
+9. Click TextEdit's back window (the last one in its Window list) to raise it, wait one second. Hold ⌥, select TextEdit, `↓`: that window is now first in the list, the one in front before it second. Press `Esc`.
+10. `log stream --predicate 'subsystem == "io.github.iacoware.downtab" AND category == "focus"'` shows a `raise pid=... wid=... private=true ax=0` line for each window confirmed. `private=false` means a private API is missing: the window still comes forward, but with all of the app's windows, and `log show --last 1h --predicate 'subsystem == "io.github.iacoware.downtab" AND category == "private-api"'` shows one `private symbol missing: <name>, its feature is off` line per missing symbol; the app keeps running.
 
 ## Switcher: Window shortcut
 

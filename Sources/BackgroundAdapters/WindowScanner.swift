@@ -108,28 +108,31 @@ public actor WindowScanner {
                     isFullScreen: !windowSpaces.isDisjoint(with: spaces.fullScreen), size: server.size
                 ))
         }
-        // The window server lists windows front to back; Accessibility's order is up to each app.
+        // Accessibility's order is up to each app.
         return windows.sorted { lhs, rhs in
-            depth(of: lhs, in: serverWindows) < depth(of: rhs, in: serverWindows)
+            onScreenRank(of: lhs, in: serverWindows) < onScreenRank(of: rhs, in: serverWindows)
         }
     }
 
-    /// Windows the window server does not know go last.
-    private static func depth(of window: DesktopWindow, in serverWindows: [CGWindowID: ServerWindow]) -> Int {
-        window.id.flatMap { serverWindows[$0.rawValue]?.depth } ?? Int.max
+    private static func onScreenRank(of window: DesktopWindow, in serverWindows: [CGWindowID: ServerWindow]) -> Int {
+        window.id.flatMap { serverWindows[$0.rawValue]?.onScreenRank } ?? Int.max
     }
 
     private struct ServerWindow {
         let size: WindowSize
-        /// Position in the window server's front-to-back order.
-        let depth: Int
+        /// Position among on-screen windows, front to back.
+        let onScreenRank: Int?
     }
 
+    /// Only the on-screen list is front to back: the full one is in no useful order (issue #26). For on-screen
+    /// windows that order is MRU, since focusing a window raises it.
     private static func serverWindowsByProcess() -> [pid_t: [CGWindowID: ServerWindow]] {
+        let onScreen = WindowServerList.normalWindows(includingOffScreen: false).map(\.id)
+        let ranks = Dictionary(zip(onScreen, onScreen.indices), uniquingKeysWith: { first, _ in first })
         var result: [pid_t: [CGWindowID: ServerWindow]] = [:]
-        for (depth, window) in WindowServerList.normalWindows(includingOffScreen: true).enumerated() {
+        for window in WindowServerList.normalWindows(includingOffScreen: true) {
             let size = WindowSize(width: window.bounds.width, height: window.bounds.height)
-            result[window.ownerPID, default: [:]][window.id] = ServerWindow(size: size, depth: depth)
+            result[window.ownerPID, default: [:]][window.id] = ServerWindow(size: size, onScreenRank: ranks[window.id])
         }
         return result
     }

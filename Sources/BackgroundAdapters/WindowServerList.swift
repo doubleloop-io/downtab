@@ -9,7 +9,7 @@ enum WindowServerList {
         let bounds: CGRect
     }
 
-    /// Front to back. Off-screen windows include those of other Spaces and minimized ones.
+    /// Front to back only without off-screen windows, which include those of other Spaces and minimized ones.
     static func normalWindows(includingOffScreen: Bool) -> [Window] {
         let visibility: CGWindowListOption = includingOffScreen ? .optionAll : .optionOnScreenOnly
         let options: CGWindowListOption = [visibility, .excludeDesktopElements]
