@@ -1,6 +1,6 @@
 # Downtab
 
-A personal macOS app switcher. Principles: `docs/principles.md`. Decisions: `docs/adr/`. Terms: `GLOSSARY.md`.
+A macOS app switcher. Principles: `docs/principles.md`. Decisions: `docs/adr/`. Terms: `GLOSSARY.md`.
 
 ## Requirements
 
@@ -42,7 +42,7 @@ Release:
 
 ## Distribution
 
-This repo is private, so friends download from the public repo [`iacoware/downtab-app`](https://github.com/iacoware/downtab-app):
+Users download from the public repo [`iacoware/downtab-app`](https://github.com/iacoware/downtab-app):
 
 - Its GitHub Pages site (served from `main`, root) is the download page. `index.html` is a copy of `website/downtab-landing.html`, next to `downtab-landing-screenshot.jpg` from `website/`: edit them here, commit on `main`, then run `make publish-site`.
 - Its releases carry `Downtab.zip`, published by `make release` with the version's `CHANGELOG.md` section as notes. Stable link: `https://github.com/iacoware/downtab-app/releases/latest/download/Downtab.zip`.

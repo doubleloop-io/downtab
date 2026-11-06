@@ -1,6 +1,6 @@
 # Downtab
 
-A personal macOS app switcher that behaves like the native one at the first level and lets the user descend to a single window of an app.
+A macOS app switcher that behaves like the native one at the first level and lets the user descend to a single window of an app.
 
 ## Language
 
