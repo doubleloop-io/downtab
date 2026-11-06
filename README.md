@@ -1,12 +1,28 @@
 # Downtab
 
-A macOS app switcher. Principles: `docs/principles.md`. Decisions: `docs/adr/`. Terms: `GLOSSARY.md`.
+A macOS app switcher that works like ⌘Tab, and lets you drop down to a single window of an app.
 
-## Requirements
+![Downtab switcher](website/downtab-landing-screenshot.jpg)
+
+Entirely keyboard-driven: `⌥Tab`, `Tab`, `Tab`, `↓`, `↓`, `release`.
+
+- **Feels like ⌘Tab**: hold ⌥ and press Tab to see apps in most-recently-used order.
+- **Drop down to a window**: press ↓ on an app with two or more windows to pick just the one you want.
+- **Window shortcut**: ⌥` opens the switcher on the current app with its windows already listed.
+- **Current Space only**: only windows on the Spaces you're looking at, on every display.
+- **Titles, no thumbnails**: no Screen Recording permission, no capture lag.
+
+macOS 15 or later · Apple Silicon only. Download, install steps and troubleshooting: **[iacoware.github.io/downtab-app](https://iacoware.github.io/downtab-app/)**.
+
+## Development
+
+Before changing behavior read `docs/principles.md`. Decisions: `docs/adr/`. Terms: `GLOSSARY.md`.
+
+### Requirements
 
 - macOS with the Command Line Tools (Swift 6.4). Xcode is not needed.
 
-## Commands
+### Commands
 
 All commands go through `make` (run it with no target for the list). Prefer it over bare `swift build` / `swift test`: it works around a Swift 6.4 issue where a `swift build` breaks the next `swift test`.
 
