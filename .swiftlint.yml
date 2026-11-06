@@ -13,9 +13,6 @@ only_rules:
 included:
   - Sources
   - Tests
-excluded:
-  - spike
-
 # `make lint` runs with --strict, so every threshold here fails the build.
 function_body_length:
   warning: 60

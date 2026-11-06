@@ -1,7 +1,7 @@
 <!doctype html>
 <!-- PROTOTYPE, throwaway. Question: does variant A feel native with real icons and the window list dropping
-     under the icon? ⌥ stands in for ⌘ because the browser cannot catch ⌘Tab. B cycles the window-count styles. -->
-<html lang="it">
+     under the icon? ⌥ stands in for ⌘ because the browser cannot catch ⌘Tab. L cycles the window-count styles. -->
+<html lang="en">
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -61,27 +61,27 @@
   .tile.current.parent .count { background: var(--accent); color: #fff; }
 
   /* Corner badges are centred on the artwork's corner (~90% of the image box, past the transparent margin). */
-  [data-layout="ovale"] .slot, [data-layout="cerchio"] .slot {
+  [data-layout="oval"] .slot, [data-layout="circle"] .slot {
     position: absolute; height: auto; margin: 0; transform: translate(-50%, -50%);
     left: calc(11px + var(--icon) * 0.9); top: calc(11px + var(--icon) * 0.9);
   }
-  [data-layout="ovale"] .name, [data-layout="cerchio"] .name { margin-top: 4px; }
+  [data-layout="oval"] .name, [data-layout="circle"] .name { margin-top: 4px; }
 
-  [data-layout="ovale"] .tile .count {
+  [data-layout="oval"] .tile .count {
     height: 22px; border-radius: 11px; font-size: 12.5px; background: #4a4a50; color: #fff;
     box-shadow: 0 0 0 2.5px rgb(40, 40, 45), 0 2px 6px rgba(0, 0, 0, 0.4);
   }
-  [data-layout="ovale"] .tile.current .count { box-shadow: 0 0 0 2.5px rgb(78, 78, 84), 0 2px 6px rgba(0, 0, 0, 0.4); }
-  [data-layout="ovale"] .tile.current.parent .count { background: var(--accent); }
+  [data-layout="oval"] .tile.current .count { box-shadow: 0 0 0 2.5px rgb(78, 78, 84), 0 2px 6px rgba(0, 0, 0, 0.4); }
+  [data-layout="oval"] .tile.current.parent .count { background: var(--accent); }
 
-  [data-layout="cerchio"] .tile { --badge: calc(var(--icon) * 0.3); }
-  [data-layout="cerchio"] .tile .count {
+  [data-layout="circle"] .tile { --badge: calc(var(--icon) * 0.3); }
+  [data-layout="circle"] .tile .count {
     min-width: var(--badge); height: var(--badge); padding: 0 4px; justify-content: center; border-radius: 999px;
     background: #f5f5f7; color: #1c1c1e; font-size: calc(var(--badge) * 0.5);
     box-shadow: inset 0 0 0 3px var(--accent), 0 2px 6px rgba(0, 0, 0, 0.35);
   }
-  [data-layout="cerchio"] .count svg { display: none; }
-  [data-layout="cerchio"] .tile.current.parent .count {
+  [data-layout="circle"] .count svg { display: none; }
+  [data-layout="circle"] .tile.current.parent .count {
     background: var(--accent); color: #fff; box-shadow: inset 0 0 0 3px #fff, 0 2px 6px rgba(0, 0, 0, 0.35);
   }
 
@@ -126,7 +126,7 @@
   [data-names="grow"] .name { width: max-content; max-width: 260px; }
   /* E: the tile wraps only the icon, so it gets more room and the badge sits further in to keep a margin. */
   [data-names="below"] .tile { --tile: calc(var(--icon) + 28px); padding: 14px 0; }
-  [data-names="below"][data-layout="cerchio"] .slot {
+  [data-names="below"][data-layout="circle"] .slot {
     left: calc(14px + var(--icon) * 0.86); top: calc(14px + var(--icon) * 0.86);
   }
   [data-names="below"] .panel { padding-bottom: 40px; }
@@ -164,7 +164,7 @@
 <script>
 const CHEVRON = `<svg viewBox="0 0 9 6" aria-hidden="true"><path d="M1 1.2 4.5 4.7 8 1.2" fill="none"
   stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" /></svg>`;
-const LAYOUTS = ["pill sotto l'icona", "ovale", "cerchio"];
+const LAYOUTS = ["pill under the icon", "oval", "circle"];
 const NAME_FITS = [
   { key: "overhang", label: "A · overhang the tile (current app)" },
   { key: "truncate", label: "B · truncate inside the tile" },
@@ -183,18 +183,18 @@ const apps = [
   ]},
   { name: "Google Chrome", icon: "chrome", windows: [
     { t: "GitHub — Pull requests assigned to me and a very long tab title that must be truncated" },
-    { t: "intervals.icu — Calendar" }, { t: "Google Docs — Offerta Q4" },
+    { t: "intervals.icu — Calendar" }, { t: "Google Docs — Q4 proposal" },
   ]},
   { name: "iTerm", icon: "iterm", windows: [{ t: "~/projects/iacoware — zsh" }, { t: "ssh staging — htop" }] },
   { name: "Slack", icon: "slack", windows: [{ t: "#general — doubleloop" }] },
-  { name: "Miro", icon: "miro", windows: [{ t: "Switcher explorations" }, { t: "Retro novembre" }] },
-  { name: "Mail", icon: "mail", windows: [{ t: "Posta in arrivo — 12 messaggi", min: true }] },
+  { name: "Miro", icon: "miro", windows: [{ t: "Switcher explorations" }, { t: "November retro" }] },
+  { name: "Mail", icon: "mail", windows: [{ t: "Inbox — 12 messages", min: true }] },
   { name: "Music", icon: "music", windows: [{ t: "Music" }] },
   { name: "Finder", icon: "finder", windows: [] },
 ];
 
 const s = {
-  open: false, level: "app", a: 0, w: 0, heldOption: false, layout: "cerchio", last: "—",
+  open: false, level: "app", a: 0, w: 0, heldOption: false, layout: "circle", last: "—",
   names: NAME_FITS.some((f) => f.key === initialNames) ? initialNames : NAME_FITS[0].key,
 };
 
@@ -214,14 +214,14 @@ function tile(a, i) {
 }
 
 function windowRow(w) {
-  const tag = w.min ? `<span class="tag">minimizzata</span>` : "";
+  const tag = w.min ? `<span class="tag">Minimized</span>` : "";
   return `<div class="win ${w.min ? "min" : ""}"><span class="t">${escapeHtml(w.t)}</span>${tag}</div>`;
 }
 
 function popoverContent(a) {
   const n = a.windows.length;
   return `<div class="caret"></div>
-    <div class="pop-head"><img src="${iconSrc(a)}" alt="" />${escapeHtml(a.name)} · ${n} ${n === 1 ? "finestra" : "finestre"}</div>
+    <div class="pop-head"><img src="${iconSrc(a)}" alt="" />${escapeHtml(a.name)} · ${n} ${n === 1 ? "window" : "windows"}</div>
     <div class="list">${a.windows.map(windowRow).join("")}</div>`;
 }
 
@@ -260,15 +260,15 @@ function placePopover(pop, panel) {
 }
 
 function renderHelp() {
-  help.innerHTML = `<b>Tasti</b> (⌥ al posto di ⌘)<br />
-    <kbd>⌥ Tab</kbd> app successiva · rilascio <kbd>⌥</kbd> conferma<br />
-    <kbd>↓</kbd> apre le finestre · <kbd>← →</kbd> altra app<br />
-    <kbd>↑</kbd> dalla prima finestra torna alle app<br />
-    <kbd>Esc</kbd> annulla tutto<br />
-    <kbd>⌥ \`</kbd> finestre dell'app attiva (anche <kbd>⌥ \\</kbd>)<br />
-    <kbd>L</kbd> numero finestre: <b>${s.layout}</b><br />
-    <kbd>N</kbd> nomi lunghi: <b>${s.names}</b>
-    <div class="last">ultimo: ${escapeHtml(s.last.slice(0, 90))}</div>`;
+  help.innerHTML = `<b>Keys</b> (⌥ instead of ⌘)<br />
+    <kbd>⌥ Tab</kbd> next app · releasing <kbd>⌥</kbd> confirms<br />
+    <kbd>↓</kbd> opens the windows · <kbd>← →</kbd> other app<br />
+    <kbd>↑</kbd> from the first window goes back to the apps<br />
+    <kbd>Esc</kbd> cancels everything<br />
+    <kbd>⌥ \`</kbd> windows of the active app (also <kbd>⌥ \\</kbd>)<br />
+    <kbd>L</kbd> window count: <b>${s.layout}</b><br />
+    <kbd>N</kbd> long names: <b>${s.names}</b>
+    <div class="last">last: ${escapeHtml(s.last.slice(0, 90))}</div>`;
 }
 
 function cycleNames(step) {
@@ -299,8 +299,8 @@ function render() {
   renderNamesBar();
   renderHelp();
   if (!s.open) {
-    stage.innerHTML = `<div id="hint">Tieni premuto <b>⌥</b> e premi <b>Tab</b>
-      <small>⌘Tab è riservato a macOS: nel browser si simula con ⌥</small></div>`;
+    stage.innerHTML = `<div id="hint">Hold <b>⌥</b> and press <b>Tab</b>
+      <small>⌘Tab is reserved by macOS: the browser simulates it with ⌥</small></div>`;
     return;
   }
   const panel = ensurePanel();
@@ -371,18 +371,18 @@ function commit() {
   const chosen = app();
   if (s.level === "window") {
     const [w] = chosen.windows.splice(s.w, 1);
-    s.last = `alza solo «${w.t}»${w.min ? " (ripristinata)" : ""}`;
+    s.last = `raise only «${w.t}»${w.min ? " (restored)" : ""}`;
     delete w.min;
     chosen.windows.unshift(w);
   } else {
-    s.last = `attiva ${chosen.name}`;
+    s.last = `activate ${chosen.name}`;
   }
   apps.splice(s.a, 1);
   apps.unshift(chosen);
   s.open = false;
 }
 
-// Physical key left of 1 (Backquote on ANSI, IntlBackslash on ISO/Italian), so ⌥ dead keys don't matter.
+// Physical key left of 1 (Backquote on ANSI, IntlBackslash on ISO), so ⌥ dead keys don't matter.
 const isWindowCycleKey = (e) => e.code === "Backquote" || e.code === "IntlBackslash";
 
 addEventListener("keydown", (e) => {
@@ -398,7 +398,7 @@ addEventListener("keydown", (e) => {
   } else if (s.open && e.key === "Enter") {
     commit();
   } else if (s.open && e.key === "Escape") {
-    cancel("annullato");
+    cancel("cancelled");
   } else if (s.open && e.key.startsWith("Arrow")) {
     onArrow(e.key);
   } else {
@@ -413,7 +413,7 @@ addEventListener("keyup", (e) => {
 });
 
 addEventListener("blur", () => {
-  if (s.open && s.heldOption) { cancel("annullato: focus perso"); render(); }
+  if (s.open && s.heldOption) { cancel("cancelled: focus lost"); render(); }
 });
 
 addEventListener("resize", () => { if (s.open) render(); });

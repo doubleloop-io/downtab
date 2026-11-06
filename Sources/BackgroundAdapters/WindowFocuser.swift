@@ -64,7 +64,8 @@ public actor WindowFocuser {
         return (search.element, search.element == nil ? "remote-missed" : "remote")
     }
 
-    /// The spike's recipe (`docs/spike-results.md`, "Ricetta: alzare una finestra").
+    /// Only the chosen window comes forward, through private APIs when available
+    /// (`docs/adr/0001-private-apis-native-stack.md`).
     private func bringToFront(
         _ windowID: WindowID, of app: AppID, restoring restoration: WindowRestoration, focusChange: Int
     ) async {

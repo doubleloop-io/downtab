@@ -110,7 +110,7 @@ Before starting: `make run`, Accessibility granted to Downtab, then open TextEdi
 
 ## Switcher: look
 
-Before starting: `make run`, then open TextEdit, Safari and Notes in this order. Open `docs/prototype-switcher.html?names=below` in a browser (the bar at the bottom shows `E · name below the row, icon-only highlight`) and hold ⌥ + Tab to open its panel. Ignore the prototype's Italian texts: they are not part of this check.
+Before starting: `make run`, then open TextEdit, Safari and Notes in this order. Open `docs/adr/assets/prototype-switcher.html?names=below` in a browser (the bar at the bottom shows `E · name below the row, icon-only highlight`) and hold ⌥ + Tab to open its panel. Ignore the prototype's Italian texts: they are not part of this check.
 
 1. In Notes, hold ⌥ and press Tab: the Switcher is a dark, rounded, translucent panel with a thin light border, like the prototype's, even in Light Mode and over a bright window.
 2. Each app is a large icon. The selected app's icon sits in a lighter rounded tile with a thin border and an even margin on every side; the others have none.
@@ -118,7 +118,7 @@ Before starting: `make run`, then open TextEdit, Safari and Notes in this order.
 4. Press Tab a few times: the highlight and the name move, the icons do not move. Press `Esc`.
 5. With many apps open (15 or more), the Switcher still fits the screen width: icons get smaller instead of overflowing.
 6. With many apps open, select the first and then the last app: a name wider than its tile stays inside the panel, pushed against its left or right edge instead of centered. Press `Esc`.
-7. Open a second TextEdit window (⌘N). Hold ⌥ and press Tab: TextEdit's icon has a Window count badge like the prototype's (press `B` there to cycle badge styles until it shows `cerchio`): a white disc with a blue ring and `2`, centered near the icon's bottom-right corner, inside the tile's highlight when selected. Safari and Notes, with one window each, have no badge. Press `Esc`.
+7. Open a second TextEdit window (⌘N). Hold ⌥ and press Tab: TextEdit's icon has a Window count badge like the prototype's (press `L` there to cycle badge styles until it shows `circle`): a white disc with a blue ring and `2`, centered near the icon's bottom-right corner, inside the tile's highlight when selected. Safari and Notes, with one window each, have no badge. Press `Esc`.
 8. Open 3 Finder windows: Finder's badge shows `3` (the desktop does not count). An app exposing fake dialogs (cmux, with one window) shows no badge. Press `Esc`.
 
 ## Switcher: which apps appear
@@ -155,7 +155,7 @@ Before starting: `make run`, Accessibility granted to Downtab, TextEdit and Safa
 
 Before starting: `make run`, Accessibility granted to Downtab. Open TextEdit with 3 windows titled apart (⌘N three times, type `one`, `two`, `three` and save each, or just tell them apart by content), arranged so each one is partly visible, then Safari with one window, then Notes, clicking each to bring it to the front. Keep ⌥ held during each step unless the step says to release it.
 
-1. In Notes, hold ⌥, press Tab until TextEdit is selected, press `↓`: a Window list drops under TextEdit's icon, with a caret pointing at it, a header with TextEdit's icon and `TextEdit · 3 windows`, and the 3 titles in TextEdit's front-to-back order, the first one highlighted in blue. TextEdit's badge turns blue with a white ring and `3`; its tile highlight gets fainter. Compare with `docs/prototype-switcher.html` (press `↓` there).
+1. In Notes, hold ⌥, press Tab until TextEdit is selected, press `↓`: a Window list drops under TextEdit's icon, with a caret pointing at it, a header with TextEdit's icon and `TextEdit · 3 windows`, and the 3 titles in TextEdit's front-to-back order, the first one highlighted in blue. TextEdit's badge turns blue with a white ring and `3`; its tile highlight gets fainter. Compare with `docs/adr/assets/prototype-switcher.html` (press `↓` there).
 2. Press `↓` twice: the highlight moves down to the last window; `↓` again keeps it there. Press `↑` until the first window, then `↑` once more: the Window list closes, TextEdit is selected at App level and its badge is back to white.
 3. Select Safari (one window) or an app with no windows and press `↓`: nothing happens. Press `Esc`.
 4. Hold ⌥, select TextEdit, `↓`, `↓` to the second window, release ⌥: only that window comes to the front and gets the keyboard focus (type a few letters: they land in it). TextEdit's other two windows stay behind the windows of other apps that covered them before.

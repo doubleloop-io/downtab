@@ -3,7 +3,7 @@ import SwitcherCore
 
 /// Renders the core's displayed state and nothing else. Non-activating, so the Frontmost app keeps focus.
 /// Look and metrics follow prototype variant A, with long names fitted as in variant E
-/// (`docs/prototype-switcher.html`, `?names=below`).
+/// (`docs/adr/assets/prototype-switcher.html`, `?names=below`).
 final class SwitcherPanel: NSPanel {
     private let appRow = NSStackView()
     private let selectedName = NSTextField(labelWithString: "")

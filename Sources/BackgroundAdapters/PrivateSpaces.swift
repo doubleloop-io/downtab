@@ -2,7 +2,8 @@ import ApplicationServices
 import Foundation
 
 /// Spaces and window ids through private APIs. With a symbol missing, windows have no id or no Space, or the Current
-/// Space is unknown: either way no app is hidden for living in another Space (`docs/spike-results.md`).
+/// Space is unknown: either way no app is hidden for living in another Space
+/// (`docs/adr/0001-private-apis-native-stack.md`).
 enum PrivateSpaces {
     private typealias MainConnection = @convention(c) () -> UInt32
     private typealias GetActiveSpace = @convention(c) (UInt32) -> UInt64

@@ -3,8 +3,8 @@ extension DesktopSnapshot {
     func appRow() -> [AppRowEntry] {
         let appsByID = Dictionary(apps.map { ($0.id, $0) }, uniquingKeysWith: { first, _ in first })
         let regularApps = mruOrder.compactMap { appsByID[$0] }.filter(\.isRegular)
-        // Like the native switcher, which shows every app from a full-screen Space; App level only, for now
-        // (`docs/GOAL.md`). The Space, not the Frontmost app: activation can bring an app forward and stay there.
+        // Like the native switcher, which shows every app from a full-screen Space; App level only, for now.
+        // The Space, not the Frontmost app: activation can bring an app forward and stay there.
         if isActiveSpaceFullScreen {
             return regularApps.map { entry(of: $0, windows: []) }
         }
