@@ -2,14 +2,14 @@ import ApplicationServices
 import Foundation
 
 /// `kAXWindows` lists only the windows of the Current Space: the Accessibility element of a window in another Space is
-/// found by trying the app's element ids one by one, as AltTab does (`docs/alttab-notes.md`).
+/// found by trying the app's element ids one by one (`docs/adr/0001-private-apis-native-stack.md`).
 enum PrivateRemoteWindow {
     private typealias CreateWithRemoteToken = @convention(c) (CFData) -> Unmanaged<AXUIElement>?
 
     private static let createWithRemoteToken = PrivateSymbol.resolve(
         "_AXUIElementCreateWithRemoteToken", in: .process, as: CreateWithRemoteToken.self)
 
-    /// AltTab's bound: window elements of real apps sit well below it.
+    /// Window elements of real apps sit well below it.
     private static let elementIDs: Range<UInt64> = 0..<1000
     /// Activation already happened: past this the Space switch is late enough to be worth giving up on.
     private static let budget: Duration = .milliseconds(150)

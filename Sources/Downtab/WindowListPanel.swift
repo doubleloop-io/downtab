@@ -2,7 +2,7 @@ import AppKit
 import SwitcherCore
 
 /// The selected app's Window list, dropped under its icon with a caret pointing at it, as in prototype variant A
-/// (`docs/prototype-switcher.html`). Never key: the Switcher keeps the keyboard.
+/// (`docs/adr/assets/prototype-switcher.html`). Never key: the Switcher keeps the keyboard.
 final class WindowListPanel: NSPanel {
     private let background = CaretBackground()
     private let headerIcon = NSImageView()

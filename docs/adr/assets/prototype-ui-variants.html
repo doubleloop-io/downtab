@@ -1,7 +1,7 @@
 <!doctype html>
 <!-- PROTOTYPE, throwaway. Question: how to go from app to window without friction and without moving the UI?
      Variants live on ?variant=A|B|C|D|E. Switch with keys 1-5 because arrows belong to the switcher. -->
-<html lang="it">
+<html lang="en">
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -125,25 +125,25 @@
 <div id="stage"></div>
 <div id="hud"></div>
 <div id="help">
-  <b>Tasti</b><br />
-  <b>⌥ + Tab</b> apre; rilascio ⌥ conferma (come ⌘Tab)<br />
-  <b>Tab</b> da solo apre in modalità fissa; <b>Enter</b> conferma<br />
-  <b>⇧Tab</b> app precedente · <b>Esc</b> annulla<br />
-  <b>← → ↑ ↓</b> navigano · <b>1-5</b> cambiano variante
+  <b>Keys</b><br />
+  <b>⌥ + Tab</b> opens; releasing ⌥ confirms (like ⌘Tab)<br />
+  <b>Tab</b> alone opens in sticky mode; <b>Enter</b> confirms<br />
+  <b>⇧Tab</b> previous app · <b>Esc</b> cancels<br />
+  <b>← → ↑ ↓</b> navigate · <b>1-5</b> switch variant
 </div>
 <div id="bar">
-  <button id="prev" aria-label="Variante precedente">‹</button>
+  <button id="prev" aria-label="Previous variant">‹</button>
   <span id="label"></span>
-  <button id="next" aria-label="Variante successiva">›</button>
+  <button id="next" aria-label="Next variant">›</button>
 </div>
 
 <script>
 const VARIANTS = {
-  A: "Tendina sotto l'icona",
-  B: "Ripiano fisso sempre visibile",
-  C: "Sostituzione sul posto",
-  D: "Fisarmonica nella riga",
-  E: "Griglia sotto l'icona",
+  A: "Dropdown under the icon",
+  B: "Fixed shelf, always visible",
+  C: "In-place replacement",
+  D: "Accordion in the row",
+  E: "Grid under the icon",
 };
 const GRID_COLUMNS = 3;
 const VARIANT_KEYS = Object.keys(VARIANTS);
@@ -153,16 +153,16 @@ const seedApps = () => [
   { name: "VS Code", color: "#0a7bd6", windows: [
     { t: "app-ideas — prototype-ui-variants.html" }, { t: "fitview — CONTEXT.md" }, { t: "recipe-app — goal.md" },
     { t: "trail-running-races — arch-choices.md" }, { t: "dotfiles — .zshrc" },
-    { t: "client-api — orders.service.ts" }, { t: "scratch — Untitled-4", tag: "minimizzata" },
+    { t: "client-api — orders.service.ts" }, { t: "scratch — Untitled-4", tag: "Minimized" },
   ]},
   { name: "Chrome", color: "#d9503f", windows: [
     { t: "GitHub — Pull requests assigned to me and a very long tab title that must be truncated" },
-    { t: "intervals.icu — Calendar" }, { t: "Google Docs — Offerta Q4" },
+    { t: "intervals.icu — Calendar" }, { t: "Google Docs — Q4 proposal" },
   ]},
   { name: "Ghostty", color: "#3f3f46", windows: [{ t: "~/projects/iacoware" }, { t: "ssh staging" }] },
   { name: "Slack", color: "#611f69", windows: [{ t: "#general" }] },
   { name: "Figma", color: "#a259ff", windows: [{ t: "Switcher explorations" }, { t: "Design system" }] },
-  { name: "Mail", color: "#1e90ff", windows: [{ t: "Posta in arrivo", tag: "minimizzata" }] },
+  { name: "Mail", color: "#1e90ff", windows: [{ t: "Inbox", tag: "Minimized" }] },
   { name: "Spotify", color: "#1db954", windows: [{ t: "Spotify" }] },
   { name: "Finder", color: "#60a5fa", windows: [] },
 ];
@@ -231,7 +231,7 @@ const renderVariant = {
   B() {
     const rows = app().windows.length
       ? app().windows.map(windowRow).join("")
-      : `<div class="empty">Nessuna finestra aperta</div>`;
+      : `<div class="empty">No open windows</div>`;
     return `<div class="panel" data-bounds><div class="row">${row()}</div>
       <div class="shelf ${s.level === "app" ? "dim" : ""}">${rows}</div></div>`;
   },
@@ -243,7 +243,7 @@ const renderVariant = {
     const cards = a.windows.map((w, i) => `<div class="card ${i === s.w ? "sel" : ""}">
       <div class="thumb"></div><div class="t">${escapeHtml(w.t)}</div></div>`).join("");
     return `<div class="panel fixed-c" data-bounds>
-      <div class="crumb"><div class="icon" style="background:${a.color}">${a.name[0]}</div>${a.name} · ↑ torna alle app</div>
+      <div class="crumb"><div class="icon" style="background:${a.color}">${a.name[0]}</div>${a.name} · ↑ back to the apps</div>
       <div class="cards">${cards}</div></div>`;
   },
   D() {
@@ -299,19 +299,19 @@ function renderHud() {
   const front = s.apps[0];
   const moved = metrics.dw || metrics.dh || metrics.anchorShift;
   hud.innerHTML = `<b>${s.variant}</b> ${VARIANTS[s.variant]}<br />
-    livello: <b>${s.open ? s.level : "—"}</b> · tasti: <b>${s.keys}</b><br />
-    selezione: <b>${escapeHtml(selected.slice(0, 44))}</b><br />
-    salto occhio: <b>${metrics.jump}px</b><br />
-    <span class="${moved ? "warn" : ""}">Δ UI: ${metrics.dw}×${metrics.dh}px · app spostate: ${metrics.anchorShift}px</span><br />
-    in primo piano: <b>${front.name}</b>${front.windows[0] ? " › " + escapeHtml(front.windows[0].t.slice(0, 30)) : ""}<br />
-    ultimo: ${escapeHtml(s.lastResult.slice(0, 80))}${s.notice ? `<br /><span class="warn">${s.notice}</span>` : ""}`;
+    level: <b>${s.open ? s.level : "—"}</b> · keys: <b>${s.keys}</b><br />
+    selection: <b>${escapeHtml(selected.slice(0, 44))}</b><br />
+    eye jump: <b>${metrics.jump}px</b><br />
+    <span class="${moved ? "warn" : ""}">Δ UI: ${metrics.dw}×${metrics.dh}px · apps moved: ${metrics.anchorShift}px</span><br />
+    frontmost: <b>${front.name}</b>${front.windows[0] ? " › " + escapeHtml(front.windows[0].t.slice(0, 30)) : ""}<br />
+    last: ${escapeHtml(s.lastResult.slice(0, 80))}${s.notice ? `<br /><span class="warn">${s.notice}</span>` : ""}`;
   label.textContent = `${s.variant} (${VARIANTS[s.variant]})`;
 }
 
 function render() {
   if (!s.open) {
-    stage.innerHTML = `<div id="hint">Premi <b>⌥ + Tab</b> e tieni premuto ⌥, oppure <b>Tab</b>
-      <small>⌘Tab è riservato a macOS: nel browser non è intercettabile</small></div>`;
+    stage.innerHTML = `<div id="hint">Press <b>⌥ + Tab</b> and hold ⌥, or <b>Tab</b>
+      <small>⌘Tab is reserved by macOS: the browser cannot catch it</small></div>`;
     previous = null;
     renderHud();
     return;
@@ -343,7 +343,7 @@ function moveApp(step) {
 }
 
 function enterWindows() {
-  if (!app().windows.length) { s.notice = `${app().name}: nessuna finestra`; return; }
+  if (!app().windows.length) { s.notice = `${app().name}: no windows`; return; }
   s.level = "window";
   s.w = firstWindowIndexOnEnter();
 }
@@ -394,10 +394,10 @@ function commit() {
   if (s.level === "window") {
     const [w] = chosen.windows.splice(s.w, 1);
     chosen.windows.unshift(w);
-    s.lastResult = `alza SOLO «${w.t}»${w.tag ? ` (${w.tag})` : ""}`;
+    s.lastResult = `raise ONLY «${w.t}»${w.tag ? ` (${w.tag})` : ""}`;
     delete w.tag;
   } else {
-    s.lastResult = `attiva ${chosen.name}`;
+    s.lastResult = `activate ${chosen.name}`;
   }
   s.apps.splice(s.a, 1);
   s.apps.unshift(chosen);
@@ -407,7 +407,7 @@ function commit() {
 function handleArrowOrSelection(key) {
   s.notice = "";
   if (key === "Enter") { commit(); return; }
-  if (key === "Escape") { s.open = false; s.lastResult = "annullato"; return; }
+  if (key === "Escape") { s.open = false; s.lastResult = "cancelled"; return; }
   if (s.level === "app") {
     if (key === "ArrowLeft") moveApp(-1);
     if (key === "ArrowRight") moveApp(1);
@@ -454,7 +454,7 @@ addEventListener("keyup", (e) => {
 });
 
 addEventListener("blur", () => {
-  if (s.open && s.heldOption) { s.open = false; s.lastResult = "annullato: focus perso"; render(); }
+  if (s.open && s.heldOption) { s.open = false; s.lastResult = "cancelled: focus lost"; render(); }
 });
 
 document.getElementById("prev").addEventListener("click", (e) => { cycleVariant(-1); e.currentTarget.blur(); });

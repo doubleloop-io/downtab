@@ -1,6 +1,7 @@
 import AppKit
 
-/// Colors of prototype variant A (`docs/prototype-switcher.html`), shared by the Switcher and its Window list.
+/// Colors of prototype variant A (`docs/adr/assets/prototype-switcher.html`), shared by the Switcher and its
+/// Window list.
 enum Palette {
     static let border = NSColor(white: 1, alpha: 0.12)
     static let text = NSColor(srgbRed: 0xF5 / 255, green: 0xF5 / 255, blue: 0xF7 / 255, alpha: 1)

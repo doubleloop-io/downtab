@@ -1,6 +1,6 @@
 # Downtab
 
-A personal macOS app switcher. Product decisions: `docs/GOAL.md`. Terms: `GLOSSARY.md`.
+A personal macOS app switcher. Principles: `docs/principles.md`. Decisions: `docs/adr/`. Terms: `GLOSSARY.md`.
 
 ## Requirements
 
@@ -55,9 +55,10 @@ This repo is private, so friends download from the public repo [`iacoware/downta
 - `Sources/Downtab`: the app (menu bar item, AppKit adapters).
 - `App/Info.plist`: bundle metadata (`LSUIElement`, no Dock icon); no version keys, `make bundle` stamps them.
 - `Makefile`, `scripts/`: developer commands; `scripts/` holds the steps too long for a Makefile recipe.
+- `docs/principles.md`: the intent later changes must not betray.
+- `docs/adr/`: decisions and their trade-offs; `docs/adr/assets/` holds the UI prototypes.
 - `docs/manual-checklist.md`: checks to run by hand on the real app.
 - `website/`: the download page and its screenshot, published by `make publish-site`.
-- `spike/`: the throwaway spike, kept as a reference.
 
 ## Signing and permissions
 

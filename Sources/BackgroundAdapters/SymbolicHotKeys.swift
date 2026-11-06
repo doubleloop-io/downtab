@@ -9,8 +9,7 @@ public protocol SymbolicHotKeySwitch: Sendable {
 }
 
 extension NativeShortcut {
-    /// Ids read from AltTab (`docs/alttab-notes.md`); 27 is "Move focus to next window" in
-    /// `com.apple.symbolichotkeys`.
+    /// Ids in `com.apple.symbolichotkeys`: 1 and 2 are ⌘Tab and ⌘⇧Tab, 27 is "Move focus to next window".
     public var symbolicHotKeyIDs: [Int32] {
         switch self {
         case .commandTab: [1, 2]

@@ -2,7 +2,7 @@ import ApplicationServices
 import Foundation
 
 /// Makes one window the front and key window of its app through private APIs: the public ones bring every window
-/// of the app forward (`docs/spike-results.md`, "Ricetta: alzare una finestra").
+/// of the app forward (`docs/adr/0001-private-apis-native-stack.md`).
 enum PrivateWindowFront {
     private typealias SetFrontProcess =
         @convention(c) (UnsafeMutablePointer<ProcessSerialNumber>, CGWindowID, UInt32) -> Int32
