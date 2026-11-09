@@ -81,3 +81,13 @@ Users download from the public repo [`iacoware/downtab-app`](https://github.com/
 The bundle is signed with the same certificate on every build, so the Accessibility permission survives rebuilds. Deleting `.signing/` (or a fresh clone) creates a new certificate: run `setup-signing` again and re-grant Accessibility.
 
 CI (`.github/workflows/ci.yml`) only builds and tests; it never signs or bundles. It uses the runner's default Xcode, which can be older than the local toolchain (no hosted runner ships Swift 6.4 / the macOS 27 SDK yet); the `Versions` step logs what it ran with. Code must therefore also build with that older toolchain.
+
+## License
+
+Copyright © 2026 doubleloop.
+
+Downtab is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version (`GPL-3.0-or-later`). See [`LICENSE`](LICENSE).
+
+- **Name and icon**: the license covers the code, not the Downtab name or icon. Forks that distribute builds must use a different name and icon.
+- **Contributions**: external contributions will require signing a Contributor License Agreement (CLA) before they can be merged.
+- **Acknowledgments**: some interoperability facts about private macOS APIs (function signatures, record offsets, symbolic hotkey ids, the remote-token window lookup) were learned by reading [AltTab](https://github.com/lwouis/alt-tab-macos) (GPL-3.0). No AltTab code is copied.
