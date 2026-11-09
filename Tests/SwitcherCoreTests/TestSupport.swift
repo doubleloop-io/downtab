@@ -78,14 +78,16 @@ extension DesktopApp {
         _ name: String,
         processIdentifier: Int32? = nil,
         isHidden: Bool = false,
-        windows: [DesktopWindow] = []
+        windows: [DesktopWindow] = [],
+        notificationBadge: String? = nil
     ) -> DesktopApp {
         DesktopApp(
             id: AppID(processIdentifier: processIdentifier ?? uniqueID()),
             name: name,
             isRegular: true,
             isHidden: isHidden,
-            windows: windows
+            windows: windows,
+            notificationBadge: notificationBadge
         )
     }
 }
@@ -175,6 +177,13 @@ extension SwitcherState {
             preconditionFailure("no \(name) in an open App row")
         }
         return entry.windowCountBadge
+    }
+
+    func notificationBadge(of name: String) -> String? {
+        guard case .open(let displayed) = self, let entry = displayed.appRow.first(where: { $0.name == name }) else {
+            preconditionFailure("no \(name) in an open App row")
+        }
+        return entry.notificationBadge
     }
 }
 

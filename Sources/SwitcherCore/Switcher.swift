@@ -66,6 +66,8 @@ public struct AppRowEntry: Equatable, Sendable {
     public let windows: [WindowListEntry]
     /// Nil unless the app has windows only in other Spaces.
     let windowToFrontOnActivation: WindowID?
+    /// Nil when the app's Dock icon shows no label.
+    public let notificationBadge: String?
 
     /// Nil when the app has fewer than 2 windows: only an app with something to descend into gets a badge.
     public var windowCountBadge: Int? { windows.count >= 2 ? windows.count : nil }

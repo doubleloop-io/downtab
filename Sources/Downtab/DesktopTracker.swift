@@ -19,6 +19,8 @@ final class DesktopTracker {
     private var observers: [any NSObjectProtocol] = []
     private let scanner = WindowScanner()
     private var scan: WindowScan?
+    private let dockBadges = DockNotificationBadges()
+    private var notificationBadges: [String: String] = [:]
     private var isScanning = false
     private var needsAnotherScan = false
     private var periodicScan: Task<Void, Never>?
@@ -72,7 +74,8 @@ final class DesktopTracker {
                 return DesktopApp(
                     id: id, name: app.name, isRegular: app.process.activationPolicy == .regular,
                     isHidden: app.process.isHidden,
-                    windows: ranks.map { scanned.orderedFrontToBack(onScreenRanks: $0) } ?? scanned)
+                    windows: ranks.map { scanned.orderedFrontToBack(onScreenRanks: $0) } ?? scanned,
+                    notificationBadge: app.process.bundleIdentifier.flatMap { notificationBadges[$0] })
             }
         }
         return DesktopSnapshot(
@@ -122,10 +125,14 @@ final class DesktopTracker {
         let regularApps = mruOrder.apps.filter { apps[$0]?.process.activationPolicy == .regular }
         // Here rather than at launch: an app can become regular after launching, or stop being regular.
         windowEvents?.watch(only: Set(regularApps))
-        Task { [weak self, scanner] in
+        Task { [weak self, scanner, dockBadges] in
+            // The Dock raises no event when a badge changes: each scan reads them again.
+            async let badges = dockBadges.labelsByBundleIdentifier()
             let result = await scanner.scan(regularApps)
+            let labels = await badges
             guard let self else { return }
             scan = result
+            notificationBadges = labels
             isScanning = false
             if needsAnotherScan {
                 needsAnotherScan = false

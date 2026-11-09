@@ -131,8 +131,9 @@ Before starting: `make run`, then open TextEdit, Safari and Notes in this order.
 4. Press Tab a few times: the highlight and the name move, the icons do not move. Press `Esc`.
 5. With many apps open (15 or more), the Switcher still fits the screen width: icons get smaller instead of overflowing.
 6. With many apps open, select the first and then the last app: a name wider than its tile stays inside the panel, pushed against its left or right edge instead of centered. Press `Esc`.
-7. Open a second TextEdit window (⌘N). Hold ⌥ and press Tab: TextEdit's icon has a Window count badge like the prototype's (press `L` there to cycle badge styles until it shows `circle`): a white disc with a blue ring and `2`, centered on the bottom-right corner of the icon's artwork, covering it, as the native ⌘Tab's notification badge does on the top-right corner. Safari and Notes, with one window each, have no badge. Press `Esc`.
-8. Open 3 Finder windows: Finder's badge shows `3` (the desktop does not count). An app exposing fake dialogs (cmux, with one window) shows no badge. Press `Esc`.
+7. Open a second TextEdit window (⌘N). Hold ⌥ and press Tab: TextEdit's icon has a Window count badge: a blue disc with a white `2`, the same size and look as the native ⌘Tab's notification badge, centered on the bottom-right corner of the icon's artwork, covering it. Safari and Notes, with one window each, have no badge. Press `Esc`.
+8. Notification badge: with an app showing a badge on its Dock icon (Slack, Mail, Notion with unread items; or System Settings with a pending update), hold ⌥ and press Tab: its icon in the App row shows the same label as the Dock, in a red disc with white text on the top-right corner of the artwork, like the native ⌘Tab. An app whose Dock icon shows no badge has none. Mark the items read: within about a second of the Dock's badge going away, a new ⌥Tab shows none either. Press `Esc`.
+9. Open 3 Finder windows: Finder's badge shows `3` (the desktop does not count). An app exposing fake dialogs (cmux, with one window) shows no badge. Press `Esc`.
 
 ## Switcher: which apps appear
 
@@ -180,8 +181,8 @@ Before starting: `make run` on macOS 26 or later, with TextEdit holding 3 window
 
 Before starting: `make run`, Accessibility granted to Downtab. Open TextEdit with 3 windows titled apart (⌘N three times, type `one`, `two`, `three` and save each, or just tell them apart by content), arranged so each one is partly visible, then Safari with one window, then Notes, clicking each to bring it to the front. Keep ⌥ held during each step unless the step says to release it.
 
-1. In Notes, hold ⌥, press Tab until TextEdit is selected, press `↓`: a Window list drops under TextEdit's icon as a rounded rectangle with no caret, a header with TextEdit's icon and `TextEdit · 3 windows`, and the 3 titles in TextEdit's front-to-back order, the first one highlighted in blue. TextEdit's badge turns blue with a white ring and `3`; its tile highlight gets fainter. Compare with `docs/adr/assets/prototype-switcher.html` (press `↓` there).
-2. Press `↓` twice: the highlight moves down to the last window; `↓` again keeps it there. Press `↑` until the first window, then `↑` once more: the Window list closes, TextEdit is selected at App level and its badge is back to white.
+1. In Notes, hold ⌥, press Tab until TextEdit is selected, press `↓`: a Window list drops under TextEdit's icon as a rounded rectangle with no caret, a header with TextEdit's icon and `TextEdit · 3 windows`, and the 3 titles in TextEdit's front-to-back order, the first one highlighted in blue. TextEdit's badge turns white with a blue `3`; its tile highlight gets fainter. Compare with `docs/adr/assets/prototype-switcher.html` (press `↓` there).
+2. Press `↓` twice: the highlight moves down to the last window; `↓` again keeps it there. Press `↑` until the first window, then `↑` once more: the Window list closes, TextEdit is selected at App level and its badge is back to blue.
 3. Select Safari (one window) or an app with no windows and press `↓`: nothing happens. Press `Esc`.
 4. Hold ⌥, select TextEdit, `↓`, `↓` to the second window, release ⌥: only that window comes to the front and gets the keyboard focus (type a few letters: they land in it). TextEdit's other two windows stay behind the windows of other apps that covered them before.
 5. Repeat step 4 with `Enter` instead of releasing ⌥: same result, and releasing ⌥ afterwards does nothing more.

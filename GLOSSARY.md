@@ -28,6 +28,10 @@ The state in which the selection is on a window in a Window list.
 The marker on an app with more than one window, showing the count and that it can be descended into.
 _Avoid_: counter, arrow
 
+**Notification badge**:
+The label an app shows on its Dock icon (a count, a dot, any text), repeated on its icon in the App row like the native switcher does.
+_Avoid_: app badge, Dock badge, unread count
+
 ### Keys
 
 **App shortcut**:
