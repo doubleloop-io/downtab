@@ -5,7 +5,7 @@ import os
 /// Downtab's preferences, kept in `UserDefaults`.
 struct SettingsStore {
     private let defaults = UserDefaults.standard
-    private let logger = Logger(subsystem: "io.github.iacoware.downtab", category: "settings")
+    private let logger = Logger(subsystem: "io.doubleloop.downtab", category: "settings")
 
     func shortcuts() -> Shortcuts {
         Shortcuts(app: shortcut(for: .app), window: shortcut(for: .window))

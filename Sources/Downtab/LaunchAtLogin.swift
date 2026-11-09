@@ -11,7 +11,7 @@ struct LaunchAtLogin {
 
     private let store = SettingsStore()
     private let service = SMAppService.mainApp
-    private let logger = Logger(subsystem: "io.github.iacoware.downtab", category: "login")
+    private let logger = Logger(subsystem: "io.doubleloop.downtab", category: "login")
 
     var isWanted: Bool { store.launchAtLogin() }
 

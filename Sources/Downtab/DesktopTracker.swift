@@ -23,7 +23,7 @@ final class DesktopTracker {
     private var needsAnotherScan = false
     private var periodicScan: Task<Void, Never>?
     private var windowEvents: WindowEventObserver?
-    private let logger = Logger(subsystem: "io.github.iacoware.downtab", category: "scan")
+    private let logger = Logger(subsystem: "io.doubleloop.downtab", category: "scan")
 
     func start() {
         let windowEvents = WindowEventObserver { [weak self] in self?.requestScan() }
