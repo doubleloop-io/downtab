@@ -11,12 +11,7 @@ tag=v$version
 [ "$(git rev-parse --is-shallow-repository)" = false ] || fail "shallow clone: the build number would be wrong, run git fetch --unshallow"
 
 git rev-parse --quiet --verify "refs/tags/$tag" >/dev/null && fail "tag $tag already exists: run make version"
-highest=
-for existing in $(git tag -l 'v*'); do
-  candidate=${existing#v}
-  is_semver "$candidate" || continue
-  if [ -z "$highest" ] || version_gt "$candidate" "$highest"; then highest=$candidate; fi
-done
+highest=$(highest_tag_version)
 if [ -n "$highest" ] && ! version_gt "$version" "$highest"; then
   fail "$version is not greater than the latest tag v$highest: run make version"
 fi

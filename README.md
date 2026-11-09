@@ -41,6 +41,7 @@ All commands go through `make` (run it with no target for the list). Prefer it o
 | `make stop` | Quits the running app. |
 | `make version V=X.Y.Z` | Closes `## [Unreleased]` in `CHANGELOG.md` as `## [X.Y.Z] - <today>` and writes `X.Y.Z` to `VERSION`. Refuses a malformed or non-greater `V`, or an empty `[Unreleased]`. Commits nothing. |
 | `make release` | Refuses unless on `main`, clean, not shallow, `VERSION` greater than every `v*` tag, no tag or public release for it yet, a non-empty changelog section for it, and `make test` passing. Then packages, tags `vX.Y.Z`, pushes the tag and publishes the release in this repo (see Distribution). |
+| `make ship V=X.Y.Z` | Refuses unless `V` is valid and greater than `VERSION` and every `v*` tag, and on a clean `main` equal to `origin/main` with `make test` and `make smoke` passing. Then `make version`, commits `VERSION` and `CHANGELOG.md` as `Release vX.Y.Z`, pushes `main` and runs `make release`. |
 
 ## Versioning
 
@@ -54,6 +55,8 @@ Release:
 2. `make version V=X.Y.Z`, commit on `main`.
 3. `make smoke` (manual, needs Accessibility).
 4. `make release` (from `main`).
+
+Or, after step 1, `make ship V=X.Y.Z` runs steps 2–4, smoke first. If it fails after the push, rerun `make release`.
 
 ## Distribution
 

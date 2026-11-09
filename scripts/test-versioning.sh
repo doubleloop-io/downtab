@@ -12,7 +12,8 @@ TODAY=$(date +%F)
 failed() { echo "FAIL: $1"; failures=$((failures + 1)); }
 
 # Stubs: `gh release view` answers from $GH_RELEASES; `gh release create` logs its arguments to $ROOT/gh-create
-# and its notes to $ROOT/gh-notes, then exits with $GH_CREATE_EXIT; `make test` exits with $MAKE_TEST_EXIT.
+# and its notes to $ROOT/gh-notes, then exits with $GH_CREATE_EXIT; `make <target>` appends the target to
+# $ROOT/make-calls and exits with $MAKE_TEST_EXIT, $MAKE_SMOKE_EXIT or $MAKE_RELEASE_EXIT.
 mkdir -p "$ROOT/bin"
 cat >"$ROOT/bin/gh" <<STUB
 #!/usr/bin/env bash
@@ -24,9 +25,14 @@ fi
 [[ " \${GH_RELEASES:-} " == *" \$3 "* ]] && { echo "\$3"; exit 0; }
 echo "release not found"; exit 1
 STUB
-cat >"$ROOT/bin/make" <<'STUB'
+cat >"$ROOT/bin/make" <<STUB
 #!/usr/bin/env bash
-exit "${MAKE_TEST_EXIT:-0}"
+echo "\$1" >>"$ROOT/make-calls"
+case "\$1" in
+  smoke) exit "\${MAKE_SMOKE_EXIT:-0}" ;;
+  release) exit "\${MAKE_RELEASE_EXIT:-0}" ;;
+  *) exit "\${MAKE_TEST_EXIT:-0}" ;;
+esac
 STUB
 chmod +x "$ROOT/bin/gh" "$ROOT/bin/make"
 export PATH="$ROOT/bin:$PATH"
@@ -172,6 +178,66 @@ origin=$(mktemp -d "$ROOT/origin.XXXX")
 git init -q --bare "$origin" && git remote add origin "$origin"
 GH_CREATE_EXIT=1 expect_refusal "publish when gh fails" "tag v0.2.0 pushed but the release failed" \
   "$SCRIPTS/release-publish.sh" "$ROOT/Downtab.zip"
+
+# make ship: a repo whose main matches a bare origin
+new_shipping_repo() {
+  new_repo
+  origin=$(mktemp -d "$ROOT/origin.XXXX")
+  git init -q --bare -b main "$origin" && git remote add origin "$origin" && git push -q origin main
+  rm -f "$ROOT/make-calls"
+}
+
+# Nothing changed locally or on origin, and neither smoke nor release ran unless listed.
+expect_untouched() {
+  local name=$1 calls=${2:-}
+  [ "$(cat VERSION)" = 0.1.0 ] || failed "$name: VERSION changed"
+  [ -z "$(git status --porcelain)" ] || failed "$name: tree changed"
+  [ "$(git rev-list --count HEAD)" = 1 ] || failed "$name: committed"
+  [ "$(git -C "$origin" rev-list --count main)" = 1 ] || failed "$name: pushed"
+  [ "$(tr '\n' ' ' 2>/dev/null <"$ROOT/make-calls")" = "$calls" ] \
+    || failed "$name: make calls '$(tr '\n' ' ' 2>/dev/null <"$ROOT/make-calls")', expected '$calls'"
+}
+
+new_shipping_repo
+expect_refusal "ship without V" "usage" "$SCRIPTS/ship.sh"
+expect_refusal "ship V=1.2" "not X.Y.Z" "$SCRIPTS/ship.sh" 1.2
+expect_refusal "ship V not greater than VERSION" "not greater than the current version" "$SCRIPTS/ship.sh" 0.1.0
+git tag v0.3.0
+expect_refusal "ship V not greater than latest tag" "not greater than the latest tag v0.3.0" "$SCRIPTS/ship.sh" 0.2.0
+git tag -d v0.3.0 >/dev/null
+git switch -qc feature
+expect_refusal "ship off main" "only from main" "$SCRIPTS/ship.sh" 0.2.0
+git switch -q main
+touch untracked
+expect_refusal "ship dirty tree" "not clean" "$SCRIPTS/ship.sh" 0.2.0
+rm untracked
+expect_untouched "ship refusals"
+
+new_shipping_repo
+git commit -q --allow-empty -m unpushed
+expect_refusal "ship ahead of origin" "differs from origin/main" "$SCRIPTS/ship.sh" 0.2.0
+git reset -q --hard HEAD~1
+other=$(mktemp -d "$ROOT/other.XXXX")
+git clone -q "$origin" "$other" && git -C "$other" commit -q --allow-empty -m elsewhere && git -C "$other" push -q origin main
+expect_refusal "ship behind origin" "differs from origin/main" "$SCRIPTS/ship.sh" 0.2.0
+
+new_shipping_repo
+MAKE_TEST_EXIT=1 expect_refusal "ship make test fails" "make test failed" "$SCRIPTS/ship.sh" 0.2.0
+expect_untouched "ship make test fails" "test "
+
+new_shipping_repo
+MAKE_SMOKE_EXIT=1 expect_refusal "ship make smoke fails" "make smoke failed" "$SCRIPTS/ship.sh" 0.2.0
+expect_untouched "ship make smoke fails" "test smoke "
+
+new_shipping_repo
+expect_success "ship" "$SCRIPTS/ship.sh" 0.2.0
+[ "$(cat VERSION)" = 0.2.0 ] || failed "ship VERSION: $(cat VERSION)"
+[ -z "$(git status --porcelain)" ] || failed "ship left changes: $(git status --porcelain)"
+[ "$(git log -1 --format=%s)" = "Release v0.2.0" ] || failed "ship commit message: $(git log -1 --format=%s)"
+[ "$(git show --name-only --format= HEAD | sort | tr '\n' ' ')" = "CHANGELOG.md VERSION " ] \
+  || failed "ship committed: $(git show --name-only --format= HEAD)"
+[ "$(git -C "$origin" rev-parse main)" = "$(git rev-parse HEAD)" ] || failed "ship did not push main"
+[ "$(tr '\n' ' ' <"$ROOT/make-calls")" = "test smoke release " ] || failed "ship make calls: $(cat "$ROOT/make-calls")"
 
 if [ "$failures" -gt 0 ]; then echo "versioning: $failures failed"; exit 1; fi
 echo "versioning ok"

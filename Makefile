@@ -1,7 +1,7 @@
 # Developer commands. CI only runs `build` and `test`: signing material never leaves this Mac.
 .DEFAULT_GOAL := help
 .PHONY: help setup-signing build test check-core test-versioning lint format icon bundle package run stop smoke restore restore-status \
-	version release
+	version release ship
 
 EXE := Downtab
 APP := build/$(EXE).app
@@ -40,11 +40,14 @@ help:
 	@echo "make version V=X.Y.Z close the [Unreleased] changelog section as X.Y.Z and write X.Y.Z to VERSION; commits nothing"
 	@echo "make release         refuse unless on a clean, full main with a bumped VERSION, its changelog section and passing tests;"
 	@echo "                     then package, tag vX.Y.Z, push the tag, publish the release with $(ZIP) in doubleloop-io/downtab"
+	@echo "make ship V=X.Y.Z    refuse unless on a clean main equal to origin/main with passing tests and smoke;"
+	@echo "                     then make version, commit and push on main, make release"
 	@echo
 	@echo "Release: 1. add user-facing entries under ## [Unreleased] in CHANGELOG.md while working"
 	@echo "         2. make version V=X.Y.Z, commit on main"
 	@echo "         3. make smoke (manual, needs Accessibility)"
 	@echo "         4. make release (from main)"
+	@echo "         or, after 1: make ship V=X.Y.Z (steps 2-4, smoke first)"
 
 icon:
 	@scripts/make-icon.sh
@@ -125,6 +128,9 @@ version:
 
 package: bundle
 	@scripts/package.sh "$(APP)" "$(RESTORE)" "$(ZIP)"
+
+ship:
+	@scripts/ship.sh "$(V)"
 
 release:
 	@scripts/release-check.sh

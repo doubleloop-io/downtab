@@ -21,6 +21,17 @@ version_gt() {
   return 1
 }
 
+# The greatest X.Y.Z among the v* tags, empty when there is none.
+highest_tag_version() {
+  local existing candidate highest=
+  for existing in $(git tag -l 'v*'); do
+    candidate=${existing#v}
+    is_semver "$candidate" || continue
+    if [ -z "$highest" ] || version_gt "$candidate" "$highest"; then highest=$candidate; fi
+  done
+  echo "$highest"
+}
+
 read_version() {
   [ -f "$VERSION_FILE" ] || fail "$VERSION_FILE missing: it must hold the version, e.g. 0.1.0"
   local lines version
