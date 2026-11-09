@@ -4,6 +4,8 @@ User-facing changes to Downtab. Format: [Keep a Changelog](https://keepachangelo
 
 ## [Unreleased]
 
+## [0.3.0] - 2026-11-09
+
 ### Added
 
 - Preferences: `Show Switcher on` picks the display the Switcher opens on: the one under the pointer (as before), the one with the menu bar, or the one with the focused window.
