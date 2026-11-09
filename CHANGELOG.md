@@ -4,6 +4,10 @@ User-facing changes to Downtab. Format: [Keep a Changelog](https://keepachangelo
 
 ## [Unreleased]
 
+### Added
+
+- The menu bar menu shows `Update Available: X.Y.Z…` when a newer release is out; it opens the download page. Downtab checks shortly after launch, then once a day.
+
 ### Fixed
 
 - Switcher: no more square outline around its rounded corners, visible with the light system appearance.
