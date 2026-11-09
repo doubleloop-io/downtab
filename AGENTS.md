@@ -17,7 +17,7 @@
 
 ### Issue tracker
 
-Le issue stanno su GitHub (`iacoware/downtab`) e si gestiscono con `gh`. See `docs/agents/issue-tracker.md`.
+Le issue stanno su GitHub (`doubleloop-io/downtab`) e si gestiscono con `gh`. See `docs/agents/issue-tracker.md`.
 
 ### Triage labels
 

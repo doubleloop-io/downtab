@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Tags the release here and publishes it, with its changelog section as notes and the zip as asset, in the public repo.
+# Tags the release here and publishes it, with its changelog section as notes and the zip as asset, in RELEASE_REPO.
 # Run only after release-check.sh and package.sh.
 set -euo pipefail
 source "$(dirname "$0")/lib/version.sh"

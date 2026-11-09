@@ -1,8 +1,8 @@
 # Sourced by the versioning scripts. Paths are relative to the repo root (the scripts' working directory).
 VERSION_FILE=VERSION
 CHANGELOG_FILE=CHANGELOG.md
-# Public: hosts the download page and the releases, while this repo stays private.
-RELEASE_REPO=iacoware/downtab-app
+# Hosts the releases: this repo.
+RELEASE_REPO=doubleloop-io/downtab
 SEMVER_PATTERN='^(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)$'
 
 fail() { echo "$*" >&2; exit 1; }

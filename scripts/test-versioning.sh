@@ -133,7 +133,7 @@ git tag v0.2.0
 expect_refusal "release tag exists" "tag v0.2.0 already exists" "$SCRIPTS/release-check.sh"
 git tag -d v0.2.0 >/dev/null
 
-GH_RELEASES=v0.2.0 expect_refusal "release exists in public repo" "already exists in iacoware/downtab-app" "$SCRIPTS/release-check.sh"
+GH_RELEASES=v0.2.0 expect_refusal "release already exists" "already exists in doubleloop-io/downtab" "$SCRIPTS/release-check.sh"
 
 git tag v0.10.0
 expect_refusal "release not greater than latest tag (numeric)" "not greater than the latest tag v0.10.0" "$SCRIPTS/release-check.sh"
@@ -153,7 +153,7 @@ printf '# Changelog\n\n## [Unreleased]\n\n## [0.2.0] - 2026-02-01\n\n### Added\n
 notes=$(source "$SCRIPTS/lib/version.sh" && changelog_section 0.2.0)
 [ "$notes" = "$(printf '### Added\n\n- New thing\n\n### Fixed\n\n- Old bug')" ] || failed "changelog section: $notes"
 
-# release publishing: tags, pushes the tag, creates the public release with the zip and the notes
+# release publishing: tags, pushes the tag, creates the release with the zip and the notes
 new_repo
 "$SCRIPTS/bump-version.sh" 0.2.0 >/dev/null && commit_all
 origin=$(mktemp -d "$ROOT/origin.XXXX")
@@ -162,7 +162,7 @@ expect_refusal "publish without zip" "missing" "$SCRIPTS/release-publish.sh" "$R
 touch "$ROOT/Downtab.zip"
 expect_success "publish" "$SCRIPTS/release-publish.sh" "$ROOT/Downtab.zip"
 git -C "$origin" rev-parse --quiet --verify refs/tags/v0.2.0 >/dev/null || failed "publish did not push tag v0.2.0"
-[ "$(cat "$ROOT/gh-create")" = "release create v0.2.0 $ROOT/Downtab.zip --repo iacoware/downtab-app --title Downtab 0.2.0 --notes-file $(sed -n 's/.*--notes-file //p' "$ROOT/gh-create")" ] \
+[ "$(cat "$ROOT/gh-create")" = "release create v0.2.0 $ROOT/Downtab.zip --repo doubleloop-io/downtab --title Downtab 0.2.0 --notes-file $(sed -n 's/.*--notes-file //p' "$ROOT/gh-create")" ] \
   || failed "publish gh arguments: $(cat "$ROOT/gh-create")"
 [ "$(cat "$ROOT/gh-notes")" = "$(printf '### Added\n\n- New thing')" ] || failed "publish notes: $(cat "$ROOT/gh-notes")"
 
