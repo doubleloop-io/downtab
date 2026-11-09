@@ -8,4 +8,5 @@
 <key>CFBundlePackageType</key><string>APPL</string>
 <key>LSMinimumSystemVersion</key><string>15.0</string>
 <key>LSUIElement</key><true/>
+<key>NSHumanReadableCopyright</key><string>Copyright © 2026 doubleloop. GPL-3.0-or-later.</string>
 </dict></plist>

@@ -36,7 +36,7 @@ All commands go through `make` (run it with no target for the list). Prefer it o
 | `make format` | Rewrites sources with swift-format. |
 | `make icon` | Renders `App/Icon/*.svg` into `App/AppIcon.icns` (needs `rsvg-convert`). The `.icns` is committed; rerun only after editing an SVG. |
 | `make bundle` | Release build, assembles `build/Downtab.app`, stamps the version (see Versioning) and signs it and `build/EmergencyRestore` with the local certificate. |
-| `make package` | Bundles, then zips `Downtab/Downtab.app` and `Downtab/EmergencyRestore` into `build/Downtab.zip`, and checks both signatures survive unzipping. |
+| `make package` | Bundles, then zips `Downtab/Downtab.app`, `Downtab/EmergencyRestore` and `Downtab/LICENSE` into `build/Downtab.zip`, and checks both signatures survive unzipping. |
 | `make run` | Quits a running instance, bundles, then launches the app. |
 | `make stop` | Quits the running app. |
 | `make version V=X.Y.Z` | Closes `## [Unreleased]` in `CHANGELOG.md` as `## [X.Y.Z] - <today>` and writes `X.Y.Z` to `VERSION`. Refuses a malformed or non-greater `V`, or an empty `[Unreleased]`. Commits nothing. |
