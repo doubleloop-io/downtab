@@ -4,6 +4,10 @@ User-facing changes to Downtab. Format: [Keep a Changelog](https://keepachangelo
 
 ## [Unreleased]
 
+### Fixed
+
+- Switcher: no more square outline around its rounded corners, visible with the light system appearance.
+
 ## [0.2.0] - 2026-11-09
 
 ### Changed

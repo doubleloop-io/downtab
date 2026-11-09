@@ -112,6 +112,9 @@ final class SwitcherPanel: NSPanel {
         let background = NSVisualEffectView()
         background.material = .hudWindow
         background.state = .active
+        // The layer's corner radius rounds the drawing only; the window server derives the window's shadow
+        // from the material, which stays square unless masked.
+        background.maskImage = Self.roundedMask(radius: Metrics.panelCornerRadius)
         background.wantsLayer = true
         background.layer?.cornerRadius = Metrics.panelCornerRadius
         background.layer?.masksToBounds = true
@@ -151,6 +154,18 @@ final class SwitcherPanel: NSPanel {
         NSLayoutConstraint.activate(
             Self.edges(of: tint, pinnedTo: background) + Self.edges(of: appRow, pinnedTo: background))
         return background
+    }
+
+    private static func roundedMask(radius: CGFloat) -> NSImage {
+        let edge = 2 * radius + 1
+        let mask = NSImage(size: NSSize(width: edge, height: edge), flipped: false) { rect in
+            NSColor.black.setFill()
+            NSBezierPath(roundedRect: rect, xRadius: radius, yRadius: radius).fill()
+            return true
+        }
+        mask.capInsets = NSEdgeInsets(top: radius, left: radius, bottom: radius, right: radius)
+        mask.resizingMode = .stretch
+        return mask
     }
 
     private static func edges(of view: NSView, pinnedTo container: NSView) -> [NSLayoutConstraint] {
