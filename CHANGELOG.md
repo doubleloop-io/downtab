@@ -6,6 +6,7 @@ User-facing changes to Downtab. Format: [Keep a Changelog](https://keepachangelo
 
 ### Changed
 
+- Downtab is now free software, licensed under GPL-3.0-or-later. Source, releases and the download page moved to [github.com/doubleloop-io/downtab](https://github.com/doubleloop-io/downtab) and [doubleloop-io.github.io/downtab](https://doubleloop-io.github.io/downtab/).
 - New bundle identifier `io.doubleloop.downtab`. After updating from 0.1.2 or earlier: grant Accessibility to Downtab again, set your shortcuts and `Launch at login` again, and remove the old Downtab entry from System Settings › Privacy & Security › Accessibility.
 
 ## [0.1.2] - 2026-11-06
