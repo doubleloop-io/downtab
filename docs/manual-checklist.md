@@ -131,7 +131,7 @@ Before starting: `make run`, then open TextEdit, Safari and Notes in this order.
 4. Press Tab a few times: the highlight and the name move, the icons do not move. Press `Esc`.
 5. With many apps open (15 or more), the Switcher still fits the screen width: icons get smaller instead of overflowing.
 6. With many apps open, select the first and then the last app: a name wider than its tile stays inside the panel, pushed against its left or right edge instead of centered. Press `Esc`.
-7. Open a second TextEdit window (⌘N). Hold ⌥ and press Tab: TextEdit's icon has a Window count badge like the prototype's (press `L` there to cycle badge styles until it shows `circle`): a white disc with a blue ring and `2`, centered near the icon's bottom-right corner, inside the tile's highlight when selected. Safari and Notes, with one window each, have no badge. Press `Esc`.
+7. Open a second TextEdit window (⌘N). Hold ⌥ and press Tab: TextEdit's icon has a Window count badge like the prototype's (press `L` there to cycle badge styles until it shows `circle`): a white disc with a blue ring and `2`, centered on the bottom-right corner of the icon's artwork, covering it, as the native ⌘Tab's notification badge does on the top-right corner. Safari and Notes, with one window each, have no badge. Press `Esc`.
 8. Open 3 Finder windows: Finder's badge shows `3` (the desktop does not count). An app exposing fake dialogs (cmux, with one window) shows no badge. Press `Esc`.
 
 ## Switcher: which apps appear
@@ -174,7 +174,7 @@ Before starting: `make run` on macOS 26 or later, with TextEdit holding 3 window
 4. System Settings › Accessibility › Display › `Reduce transparency` on: both panels become opaque. Turn it off.
 5. System Settings › Accessibility › Display › `Increase contrast` on: both panels gain a visible edge and stronger text. Turn it off.
 6. ⌥Tab still shows the Switcher after the usual show delay, with no extra lag compared to the previous release.
-7. Compare ⌥Tab with the native ⌘Tab: similar height and spacing, the selected name right under its tile. On an app with a Window count badge (TextEdit), the badge's circle stays whole inside the selected tile.
+7. Compare ⌥Tab with the native ⌘Tab: similar height and spacing, the selected name right under its tile. On an app with a Window count badge (TextEdit), the badge's circle is whole, never cut by the selected tile's edge.
 
 ## Switcher: Window list
 

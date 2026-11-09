@@ -217,6 +217,8 @@ private final class AppTile: NSView {
         super.init(frame: .zero)
         wantsLayer = true
         layer?.cornerRadius = spacing.tileCornerRadius
+        // A corner radius turns clipping on, which would cut the Window count badge where it overhangs the tile.
+        clipsToBounds = false
         if isSelected {
             layer?.borderWidth = 1
         }
@@ -245,8 +247,7 @@ private final class AppTile: NSView {
         ])
         if let count = entry.windowCountBadge {
             setAccessibilityValue("\(count) windows")
-            addBadge(
-                count, iconSize: iconSize, tileMargin: spacing.tileMargin, isInverted: selection == .parentOfWindowList)
+            addBadge(count, on: image, iconSize: iconSize, isInverted: selection == .parentOfWindowList)
         }
     }
 
@@ -257,15 +258,16 @@ private final class AppTile: NSView {
         layer?.borderColor = Palette.border.cgColor
     }
 
-    /// Centered on the artwork's corner, inside the icon box past its transparent margin.
-    private func addBadge(_ count: Int, iconSize: CGFloat, tileMargin: CGFloat, isInverted: Bool) {
+    /// Centered on the artwork's bottom-right corner, like the Dock's notification badge on the top-right one:
+    /// it covers the corner of the icon and may stick out of the tile.
+    private func addBadge(_ count: Int, on image: NSView, iconSize: CGFloat, isInverted: Bool) {
         let badge = WindowCountBadge(
             count: count, diameter: Metrics.badgeDiameter(iconSize: iconSize), isInverted: isInverted)
         addSubview(badge)
-        let offset = tileMargin + iconSize * Metrics.badgeCenterIconRatio
+        let inset = iconSize * Metrics.badgeCenterInsetRatio
         NSLayoutConstraint.activate([
-            badge.centerXAnchor.constraint(equalTo: leadingAnchor, constant: offset),
-            badge.centerYAnchor.constraint(equalTo: topAnchor, constant: offset),
+            badge.centerXAnchor.constraint(equalTo: image.trailingAnchor, constant: -inset),
+            badge.centerYAnchor.constraint(equalTo: image.bottomAnchor, constant: -inset),
         ])
     }
 
@@ -323,8 +325,7 @@ private final class WindowCountBadge: NSView {
 /// Spacing in and around the App row, following the native ⌘Tab's proportions (measured on macOS 27): it scales
 /// with the icon. Linear in the icon size, which `Metrics.iconSize` relies on to fit the row.
 private struct RowSpacing {
-    /// Between the icon and the selected tile's edge, on every side: just enough for the Window count badge, which
-    /// straddles the icon's corner, to stay inside the tile.
+    /// Between the icon and the selected tile's edge, on every side.
     let tileMargin: CGFloat
     let tileGap: CGFloat
     let tileCornerRadius: CGFloat
@@ -337,7 +338,7 @@ private struct RowSpacing {
     var nameBand: CGFloat { Metrics.nameGap + Metrics.nameHeight }
 
     init(iconSize: CGFloat) {
-        tileMargin = 0.06 * iconSize + 2
+        tileMargin = 0.04 * iconSize - 1.5
         tileGap = 0.08 * iconSize
         tileCornerRadius = 0.22 * iconSize
         sidePadding = 0.3 * iconSize
@@ -355,8 +356,9 @@ private enum Metrics {
     static let panelCornerRadius: CGFloat = 28
     /// The prototype's `--badge: calc(var(--icon) * 0.3)`.
     static let badgeIconRatio: CGFloat = 0.3
-    /// Variant E: with the tile wrapping only the icon, the badge sits at 86% of the icon, keeping a margin.
-    static let badgeCenterIconRatio: CGFloat = 0.86
+    /// From the icon box's corner to the badge's center: where the artwork's corner is, past the box's transparent
+    /// margin.
+    static let badgeCenterInsetRatio: CGFloat = 0.1
     /// Below this the count is unreadable, however small the icons.
     static let minBadgeDiameter: CGFloat = 16
     /// Per side, between the count and the badge's edge: 1–2 digits stay a circle, 3+ grow into a pill.

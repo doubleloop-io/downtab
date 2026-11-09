@@ -1,6 +1,6 @@
 # Window list drops under the selected icon
 
-The Window list opens as a column of titles under the selected app's icon (variant A), as a plain rounded rectangle: the prototype's caret was dropped with the move to Liquid Glass (0003); it still drops under the icon, its top edge where the caret tip was. Apps with more than one window carry a circular Window count badge on the bottom-right corner of the icon, and the selected app's name sits below the row instead of inside its tile. The App row never moves, so the native gesture stays intact.
+The Window list opens as a column of titles under the selected app's icon (variant A), as a plain rounded rectangle: the prototype's caret was dropped with the move to Liquid Glass (0003); it still drops under the icon, its top edge where the caret tip was. Apps with more than one window carry a circular Window count badge centered on the bottom-right corner of the icon's artwork, like the Dock's notification badge on the top-right one (which it leaves free); it may stick out of the selected tile, and the selected app's name sits below the row instead of inside its tile. The App row never moves, so the native gesture stays intact.
 
 ## Considered options
 
