@@ -1,10 +1,10 @@
 import AppKit
 import SwitcherCore
 
-/// The selected app's Window list, dropped under its icon with a caret pointing at it, as in prototype variant A
-/// (`docs/adr/assets/prototype-switcher.html`). Never key: the Switcher keeps the keyboard.
+/// The selected app's Window list, a rounded rectangle dropped under its icon (`docs/adr/0002-window-list-under-the-icon.md`).
+/// Never key: the Switcher keeps the keyboard.
 final class WindowListPanel: NSPanel {
-    private let background = CaretBackground()
+    private let content = FlippedView()
     private let headerIcon = NSImageView()
     private let header = NSTextField(labelWithString: "")
     private let scroll = NSScrollView()
@@ -24,13 +24,12 @@ final class WindowListPanel: NSPanel {
         backgroundColor = .clear
         isOpaque = false
         hasShadow = true
-        appearance = NSAppearance(named: .darkAqua)
         title = "Window list"
-        contentView = background
+        PanelBackground.install(content, in: self, cornerRadius: Metrics.cornerRadius, preGlass: RoundedFill.init)
 
-        background.setAccessibilityElement(true)
-        background.setAccessibilityRole(.list)
-        background.setAccessibilityLabel("Window list")
+        content.setAccessibilityElement(true)
+        content.setAccessibilityRole(.list)
+        content.setAccessibilityLabel("Window list")
         headerIcon.imageScaling = .scaleProportionallyUpOrDown
         headerIcon.setAccessibilityElement(false)
         header.font = .systemFont(ofSize: Metrics.headerFontSize)
@@ -41,7 +40,7 @@ final class WindowListPanel: NSPanel {
         scroll.autohidesScrollers = true
         scroll.documentView = rows
         for view in [headerIcon, header, scroll] {
-            background.addSubview(view)
+            content.addSubview(view)
         }
     }
 
@@ -50,22 +49,20 @@ final class WindowListPanel: NSPanel {
         let screenFrame = screen?.frame ?? NSRect(x: anchor.x - 200, y: 0, width: 400, height: anchor.y)
         let width = min(Metrics.width, screenFrame.width - 2 * Metrics.screenGutter)
         let listHeight = min(CGFloat(entry.windows.count) * Metrics.rowHeight, Metrics.maxListHeight)
-        let height = Metrics.caretHeight + 2 * Metrics.padding + Metrics.headerHeight + listHeight
+        let height = 2 * Metrics.padding + Metrics.headerHeight + listHeight
         let x = min(
             max(anchor.x - width / 2, screenFrame.minX + Metrics.screenGutter),
             screenFrame.maxX - width - Metrics.screenGutter)
-        let top = anchor.y - Metrics.gapBelowSwitcher + Metrics.caretHeight
+        let top = anchor.y - Metrics.gapBelowSwitcher
         setFrame(NSRect(x: x, y: top - height, width: width, height: height), display: false)
-        background.caretX = anchor.x - x
 
         layoutHeader(entry, icon: icon, width: width)
         layoutRows(entry.windows, selected: selectedWindow, width: width, listHeight: listHeight)
-        background.needsDisplay = true
         orderFront(nil)
     }
 
     private func layoutHeader(_ entry: AppRowEntry, icon: NSImage?, width: CGFloat) {
-        let top = Metrics.caretHeight + Metrics.padding + Metrics.headerTopPadding
+        let top = Metrics.padding + Metrics.headerTopPadding
         headerIcon.image = icon
         headerIcon.frame = NSRect(
             x: Metrics.padding + Metrics.headerSidePadding, y: top, width: Metrics.headerIcon,
@@ -81,7 +78,7 @@ final class WindowListPanel: NSPanel {
     private func layoutRows(_ windows: [WindowListEntry], selected: Int, width: CGFloat, listHeight: CGFloat) {
         let listWidth = width - 2 * Metrics.padding
         scroll.frame = NSRect(
-            x: Metrics.padding, y: Metrics.caretHeight + Metrics.padding + Metrics.headerHeight, width: listWidth,
+            x: Metrics.padding, y: Metrics.padding + Metrics.headerHeight, width: listWidth,
             height: listHeight)
         let views = windows.enumerated().map { index, window in
             WindowRow(window, isSelected: index == selected)
@@ -91,8 +88,8 @@ final class WindowListPanel: NSPanel {
             row.frame = NSRect(x: 0, y: CGFloat(index) * Metrics.rowHeight, width: listWidth, height: Metrics.rowHeight)
         }
         rows.frame = NSRect(x: 0, y: 0, width: listWidth, height: CGFloat(windows.count) * Metrics.rowHeight)
-        background.setAccessibilityChildren(views)
-        background.setAccessibilitySelectedChildren(views.filter(\.isSelected))
+        content.setAccessibilityChildren(views)
+        content.setAccessibilitySelectedChildren(views.filter(\.isSelected))
         if let selectedRow = views.first(where: \.isSelected) {
             selectedRow.scrollToVisible(selectedRow.bounds)
         }
@@ -154,19 +151,27 @@ private final class WindowRow: NSView {
 /// The prototype's `.tag`: a small outlined pill after the title.
 private final class WindowTag: NSView {
     private let label: NSTextField
+    private let isSelected: Bool
+
+    override var wantsUpdateLayer: Bool { true }
 
     init(_ text: String, isSelected: Bool) {
         label = NSTextField(labelWithString: text)
+        self.isSelected = isSelected
         super.init(frame: .zero)
         wantsLayer = true
         layer?.cornerRadius = Metrics.tagCornerRadius
         layer?.borderWidth = 1
-        layer?.borderColor = (isSelected ? NSColor(white: 1, alpha: 0.5) : Palette.border).cgColor
         label.font = .systemFont(ofSize: Metrics.tagFontSize)
         label.textColor = isSelected ? .white : Palette.muted
         label.setAccessibilityElement(false)
         addSubview(label)
         setAccessibilityElement(false)
+    }
+
+    /// Runs with the view's own appearance current, so the appearance-dependent border resolves against it.
+    override func updateLayer() {
+        layer?.borderColor = (isSelected ? NSColor(white: 1, alpha: 0.5) : Palette.border).cgColor
     }
 
     override var fittingSize: NSSize {
@@ -194,28 +199,12 @@ extension WindowLabel {
     }
 }
 
-private final class CaretBackground: FlippedView {
-    var caretX: CGFloat = 0
-
+/// Before macOS 26: the prototype's near-opaque dark fill.
+private final class RoundedFill: NSView {
     override func draw(_ dirtyRect: NSRect) {
-        let radius = Metrics.cornerRadius
-        let caret = Metrics.caretHeight
         // Half a point in, so the 1 pt border is not clipped by the window's edge.
-        let minX: CGFloat = 0.5
-        let maxX = bounds.width - 0.5
-        let top = caret + 0.5
-        let bottom = bounds.height - 0.5
-        let tipX = min(max(caretX, minX + radius + caret), maxX - radius - caret)
-        let path = NSBezierPath()
-        path.move(to: NSPoint(x: minX + radius, y: top))
-        path.line(to: NSPoint(x: tipX - caret, y: top))
-        path.line(to: NSPoint(x: tipX, y: 0.5))
-        path.line(to: NSPoint(x: tipX + caret, y: top))
-        path.appendArc(from: NSPoint(x: maxX, y: top), to: NSPoint(x: maxX, y: bottom), radius: radius)
-        path.appendArc(from: NSPoint(x: maxX, y: bottom), to: NSPoint(x: minX, y: bottom), radius: radius)
-        path.appendArc(from: NSPoint(x: minX, y: bottom), to: NSPoint(x: minX, y: top), radius: radius)
-        path.appendArc(from: NSPoint(x: minX, y: top), to: NSPoint(x: minX + radius, y: top), radius: radius)
-        path.close()
+        let path = NSBezierPath(
+            roundedRect: bounds.insetBy(dx: 0.5, dy: 0.5), xRadius: Metrics.cornerRadius, yRadius: Metrics.cornerRadius)
         Palette.windowListFill.setFill()
         path.fill()
         Palette.border.setStroke()
@@ -232,7 +221,6 @@ private enum Metrics {
     static let width: CGFloat = 380
     static let screenGutter: CGFloat = 16
     static let gapBelowSwitcher: CGFloat = 14
-    static let caretHeight: CGFloat = 8
     static let padding: CGFloat = 6
     static let cornerRadius: CGFloat = 14
     static let headerTopPadding: CGFloat = 4

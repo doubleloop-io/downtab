@@ -1,6 +1,6 @@
 # Window list drops under the selected icon
 
-The Window list opens as a column of titles under the selected app's icon, with a caret pointing at it (variant A). Apps with more than one window carry a circular Window count badge on the bottom-right corner of the icon, and the selected app's name sits below the row instead of inside its tile. The App row never moves, so the native gesture stays intact.
+The Window list opens as a column of titles under the selected app's icon (variant A), as a plain rounded rectangle: the prototype's caret was dropped with the move to Liquid Glass (0003); it still drops under the icon, its top edge where the caret tip was. Apps with more than one window carry a circular Window count badge on the bottom-right corner of the icon, and the selected app's name sits below the row instead of inside its tile. The App row never moves, so the native gesture stays intact.
 
 ## Considered options
 
@@ -13,4 +13,4 @@ The grid (E) was the closest alternative and is rejected for now: without thumbn
 
 ## Consequences
 
-- Colors and metrics in `Palette`, `SwitcherPanel` and `WindowListPanel` come from `assets/prototype-switcher.html` with `?names=below`.
+- Colors and metrics in `Palette`, `SwitcherPanel` and `WindowListPanel` come from `assets/prototype-switcher.html` with `?names=below`. On macOS 26+ the colors follow 0003 instead.

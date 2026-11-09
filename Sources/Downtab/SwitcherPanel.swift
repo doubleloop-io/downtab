@@ -25,10 +25,8 @@ final class SwitcherPanel: NSPanel {
         backgroundColor = .clear
         isOpaque = false
         hasShadow = true
-        // The prototype is a dark HUD whatever the system appearance.
-        appearance = NSAppearance(named: .darkAqua)
         title = "Switcher"
-        contentView = makeContent()
+        installContent()
     }
 
     func show(_ displayed: DisplayedState, icon: (AppID) -> NSImage?) {
@@ -93,7 +91,7 @@ final class SwitcherPanel: NSPanel {
     /// Centered under the selected tile while it fits, otherwise pushed against the Switcher's edge. Placed by
     /// frame: Auto Layout would let a long name widen the Switcher, moving the row when the selection moves.
     private func placeSelectedName(under tile: NSView) {
-        guard let content = contentView else { return }
+        guard let content = selectedName.superview else { return }
         let tileFrame = tile.convert(tile.bounds, to: content)
         let maxWidth = content.bounds.width - 2 * Metrics.panelPadding
         selectedName.sizeToFit()
@@ -108,25 +106,8 @@ final class SwitcherPanel: NSPanel {
         )
     }
 
-    private func makeContent() -> NSView {
-        let background = NSVisualEffectView()
-        background.material = .hudWindow
-        background.state = .active
-        // The layer's corner radius rounds the drawing only; the window server derives the window's shadow
-        // from the material, which stays square unless masked.
-        background.maskImage = Self.roundedMask(radius: Metrics.panelCornerRadius)
-        background.wantsLayer = true
-        background.layer?.cornerRadius = Metrics.panelCornerRadius
-        background.layer?.masksToBounds = true
-        background.layer?.borderWidth = 1
-        background.layer?.borderColor = Palette.border.cgColor
-        // The HUD material alone lets bright windows show through; the prototype's panel stays dark.
-        let tint = NSView()
-        tint.wantsLayer = true
-        tint.layer?.backgroundColor = Palette.hudTint.cgColor
-        tint.translatesAutoresizingMaskIntoConstraints = false
-        background.addSubview(tint)
-
+    private func installContent() {
+        let content = NSView()
         appRow.orientation = .horizontal
         appRow.alignment = .top
         appRow.spacing = Metrics.tileGap
@@ -140,7 +121,7 @@ final class SwitcherPanel: NSPanel {
         appRow.setAccessibilityRole(.list)
         appRow.setAccessibilityLabel("App row")
         appRow.translatesAutoresizingMaskIntoConstraints = false
-        background.addSubview(appRow)
+        content.addSubview(appRow)
 
         selectedName.font = .systemFont(ofSize: Metrics.nameFontSize, weight: .medium)
         selectedName.textColor = Palette.text
@@ -150,9 +131,31 @@ final class SwitcherPanel: NSPanel {
         // The App row's entries already carry the name.
         selectedName.setAccessibilityElement(false)
         selectedName.cell?.setAccessibilityElement(false)
-        background.addSubview(selectedName)
-        NSLayoutConstraint.activate(
-            Self.edges(of: tint, pinnedTo: background) + Self.edges(of: appRow, pinnedTo: background))
+        content.addSubview(selectedName)
+        NSLayoutConstraint.activate(appRow.constraintsPinningEdges(to: content))
+        PanelBackground.install(
+            content, in: self, cornerRadius: Metrics.panelCornerRadius, preGlass: Self.makeHUDBackground)
+    }
+
+    private static func makeHUDBackground() -> NSView {
+        let background = NSVisualEffectView()
+        background.material = .hudWindow
+        background.state = .active
+        // The layer's corner radius rounds the drawing only; the window server derives the window's shadow
+        // from the material, which stays square unless masked.
+        background.maskImage = roundedMask(radius: Metrics.panelCornerRadius)
+        background.wantsLayer = true
+        background.layer?.cornerRadius = Metrics.panelCornerRadius
+        background.layer?.masksToBounds = true
+        background.layer?.borderWidth = 1
+        background.layer?.borderColor = Palette.border.cgColor
+        // The HUD material alone lets bright windows show through; the prototype's panel stays dark.
+        let tint = NSView()
+        tint.wantsLayer = true
+        tint.layer?.backgroundColor = Palette.hudTint.cgColor
+        tint.translatesAutoresizingMaskIntoConstraints = false
+        background.addSubview(tint)
+        NSLayoutConstraint.activate(tint.constraintsPinningEdges(to: background))
         return background
     }
 
@@ -166,15 +169,6 @@ final class SwitcherPanel: NSPanel {
         mask.capInsets = NSEdgeInsets(top: radius, left: radius, bottom: radius, right: radius)
         mask.resizingMode = .stretch
         return mask
-    }
-
-    private static func edges(of view: NSView, pinnedTo container: NSView) -> [NSLayoutConstraint] {
-        [
-            view.leadingAnchor.constraint(equalTo: container.leadingAnchor),
-            view.trailingAnchor.constraint(equalTo: container.trailingAnchor),
-            view.topAnchor.constraint(equalTo: container.topAnchor),
-            view.bottomAnchor.constraint(equalTo: container.bottomAnchor),
-        ]
     }
 
     private static func pointerScreen() -> NSScreen? {
@@ -202,17 +196,18 @@ private final class AppTile: NSView {
     }
 
     let isSelected: Bool
+    private let selection: Selection
+
+    override var wantsUpdateLayer: Bool { true }
 
     init(icon: NSImage?, entry: AppRowEntry, iconSize: CGFloat, selection: Selection) {
         isSelected = selection != .unselected
+        self.selection = selection
         super.init(frame: .zero)
         wantsLayer = true
         layer?.cornerRadius = Metrics.tileCornerRadius
         if isSelected {
-            layer?.backgroundColor =
-                (selection == .parentOfWindowList ? Palette.parentTile : Palette.selectedTile).cgColor
             layer?.borderWidth = 1
-            layer?.borderColor = Palette.border.cgColor
         }
 
         setAccessibilityElement(true)
@@ -241,6 +236,13 @@ private final class AppTile: NSView {
             setAccessibilityValue("\(count) windows")
             addBadge(count, iconSize: iconSize, isInverted: selection == .parentOfWindowList)
         }
+    }
+
+    /// Runs with the view's own appearance current, so the appearance-dependent colors resolve against it.
+    override func updateLayer() {
+        guard isSelected else { return }
+        layer?.backgroundColor = (selection == .parentOfWindowList ? Palette.parentTile : Palette.selectedTile).cgColor
+        layer?.borderColor = Palette.border.cgColor
     }
 
     /// Centered on the artwork's corner, inside the icon box past its transparent margin.
