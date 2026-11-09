@@ -14,4 +14,14 @@ public enum OnScreenWindowOrder {
         let onScreen = WindowServerList.normalWindows(includingOffScreen: false).map { WindowID($0.id) }
         return Dictionary(zip(onScreen, onScreen.indices), uniquingKeysWith: { first, _ in first })
     }
+
+    /// Level-0 windows on screen, front to back, with their bounds in window-server coordinates.
+    public static func windowsFrontToBack() -> [OnScreenWindow] {
+        WindowServerList.normalWindows(includingOffScreen: false).map { window in
+            OnScreenWindow(
+                owner: AppID(processIdentifier: window.ownerPID),
+                bounds: ScreenRect(window.bounds),
+                alpha: window.alpha)
+        }
+    }
 }

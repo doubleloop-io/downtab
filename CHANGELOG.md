@@ -6,7 +6,15 @@ User-facing changes to Downtab. Format: [Keep a Changelog](https://keepachangelo
 
 ### Added
 
+- Preferences: `Show Switcher on` picks the display the Switcher opens on: the one under the pointer (as before), the one with the menu bar, or the one with the focused window.
 - The menu bar menu shows `Update Available: X.Y.Z…` when a newer release is out; it opens the download page. Downtab checks shortly after launch, then once a day.
+
+### Changed
+
+- Switcher and Window list: on macOS 26 and later they use the system Liquid Glass and follow the system appearance and glass settings (Clear or Tinted, Reduce transparency, Increase contrast). macOS 15 keeps the dark look.
+- Window list: a plain rounded rectangle under the selected icon, without the caret pointing at it.
+- Switcher: lower, with spacing and tile size in the proportions of the native ⌘Tab; icons fill more of their tile.
+- Switcher: the Window count badge sits on the icon's bottom-right corner like the native notification badge, free to stick out of the selected tile, which now hugs the icon.
 
 ### Fixed
 

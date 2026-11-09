@@ -82,8 +82,8 @@ extension DesktopWindow {
         !self.spaces.isDisjoint(with: spaces)
     }
 
-    /// Smaller windows are service windows (Zoom, iTerm2): their Space says nothing about where the app is.
+    /// Service windows (Zoom, iTerm2) say nothing about where the app is.
     fileprivate var isLargeEnoughToBeReal: Bool {
-        size.width >= 100 && size.height >= 50
+        size.isLargeEnoughToBeReal
     }
 }

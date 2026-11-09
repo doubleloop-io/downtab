@@ -58,6 +58,19 @@ Before starting: `make run`, then open TextEdit, Safari and Notes in this order,
 7. With the Switcher open, press ⌥Tab again: the icons stay in the same order. Press `Esc`.
 8. Opening shows only the show delay: holding ⌥ after ⌥Tab, the Switcher appears after about a tenth of a second, never later, even right after launching a new app.
 
+## Switcher: display
+
+Needs two displays. Before starting: `defaults delete io.doubleloop.downtab switcherPlacement` (ignore "does not exist"), then `make run`. Put a TextEdit window on the display without the menu bar (the other display) and a Notes window on the menu bar display. Close every Finder window. Keep ⌥ held until `Esc`.
+
+1. Open the Preferences: `Show Switcher on` reads `Display under pointer`. Click TextEdit, move the pointer to the menu bar display, ⌥Tab: the Switcher appears on the menu bar display. `Esc`.
+2. Choose `Display with menu bar`: `defaults read io.doubleloop.downtab switcherPlacement` prints `menuBarDisplay`. Move the pointer to the other display, ⌥Tab: the Switcher appears on the menu bar display. Still holding ⌥, move the pointer back and forth and press Tab: the Switcher never moves. `Esc`.
+3. Choose `Display with focused window`. Click TextEdit, move the pointer to the menu bar display, ⌥Tab: the Switcher appears on the other display. `Esc`. `` ⌥` ``: the Switcher and its Window list appear on the other display. `Esc`.
+4. Click Notes, move the pointer to the other display, ⌥Tab: the Switcher appears on the menu bar display. `Esc`.
+5. Drag the TextEdit window so that most of it is on the menu bar display, click it, ⌥Tab: the Switcher appears on the menu bar display. Move it back. `Esc`.
+6. Click the desktop (Finder frontmost, no Finder window open), move the pointer to the other display, ⌥Tab: the Switcher appears on the menu bar display. `Esc`.
+7. Open an Electron app (VS Code, Slack, Notion) with its window on the other display, click it, move the pointer to the menu bar display, ⌥Tab: the Switcher appears on the other display. `Esc`.
+8. `make stop`, `make run`: the Preferences still read `Display with focused window`. Choose `Display under pointer` again.
+
 ## Switcher: cycle and Confirm at App level
 
 Before starting: `make run`, Accessibility granted to Downtab, then open TextEdit, Safari and Notes in this order, clicking each to bring it to the front.
@@ -118,7 +131,7 @@ Before starting: `make run`, then open TextEdit, Safari and Notes in this order.
 4. Press Tab a few times: the highlight and the name move, the icons do not move. Press `Esc`.
 5. With many apps open (15 or more), the Switcher still fits the screen width: icons get smaller instead of overflowing.
 6. With many apps open, select the first and then the last app: a name wider than its tile stays inside the panel, pushed against its left or right edge instead of centered. Press `Esc`.
-7. Open a second TextEdit window (⌘N). Hold ⌥ and press Tab: TextEdit's icon has a Window count badge like the prototype's (press `L` there to cycle badge styles until it shows `circle`): a white disc with a blue ring and `2`, centered near the icon's bottom-right corner, inside the tile's highlight when selected. Safari and Notes, with one window each, have no badge. Press `Esc`.
+7. Open a second TextEdit window (⌘N). Hold ⌥ and press Tab: TextEdit's icon has a Window count badge like the prototype's (press `L` there to cycle badge styles until it shows `circle`): a white disc with a blue ring and `2`, centered on the bottom-right corner of the icon's artwork, covering it, as the native ⌘Tab's notification badge does on the top-right corner. Safari and Notes, with one window each, have no badge. Press `Esc`.
 8. Open 3 Finder windows: Finder's badge shows `3` (the desktop does not count). An app exposing fake dialogs (cmux, with one window) shows no badge. Press `Esc`.
 
 ## Switcher: which apps appear
@@ -151,11 +164,23 @@ Before starting: `make run`, Accessibility granted to Downtab, TextEdit and Safa
 8. Run `kill -CONT $(pgrep -x TextEdit)`: the `scan no answer` lines stop.
 9. Quit Safari (⌘Q): within one second the log shows `stopped watching window events pid=...` with Safari's pid.
 
+## Switcher: Liquid Glass (macOS 26+)
+
+Before starting: `make run` on macOS 26 or later, with TextEdit holding 3 windows. Open a bright window (e.g. a white web page) and a busy one (e.g. a photo) behind the middle of the screen. For each setting below hold ⌥, press Tab, then `↓` on TextEdit, check, then press `Esc`.
+
+1. Default settings, light appearance: the Switcher and the Window list are system glass (the windows behind show through, blurred), with dark text and icons readable over the bright and the busy window. The Window list keeps the look of 0002: no caret, rounded corners.
+2. Dark appearance (System Settings › Appearance): both panels turn to dark glass with light text, at once on the next ⌥Tab.
+3. System Settings › Appearance › Liquid Glass set to `Clear`, then `Tinted`: both panels follow the setting; the selected tile, the Window count badge, the selected name and the Window list header stay readable.
+4. System Settings › Accessibility › Display › `Reduce transparency` on: both panels become opaque. Turn it off.
+5. System Settings › Accessibility › Display › `Increase contrast` on: both panels gain a visible edge and stronger text. Turn it off.
+6. ⌥Tab still shows the Switcher after the usual show delay, with no extra lag compared to the previous release.
+7. Compare ⌥Tab with the native ⌘Tab: similar height and spacing, the selected name right under its tile. On an app with a Window count badge (TextEdit), the badge's circle is whole, never cut by the selected tile's edge.
+
 ## Switcher: Window list
 
 Before starting: `make run`, Accessibility granted to Downtab. Open TextEdit with 3 windows titled apart (⌘N three times, type `one`, `two`, `three` and save each, or just tell them apart by content), arranged so each one is partly visible, then Safari with one window, then Notes, clicking each to bring it to the front. Keep ⌥ held during each step unless the step says to release it.
 
-1. In Notes, hold ⌥, press Tab until TextEdit is selected, press `↓`: a Window list drops under TextEdit's icon, with a caret pointing at it, a header with TextEdit's icon and `TextEdit · 3 windows`, and the 3 titles in TextEdit's front-to-back order, the first one highlighted in blue. TextEdit's badge turns blue with a white ring and `3`; its tile highlight gets fainter. Compare with `docs/adr/assets/prototype-switcher.html` (press `↓` there).
+1. In Notes, hold ⌥, press Tab until TextEdit is selected, press `↓`: a Window list drops under TextEdit's icon as a rounded rectangle with no caret, a header with TextEdit's icon and `TextEdit · 3 windows`, and the 3 titles in TextEdit's front-to-back order, the first one highlighted in blue. TextEdit's badge turns blue with a white ring and `3`; its tile highlight gets fainter. Compare with `docs/adr/assets/prototype-switcher.html` (press `↓` there).
 2. Press `↓` twice: the highlight moves down to the last window; `↓` again keeps it there. Press `↑` until the first window, then `↑` once more: the Window list closes, TextEdit is selected at App level and its badge is back to white.
 3. Select Safari (one window) or an app with no windows and press `↓`: nothing happens. Press `Esc`.
 4. Hold ⌥, select TextEdit, `↓`, `↓` to the second window, release ⌥: only that window comes to the front and gets the keyboard focus (type a few letters: they land in it). TextEdit's other two windows stay behind the windows of other apps that covered them before.
@@ -277,7 +302,7 @@ Downtab asks GitHub for the latest release about 10 seconds after launch, then e
 
 Before starting: `defaults delete io.doubleloop.downtab launchAtLogin` (ignore "does not exist"), then `make run`. The login item points at the bundle that last registered it: run these checks from one checkout only.
 
-1. First launch turns it on: System Settings › General › Login Items & Extensions lists Downtab under `Open at Login`, enabled. The Preferences show `Launch at login` checked, under `Restore Defaults`, with no note below it.
+1. First launch turns it on: System Settings › General › Login Items & Extensions lists Downtab under `Open at Login`, enabled. The Preferences show `Launch at login` checked, under `Show Switcher on`, with no note below it.
 2. Uncheck `Launch at login`: Downtab disappears from `Open at Login` (reopen System Settings if it does not refresh). `defaults read io.doubleloop.downtab launchAtLogin` prints `0`. `make stop`, `make run`: the toggle is still unchecked and Downtab is still not listed.
 3. Check it again: Downtab is listed and enabled again; `defaults read io.doubleloop.downtab launchAtLogin` prints `1`.
 4. Log out and log back in: the Downtab icon appears in the menu bar without launching it by hand.
