@@ -7,6 +7,7 @@ User-facing changes to Downtab. Format: [Keep a Changelog](https://keepachangelo
 ### Fixed
 
 - Switcher: no more square outline around its rounded corners, visible with the light system appearance.
+- Window count badge: stays a circle with small icons, with a thinner ring and a readable count.
 
 ## [0.2.0] - 2026-11-09
 
