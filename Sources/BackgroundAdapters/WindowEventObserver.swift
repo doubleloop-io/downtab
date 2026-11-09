@@ -163,7 +163,7 @@ public final class WindowEventObserver: Sendable {
         }
     }
 
-    private static let logger = Logger(subsystem: "io.github.iacoware.downtab", category: "observer")
+    private static let logger = Logger(subsystem: "io.doubleloop.downtab", category: "observer")
     private static let windowNotifications = [
         kAXUIElementDestroyedNotification,
         kAXTitleChangedNotification,

@@ -4,6 +4,10 @@ User-facing changes to Downtab. Format: [Keep a Changelog](https://keepachangelo
 
 ## [Unreleased]
 
+### Changed
+
+- New bundle identifier `io.doubleloop.downtab`. After updating from 0.1.2 or earlier: grant Accessibility to Downtab again, set your shortcuts and `Launch at login` again, and remove the old Downtab entry from System Settings › Privacy & Security › Accessibility.
+
 ## [0.1.2] - 2026-11-06
 
 ### Added
