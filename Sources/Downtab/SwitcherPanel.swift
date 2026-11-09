@@ -201,26 +201,22 @@ private final class AppTile: NSView {
     enum Selection {
         case unselected
         case selected
-        /// At Window level the selected tile dims, leaving the highlight to the selected window, and its badge
-        /// inverts.
+        /// At Window level the selected tile dims, leaving the highlight to the selected window, and its Window count
+        /// badge inverts.
         case parentOfWindowList
     }
 
     let isSelected: Bool
-    private let selection: Selection
-
-    override var wantsUpdateLayer: Bool { true }
 
     init(icon: NSImage?, entry: AppRowEntry, iconSize: CGFloat, spacing: RowSpacing, selection: Selection) {
         isSelected = selection != .unselected
-        self.selection = selection
         super.init(frame: .zero)
-        wantsLayer = true
-        layer?.cornerRadius = spacing.tileCornerRadius
-        // A corner radius turns clipping on, which would cut the Window count badge where it overhangs the tile.
+        // The badges overhang the tile.
         clipsToBounds = false
         if isSelected {
-            layer?.borderWidth = 1
+            let highlight = TileHighlight(selection: selection, cornerRadius: spacing.tileCornerRadius)
+            addSubview(highlight)
+            NSLayoutConstraint.activate(highlight.constraintsPinningEdges(to: self))
         }
 
         setAccessibilityElement(true)
@@ -246,28 +242,38 @@ private final class AppTile: NSView {
             image.centerYAnchor.constraint(equalTo: centerYAnchor),
         ])
         if let count = entry.windowCountBadge {
-            setAccessibilityValue("\(count) windows")
-            addBadge(count, on: image, iconSize: iconSize, isInverted: selection == .parentOfWindowList)
+            let style: IconBadge.Style = selection == .parentOfWindowList ? .windowCountOfWindowList : .windowCount
+            add(IconBadge("\(count)", iconSize: iconSize, style: style), on: image, at: .bottom, iconSize: iconSize)
         }
+        if let label = entry.notificationBadge {
+            add(IconBadge(label, iconSize: iconSize, style: .notification), on: image, at: .top, iconSize: iconSize)
+        }
+        let badges = [
+            entry.windowCountBadge.map { "\($0) windows" },
+            entry.notificationBadge.map { "notification badge \($0)" },
+        ]
+        let value = badges.compactMap(\.self).joined(separator: ", ")
+        if !value.isEmpty { setAccessibilityValue(value) }
     }
 
-    /// Runs with the view's own appearance current, so the appearance-dependent colors resolve against it.
-    override func updateLayer() {
-        guard isSelected else { return }
-        layer?.backgroundColor = (selection == .parentOfWindowList ? Palette.parentTile : Palette.selectedTile).cgColor
-        layer?.borderColor = Palette.border.cgColor
+    private enum BadgeCorner {
+        /// The Notification badge, where the Dock puts it.
+        case top
+        /// The Window count badge.
+        case bottom
     }
 
-    /// Centered on the artwork's bottom-right corner, like the Dock's notification badge on the top-right one:
-    /// it covers the corner of the icon and may stick out of the tile.
-    private func addBadge(_ count: Int, on image: NSView, iconSize: CGFloat, isInverted: Bool) {
-        let badge = WindowCountBadge(
-            count: count, diameter: Metrics.badgeDiameter(iconSize: iconSize), isInverted: isInverted)
+    /// Centered on the artwork's right corner: it covers the corner of the icon and may stick out of the tile.
+    private func add(_ badge: IconBadge, on image: NSView, at corner: BadgeCorner, iconSize: CGFloat) {
         addSubview(badge)
         let inset = iconSize * Metrics.badgeCenterInsetRatio
+        let centerY =
+            switch corner {
+            case .top: badge.centerYAnchor.constraint(equalTo: image.topAnchor, constant: inset)
+            case .bottom: badge.centerYAnchor.constraint(equalTo: image.bottomAnchor, constant: -inset)
+            }
         NSLayoutConstraint.activate([
-            badge.centerXAnchor.constraint(equalTo: image.trailingAnchor, constant: -inset),
-            badge.centerYAnchor.constraint(equalTo: image.bottomAnchor, constant: -inset),
+            badge.centerXAnchor.constraint(equalTo: image.trailingAnchor, constant: -inset), centerY,
         ])
     }
 
@@ -277,43 +283,27 @@ private final class AppTile: NSView {
     }
 }
 
-/// Style `cerchio` of the prototype: a light disc with an accent ring and the count; inverted, an accent disc with a
-/// white ring.
-private final class WindowCountBadge: NSView {
-    init(count: Int, diameter: CGFloat, isInverted: Bool) {
+/// The selected tile's fill and border, in a view of its own beneath the icon and the badges: a layer draws its
+/// border above its sublayers, which would cross the badges where they overhang the tile.
+private final class TileHighlight: NSView {
+    private let selection: AppTile.Selection
+
+    override var wantsUpdateLayer: Bool { true }
+
+    init(selection: AppTile.Selection, cornerRadius: CGFloat) {
+        self.selection = selection
         super.init(frame: .zero)
         translatesAutoresizingMaskIntoConstraints = false
         setAccessibilityElement(false)
         wantsLayer = true
-        layer?.backgroundColor = (isInverted ? Palette.accent : Palette.badgeFill).cgColor
-        layer?.cornerRadius = diameter / 2
-        // A layer border is drawn inside the bounds, like the prototype's inset ring.
-        layer?.borderWidth = Metrics.badgeRing(diameter: diameter)
-        layer?.borderColor = (isInverted ? NSColor.white : Palette.accent).cgColor
-        layer?.shadowColor = NSColor.black.cgColor
-        layer?.shadowOpacity = Metrics.badgeShadowOpacity
-        layer?.shadowRadius = Metrics.badgeShadowRadius
-        layer?.shadowOffset = Metrics.badgeShadowOffset
+        layer?.cornerRadius = cornerRadius
+        layer?.borderWidth = 1
+    }
 
-        let text = "\(count)"
-        let font = NSFont.monospacedDigitSystemFont(ofSize: diameter * Metrics.badgeFontRatio, weight: .semibold)
-        // Measured on the glyphs, not the NSTextField, whose own inset would turn 1–2 digits into a pill.
-        let textWidth = ceil((text as NSString).size(withAttributes: [.font: font]).width)
-        let width = max(diameter, textWidth + 2 * diameter * Metrics.badgePaddingRatio)
-
-        let label = NSTextField(labelWithString: text)
-        label.font = font
-        label.textColor = isInverted ? .white : Palette.badgeText
-        label.alignment = .center
-        label.setAccessibilityElement(false)
-        label.translatesAutoresizingMaskIntoConstraints = false
-        addSubview(label)
-        NSLayoutConstraint.activate([
-            heightAnchor.constraint(equalToConstant: diameter),
-            widthAnchor.constraint(equalToConstant: width),
-            label.centerXAnchor.constraint(equalTo: centerXAnchor),
-            label.centerYAnchor.constraint(equalTo: centerYAnchor),
-        ])
+    /// Runs with the view's own appearance current, so the appearance-dependent colors resolve against it.
+    override func updateLayer() {
+        layer?.backgroundColor = (selection == .parentOfWindowList ? Palette.parentTile : Palette.selectedTile).cgColor
+        layer?.borderColor = Palette.border.cgColor
     }
 
     @available(*, unavailable)
@@ -354,22 +344,9 @@ private struct RowSpacing {
 
 private enum Metrics {
     static let panelCornerRadius: CGFloat = 28
-    /// The prototype's `--badge: calc(var(--icon) * 0.3)`.
-    static let badgeIconRatio: CGFloat = 0.3
     /// From the icon box's corner to the badge's center: where the artwork's corner is, past the box's transparent
     /// margin.
     static let badgeCenterInsetRatio: CGFloat = 0.1
-    /// Below this the count is unreadable, however small the icons.
-    static let minBadgeDiameter: CGFloat = 16
-    /// Per side, between the count and the badge's edge: 1–2 digits stay a circle, 3+ grow into a pill.
-    static let badgePaddingRatio: CGFloat = 0.15
-    static let badgeRingRatio: CGFloat = 0.1
-    static let badgeRingRange: ClosedRange<CGFloat> = 1...3
-    static let badgeFontRatio: CGFloat = 0.5
-    /// The prototype's `0 2px 6px rgba(0, 0, 0, 0.35)`.
-    static let badgeShadowOpacity: Float = 0.35
-    static let badgeShadowRadius: CGFloat = 3
-    static let badgeShadowOffset = CGSize(width: 0, height: -2)
     static let nameGap: CGFloat = 4
     static let nameHeight: CGFloat = 18
     static let nameFontSize: CGFloat = 13
@@ -380,15 +357,6 @@ private enum Metrics {
     static let maxPanelScreenRatio: CGFloat = 0.95
     /// Below this the icons are unreadable: past it the panel overflows the screen instead.
     static let minFittedIconSize: CGFloat = 24
-
-    static func badgeDiameter(iconSize: CGFloat) -> CGFloat {
-        max(iconSize * badgeIconRatio, minBadgeDiameter)
-    }
-
-    /// Proportional, so it never overwhelms the count on small badges.
-    static func badgeRing(diameter: CGFloat) -> CGFloat {
-        min(max(diameter * badgeRingRatio, badgeRingRange.lowerBound), badgeRingRange.upperBound)
-    }
 
     static func iconSize(screenWidth: CGFloat?, tileCount: Int) -> CGFloat {
         guard let screenWidth, tileCount > 0 else { return iconRange.upperBound }

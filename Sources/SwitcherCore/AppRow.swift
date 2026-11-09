@@ -13,7 +13,8 @@ extension DesktopSnapshot {
 
     private func entry(of app: DesktopApp, windows: [WindowListEntry]) -> AppRowEntry {
         AppRowEntry(
-            id: app.id, name: app.name, windows: windows, windowToFrontOnActivation: windowInAnotherSpace(of: app))
+            id: app.id, name: app.name, windows: windows, windowToFrontOnActivation: windowInAnotherSpace(of: app),
+            notificationBadge: app.notificationBadge?.isEmpty == false ? app.notificationBadge : nil)
     }
 
     /// The app's frontmost window, when all its windows are in other Spaces: from a full-screen Space, activation

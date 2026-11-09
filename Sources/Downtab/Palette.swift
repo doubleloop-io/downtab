@@ -14,9 +14,8 @@ enum Palette {
     static let accent = NSColor(srgbRed: 0x0A / 255, green: 0x84 / 255, blue: 0xFF / 255, alpha: 1)
     static let selectedTile = onGlass(adaptive(light: 0.12, dark: 0.22), preGlass: NSColor(white: 1, alpha: 0.2))
     static let parentTile = onGlass(adaptive(light: 0.06, dark: 0.11), preGlass: NSColor(white: 1, alpha: 0.1))
-    /// Light on both glass appearances: its accent ring and shadow set it apart from a light glass.
-    static let badgeFill = offWhite
-    static let badgeText = NSColor(srgbRed: 0x1C / 255, green: 0x1C / 255, blue: 0x1E / 255, alpha: 1)
+    /// The Dock's notification red.
+    static let notificationBadge = NSColor(srgbRed: 0xFF / 255, green: 0x3B / 255, blue: 0x30 / 255, alpha: 1)
     /// Before macOS 26 only: the HUD material alone lets bright windows show through.
     static let hudTint = NSColor(srgbRed: 30 / 255, green: 30 / 255, blue: 34 / 255, alpha: 0.8)
     /// Before macOS 26 only.

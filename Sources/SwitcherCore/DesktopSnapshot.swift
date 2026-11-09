@@ -82,13 +82,19 @@ public struct DesktopApp: Equatable, Sendable {
     public let isHidden: Bool
     /// Front to back.
     public let windows: [DesktopWindow]
+    /// The label on the app's Dock icon, as the app set it; nil when the Dock shows none.
+    public let notificationBadge: String?
 
-    public init(id: AppID, name: String, isRegular: Bool, isHidden: Bool, windows: [DesktopWindow]) {
+    public init(
+        id: AppID, name: String, isRegular: Bool, isHidden: Bool, windows: [DesktopWindow],
+        notificationBadge: String? = nil
+    ) {
         self.id = id
         self.name = name
         self.isRegular = isRegular
         self.isHidden = isHidden
         self.windows = windows
+        self.notificationBadge = notificationBadge
     }
 }
 
