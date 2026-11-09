@@ -7,6 +7,7 @@ User-facing changes to Downtab. Format: [Keep a Changelog](https://keepachangelo
 ### Added
 
 - Preferences: `Show Switcher on` picks the display the Switcher opens on: the one under the pointer (as before), the one with the menu bar, or the one with the focused window.
+- The menu bar menu shows `Update Available: X.Y.Z…` when a newer release is out; it opens the download page. Downtab checks shortly after launch, then once a day.
 
 ### Changed
 

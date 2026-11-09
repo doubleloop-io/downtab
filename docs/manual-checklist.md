@@ -289,6 +289,15 @@ Before starting: `make run`, Accessibility granted to Downtab. In the Preference
 6. Record App shortcut ⌥⌘Tab. Hold ⌥⌘, press Tab: the Switcher opens. Release only ⌘ (keep ⌥): it confirms. Repeat releasing only ⌥: it confirms. Press `Restore Defaults` afterwards.
 7. Kill the release tap (`pkill -USR1 -x Downtab`), then repeat step 2: releasing ⌃ still confirms, within a moment (fallback check); `log show --last 1m --predicate 'subsystem == "io.doubleloop.downtab"'` shows `modifier release confirmed by fallback check`. Relaunch with `make run` afterwards.
 
+## Update check
+
+Downtab asks GitHub for the latest release about 10 seconds after launch, then every 24 hours, never more than once per hour (relaunches included). Before each step: `defaults delete io.doubleloop.downtab lastUpdateCheck` (ignore "does not exist") unless the step says otherwise. In a second terminal run `log stream --level info --predicate 'subsystem == "io.doubleloop.downtab" AND category == "update"'` and keep it open.
+
+1. Newer release: `echo 0.1.0 > VERSION && make run && git checkout VERSION`. Within about 10 seconds the log shows `checking https://api.github.com/repos/doubleloop-io/downtab/releases/latest` and `latest release is X.Y.Z`. The menu bar menu starts with `Update Available: X.Y.Z…` (X.Y.Z = the latest release on github.com/doubleloop-io/downtab/releases). Clicking it opens `https://doubleloop-io.github.io/downtab/` in the default browser. No dialog, notification or badge on the menu bar icon.
+2. No newer release: `make run` (VERSION = the latest release). The log shows `latest release is X.Y.Z`; the menu has no `Update Available` item.
+3. Offline: turn Wi-Fi off, `make run`. The log shows `update check failed: ...`; the menu has no `Update Available` item and the Switcher works as usual. Turn Wi-Fi back on.
+4. At most one request per hour: without deleting `lastUpdateCheck`, `make run` again. The log shows `last update check less than an hour ago: next one in Ns` and no `checking` line. `log show --last 1h --predicate 'subsystem == "io.doubleloop.downtab" AND category == "update"' | grep -c checking` never grows by more than one per hour.
+
 ## Launch at login
 
 Before starting: `defaults delete io.doubleloop.downtab launchAtLogin` (ignore "does not exist"), then `make run`. The login item points at the bundle that last registered it: run these checks from one checkout only.
