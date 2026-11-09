@@ -4,6 +4,8 @@ User-facing changes to Downtab. Format: [Keep a Changelog](https://keepachangelo
 
 ## [Unreleased]
 
+## [0.2.0] - 2026-11-09
+
 ### Changed
 
 - Downtab is now free software, licensed under GPL-3.0-or-later. Source, releases and the download page moved to [github.com/doubleloop-io/downtab](https://github.com/doubleloop-io/downtab) and [doubleloop-io.github.io/downtab](https://doubleloop-io.github.io/downtab/).
