@@ -12,6 +12,8 @@ public enum SwitcherEvent: Equatable, Sendable {
     case rightPressed
     /// `Switcher.showDelay` after opening, unless it already closed.
     case showDelayElapsed
+    /// The mouse or the trackpad, while open.
+    case pointer(PointerEvent)
 }
 
 /// What closing the Switcher asks the app to do.
@@ -179,6 +181,62 @@ public struct DisplayedState: Equatable, Sendable {
         return .window(selectedEntry.id == frontmostApp ? 1 : 0)
     }
 
+    /// The pointer moved onto an item: an app is selected at App level, a window in the open Window list. The icon
+    /// of the app whose Window list is open keeps the list open.
+    func hovering(_ target: PointerTarget) -> DisplayedState {
+        switch target {
+        case .app(let index):
+            guard appRow.indices.contains(index), !(index == selectedIndex && hasWindowList) else { return self }
+            return selectingApp(at: index)
+        case .window(let index):
+            guard hasWindowList, selectedEntry.windows.indices.contains(index) else { return self }
+            return at(.window(index))
+        }
+    }
+
+    /// Over another app, selects it, and scrolling down opens its Window list like `↓`. Over the open Window list,
+    /// or the icon of its app, walks the list like `↓` / `↑`: down stops at the last window, up from the first goes
+    /// back to App level.
+    func scrolling(_ direction: ScrollDirection, over target: PointerTarget?) -> DisplayedState {
+        if case .app(let index) = target, appRow.indices.contains(index), !(index == selectedIndex && hasWindowList) {
+            let hovered = selectingApp(at: index)
+            return direction == .down ? hovered.movingDown() : hovered
+        }
+        guard hasWindowList else { return self }
+        return direction == .down ? movingDown() : movingUp()
+    }
+
+    /// An app with a Window count badge opens its Window list instead of confirming: the click descends.
+    func clicking(_ target: PointerTarget) -> Click {
+        switch target {
+        case .app(let index):
+            guard appRow.indices.contains(index) else { return .stays(self) }
+            if index == selectedIndex && hasWindowList { return .stays(self) }
+            let clicked = selectingApp(at: index)
+            return clicked.windowListOpening.map { Click.stays(clicked.at($0)) } ?? .confirms(clicked.confirmation)
+        case .window(let index):
+            guard hasWindowList, selectedEntry.windows.indices.contains(index) else { return .stays(self) }
+            return .confirms(at(.window(index)).confirmation)
+        }
+    }
+
+    enum Click {
+        case stays(DisplayedState)
+        /// The click closes the Switcher.
+        case confirms(FinalEffect)
+    }
+
+    private var hasWindowList: Bool {
+        if case .window = level { true } else { false }
+    }
+
+    private func selectingApp(at index: Int) -> DisplayedState {
+        var selected = self
+        selected.selectedIndex = index
+        selected.level = .app
+        return selected
+    }
+
     func shown() -> DisplayedState {
         var shown = self
         shown.isVisible = true
@@ -225,6 +283,29 @@ public struct Switcher: Sendable {
             updateWhileOpen { Self.moving($0, by: event) }
         case .showDelayElapsed:
             updateWhileOpen { $0.shown() }
+        case .pointer(let pointer):
+            return respond(to: pointer)
+        }
+        return nil
+    }
+
+    private mutating func respond(to pointer: PointerEvent) -> FinalEffect? {
+        guard case .open(let displayed) = state else { return nil }
+        switch pointer {
+        case .entered(let target):
+            state = .open(displayed.hovering(target))
+        case .scrolled(let direction, let target):
+            state = .open(displayed.scrolling(direction, over: target))
+        case .clickedOutside:
+            return cancel()
+        case .clicked(let target):
+            switch displayed.clicking(target) {
+            case .stays(let clicked):
+                state = .open(clicked)
+            case .confirms(let effect):
+                state = .closed
+                return effect
+            }
         }
         return nil
     }

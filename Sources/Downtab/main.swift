@@ -45,6 +45,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         let isGranted = change == .granted
         if isGranted {
             switcher.keyboard.startEventTaps()
+            switcher.pointer.startEventTaps()
             shortcuts.enable()
         } else {
             shortcuts.disable()

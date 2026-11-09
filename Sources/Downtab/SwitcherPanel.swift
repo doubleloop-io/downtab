@@ -1,15 +1,17 @@
 import AppKit
 import SwitcherCore
 
-/// Renders the core's displayed state and nothing else. Non-activating, so the Frontmost app keeps focus.
+/// Renders the core's displayed state and tells which tile is under the pointer. Non-activating, so the Frontmost
+/// app keeps focus.
 /// Look and metrics follow prototype variant A, with long names fitted as in variant E
 /// (`docs/adr/assets/prototype-switcher.html`, `?names=below`).
-final class SwitcherPanel: NSPanel {
+final class SwitcherPanel: PointerPanel {
     private let appRow = NSStackView()
     private let selectedName = NSTextField(labelWithString: "")
     private let windowList = WindowListPanel()
     private var margins: [NSLayoutConstraint] = []
     private var spacing = RowSpacing(iconSize: Metrics.iconRange.upperBound)
+    private var tiles: [AppTile] = []
 
     override var canBecomeKey: Bool { true }
 
@@ -29,6 +31,23 @@ final class SwitcherPanel: NSPanel {
         hasShadow = true
         title = "Switcher"
         installContent()
+        trackPointer()
+    }
+
+    override func attach(_ pointer: PointerInput) {
+        super.attach(pointer)
+        windowList.attach(pointer)
+    }
+
+    /// The whole tile is the target, not only its icon or its badge.
+    override func pointerTarget(at location: NSPoint) -> PointerTarget? {
+        tiles.firstIndex { $0.bounds.contains($0.convert(location, from: nil)) }.map(PointerTarget.app)
+    }
+
+    /// Where a click reaches the Switcher: none while it is closed or still transparent.
+    var pointerFrames: [NSRect] {
+        guard isVisible, alphaValue > 0 else { return [] }
+        return windowList.isVisible ? [frame, windowList.frame] : [frame]
     }
 
     func show(_ displayed: DisplayedState, icon: (AppID) -> NSImage?) {
@@ -47,6 +66,7 @@ final class SwitcherPanel: NSPanel {
                 selection: index == displayed.selectedIndex ? selection : .unselected
             )
         }
+        tiles = views
         appRow.setViews(views, in: .leading)
         appRow.setAccessibilitySelectedChildren(views.filter(\.isSelected))
         selectedName.stringValue = displayed.selectedEntry.name
@@ -65,6 +85,7 @@ final class SwitcherPanel: NSPanel {
     }
 
     func hide() {
+        tiles = []
         hideWindowList()
         orderOut(nil)
     }

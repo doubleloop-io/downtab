@@ -25,6 +25,12 @@ public struct ScreenRect: Equatable, Sendable {
     var maxX: Double { x + width }
     var maxY: Double { y + height }
 
+    /// The window server measures down from the menu bar display's top edge, AppKit up from its bottom edge: the same
+    /// flip converts either way. `menuBarDisplay` is the menu bar display's frame, in either.
+    public func flipped(around menuBarDisplay: ScreenRect) -> ScreenRect {
+        ScreenRect(x: x, y: menuBarDisplay.maxY - maxY, width: width, height: height)
+    }
+
     /// As AppKit's `NSMouseInRect` for unflipped coordinates: the pointer on a display's top row is at its top edge.
     func containsPointer(_ point: ScreenPoint) -> Bool {
         point.x >= x && point.x < maxX && point.y > y && point.y <= maxY

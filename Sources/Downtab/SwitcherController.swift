@@ -12,10 +12,12 @@ final class SwitcherController {
     private var missedReleaseCheck: Task<Void, Never>?
     private var showDelay: Task<Void, Never>?
     private(set) lazy var keyboard = KeyboardInput { [weak self] event in self?.handle(event) }
+    private(set) lazy var pointer = PointerInput { [weak self] event in self?.handle(event) }
 
     func start() {
         tracker.start()
         keyboard.start()
+        panel.attach(pointer)
     }
 
     private func handle(_ event: SwitcherEvent) {
@@ -27,6 +29,7 @@ final class SwitcherController {
         if switcher.state != previous {
             render()
             keyboard.captureEscape(switcher.state != .closed)
+            pointer.switcherChanged(frames: switcher.state == .closed ? nil : panel.pointerFrames)
             updateMissedReleaseCheck()
             updateShowDelay()
         }

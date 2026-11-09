@@ -3,7 +3,7 @@ import SwitcherCore
 
 /// The selected app's Window list, a rounded rectangle dropped under its icon (`docs/adr/0002-window-list-under-the-icon.md`).
 /// Never key: the Switcher keeps the keyboard.
-final class WindowListPanel: NSPanel {
+final class WindowListPanel: PointerPanel {
     private let content = FlippedView()
     private let headerIcon = NSImageView()
     private let header = NSTextField(labelWithString: "")
@@ -42,6 +42,14 @@ final class WindowListPanel: NSPanel {
         for view in [headerIcon, header, scroll] {
             content.addSubview(view)
         }
+        trackPointer()
+    }
+
+    /// A window's whole row, where the list shows it.
+    override func pointerTarget(at location: NSPoint) -> PointerTarget? {
+        guard scroll.bounds.contains(scroll.convert(location, from: nil)) else { return nil }
+        let index = Int((rows.convert(location, from: nil).y / Metrics.rowHeight).rounded(.down))
+        return rows.subviews.indices.contains(index) ? .window(index) : nil
     }
 
     /// `anchor` is in screen coordinates: x is the selected icon's center, y the Switcher's bottom edge.
