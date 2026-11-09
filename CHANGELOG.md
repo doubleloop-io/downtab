@@ -4,6 +4,10 @@ User-facing changes to Downtab. Format: [Keep a Changelog](https://keepachangelo
 
 ## [Unreleased]
 
+### Added
+
+- Preferences: `Show Switcher on` picks the display the Switcher opens on: the one under the pointer (as before), the one with the menu bar, or the one with the focused window.
+
 ### Fixed
 
 - Switcher: no more square outline around its rounded corners, visible with the light system appearance.

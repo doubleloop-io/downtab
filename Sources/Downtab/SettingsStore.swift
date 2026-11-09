@@ -27,6 +27,17 @@ struct SettingsStore {
 
     private static let launchAtLoginKey = "launchAtLogin"
 
+    func switcherPlacement() -> SwitcherPlacement {
+        let stored = defaults.string(forKey: Self.switcherPlacementKey)
+        return SwitcherPlacement.allCases.first { $0.storageValue == stored } ?? .pointerDisplay
+    }
+
+    func save(switcherPlacement: SwitcherPlacement) {
+        defaults.set(switcherPlacement.storageValue, forKey: Self.switcherPlacementKey)
+    }
+
+    private static let switcherPlacementKey = "switcherPlacement"
+
     private func shortcut(for slot: ShortcutSlot) -> Shortcut {
         guard let data = defaults.data(forKey: slot.storageKey) else { return Shortcuts.defaults[slot] }
         do {
@@ -51,6 +62,16 @@ extension ShortcutSlot {
         switch self {
         case .app: "appShortcut"
         case .window: "windowShortcut"
+        }
+    }
+}
+
+extension SwitcherPlacement {
+    fileprivate var storageValue: String {
+        switch self {
+        case .pointerDisplay: "pointerDisplay"
+        case .menuBarDisplay: "menuBarDisplay"
+        case .focusedWindowDisplay: "focusedWindowDisplay"
         }
     }
 }

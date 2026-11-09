@@ -58,6 +58,19 @@ Before starting: `make run`, then open TextEdit, Safari and Notes in this order,
 7. With the Switcher open, press ⌥Tab again: the icons stay in the same order. Press `Esc`.
 8. Opening shows only the show delay: holding ⌥ after ⌥Tab, the Switcher appears after about a tenth of a second, never later, even right after launching a new app.
 
+## Switcher: display
+
+Needs two displays. Before starting: `defaults delete io.doubleloop.downtab switcherPlacement` (ignore "does not exist"), then `make run`. Put a TextEdit window on the display without the menu bar (the other display) and a Notes window on the menu bar display. Close every Finder window. Keep ⌥ held until `Esc`.
+
+1. Open the Preferences: `Show Switcher on` reads `Display under pointer`. Click TextEdit, move the pointer to the menu bar display, ⌥Tab: the Switcher appears on the menu bar display. `Esc`.
+2. Choose `Display with menu bar`: `defaults read io.doubleloop.downtab switcherPlacement` prints `menuBarDisplay`. Move the pointer to the other display, ⌥Tab: the Switcher appears on the menu bar display. Still holding ⌥, move the pointer back and forth and press Tab: the Switcher never moves. `Esc`.
+3. Choose `Display with focused window`. Click TextEdit, move the pointer to the menu bar display, ⌥Tab: the Switcher appears on the other display. `Esc`. `` ⌥` ``: the Switcher and its Window list appear on the other display. `Esc`.
+4. Click Notes, move the pointer to the other display, ⌥Tab: the Switcher appears on the menu bar display. `Esc`.
+5. Drag the TextEdit window so that most of it is on the menu bar display, click it, ⌥Tab: the Switcher appears on the menu bar display. Move it back. `Esc`.
+6. Click the desktop (Finder frontmost, no Finder window open), move the pointer to the other display, ⌥Tab: the Switcher appears on the menu bar display. `Esc`.
+7. Open an Electron app (VS Code, Slack, Notion) with its window on the other display, click it, move the pointer to the menu bar display, ⌥Tab: the Switcher appears on the other display. `Esc`.
+8. `make stop`, `make run`: the Preferences still read `Display with focused window`. Choose `Display under pointer` again.
+
 ## Switcher: cycle and Confirm at App level
 
 Before starting: `make run`, Accessibility granted to Downtab, then open TextEdit, Safari and Notes in this order, clicking each to bring it to the front.
@@ -268,7 +281,7 @@ Before starting: `make run`, Accessibility granted to Downtab. In the Preference
 
 Before starting: `defaults delete io.doubleloop.downtab launchAtLogin` (ignore "does not exist"), then `make run`. The login item points at the bundle that last registered it: run these checks from one checkout only.
 
-1. First launch turns it on: System Settings › General › Login Items & Extensions lists Downtab under `Open at Login`, enabled. The Preferences show `Launch at login` checked, under `Restore Defaults`, with no note below it.
+1. First launch turns it on: System Settings › General › Login Items & Extensions lists Downtab under `Open at Login`, enabled. The Preferences show `Launch at login` checked, under `Show Switcher on`, with no note below it.
 2. Uncheck `Launch at login`: Downtab disappears from `Open at Login` (reopen System Settings if it does not refresh). `defaults read io.doubleloop.downtab launchAtLogin` prints `0`. `make stop`, `make run`: the toggle is still unchecked and Downtab is still not listed.
 3. Check it again: Downtab is listed and enabled again; `defaults read io.doubleloop.downtab launchAtLogin` prints `1`.
 4. Log out and log back in: the Downtab icon appears in the menu bar without launching it by hand.

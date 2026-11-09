@@ -23,7 +23,7 @@ final class SwitcherController {
         switcher.shortcuts = keyboard.shortcuts
         let desktop = tracker.snapshot(freshWindowOrder: mayOpen(previous, event))
         let effect = switcher.handle(event, desktop: desktop)
-        // Re-showing an unchanged state would move the panel to the pointer's current display.
+        // Re-showing an unchanged state would choose the display again, e.g. move the panel to the pointer's.
         if switcher.state != previous {
             render()
             keyboard.captureEscape(switcher.state != .closed)

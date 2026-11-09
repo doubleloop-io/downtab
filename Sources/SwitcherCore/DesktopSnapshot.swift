@@ -31,6 +31,11 @@ public struct WindowSize: Equatable, Sendable {
         self.width = width
         self.height = height
     }
+
+    /// Smaller windows are service windows (Zoom, iTerm2), not windows the user works in.
+    var isLargeEnoughToBeReal: Bool {
+        width >= 100 && height >= 50
+    }
 }
 
 public struct DesktopWindow: Equatable, Sendable {

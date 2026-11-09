@@ -11,6 +11,7 @@ final class PreferencesWindow: NSWindow, NSWindowDelegate {
     private let openSystemSettings = NSButton(title: "Open System Settings", target: nil, action: nil)
     private let launchAtLogin = LaunchAtLogin()
     private let launchAtLoginToggle = NSButton(checkboxWithTitle: "Launch at login", target: nil, action: nil)
+    private let placementPopUp = NSPopUpButton(frame: .zero, pullsDown: false)
     private var launchAtLoginApprovalRow: NSGridRow?
     private var recorders: [ShortcutSlot: ShortcutRecorderField] = [:]
     private var messages: [ShortcutSlot: NSTextField] = [:]
@@ -30,6 +31,7 @@ final class PreferencesWindow: NSWindow, NSWindowDelegate {
     func open() {
         showCurrentShortcuts()
         showLaunchAtLogin()
+        showPlacement()
         NSApp.activate()
         makeKeyAndOrderFront(nil)
         // AppKit focuses the first recorder on open; nothing should look selected until the user picks a field.
@@ -131,6 +133,7 @@ final class PreferencesWindow: NSWindow, NSWindowDelegate {
         addRow(nil, hint, topPadding: Layout.hintGap)
         let restore = NSButton(title: "Restore Defaults", target: self, action: #selector(restoreDefaults))
         addRow(nil, restore, topPadding: Layout.buttonGap)
+        addRow("Show Switcher on:", makePlacementPopUp(), topPadding: Layout.sectionGap)
         launchAtLoginToggle.target = self
         launchAtLoginToggle.action = #selector(toggleLaunchAtLogin)
         addRow(nil, launchAtLoginToggle, topPadding: Layout.sectionGap)
@@ -201,6 +204,24 @@ final class PreferencesWindow: NSWindow, NSWindowDelegate {
         case .rejected(let rejection):
             show(rejection, of: shortcut, for: slot)
         }
+    }
+
+    private func makePlacementPopUp() -> NSPopUpButton {
+        placementPopUp.addItems(withTitles: SwitcherPlacement.allCases.map(\.title))
+        placementPopUp.target = self
+        placementPopUp.action = #selector(choosePlacement)
+        return placementPopUp
+    }
+
+    @objc private func choosePlacement() {
+        let placements = SwitcherPlacement.allCases
+        guard placements.indices.contains(placementPopUp.indexOfSelectedItem) else { return }
+        SettingsStore().save(switcherPlacement: placements[placementPopUp.indexOfSelectedItem])
+    }
+
+    private func showPlacement() {
+        let stored = SettingsStore().switcherPlacement()
+        placementPopUp.selectItem(at: SwitcherPlacement.allCases.firstIndex(of: stored) ?? 0)
     }
 
     private func makeApprovalNote() -> NSView {
@@ -303,5 +324,15 @@ private final class HighlightBox: NSView {
         path.fill()
         NSColor.systemYellow.setStroke()
         path.stroke()
+    }
+}
+
+extension SwitcherPlacement {
+    fileprivate var title: String {
+        switch self {
+        case .pointerDisplay: "Display under pointer"
+        case .menuBarDisplay: "Display with menu bar"
+        case .focusedWindowDisplay: "Display with focused window"
+        }
     }
 }

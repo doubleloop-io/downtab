@@ -88,7 +88,7 @@ public struct DisplayedState: Equatable, Sendable {
     /// still takes every key, so none reaches the Frontmost app.
     public private(set) var isVisible = false
     /// Fixed at opening, like the App row.
-    let frontmostApp: AppID?
+    public let frontmostApp: AppID?
     /// The modifiers of the shortcut that opened the Switcher.
     public let modifier: Set<ShortcutModifier>
 
