@@ -13,4 +13,6 @@ On macOS 26 and later the Switcher and the Window list are built on the system g
 - `PanelBackground` is the only place that branches on the OS version for the panels' backgrounds; `Palette` branches for colors, and doubles tile and border opacity with Increase contrast. The rest stays version-agnostic.
 - On 26+ `Palette` uses system label colors and appearance-dependent tile and border colors; the Window count badge keeps its light disc on both appearances.
 - The Window list drops the caret on both versions: one geometry, a rounded rectangle under the icon, its top edge where the caret tip was.
+- The Switcher's spacing follows the native ⌘Tab's proportions (measured on macOS 27) on both versions, since it does not depend on the material: padding, tile gap and tile corner scale with the icon, and the selected tile is only as wide as the Window count badge needs to stay inside it. The Switcher is lower and its icons fill more of the tile than in variant A.
+- The App row's margins are constraints, not `NSStackView` edge insets: inside `NSGlassEffectView` the vertical insets are ignored.
 - The macOS 15 path is verified only by compiling.

@@ -13,4 +13,4 @@ The grid (E) was the closest alternative and is rejected for now: without thumbn
 
 ## Consequences
 
-- Colors and metrics in `Palette`, `SwitcherPanel` and `WindowListPanel` come from `assets/prototype-switcher.html` with `?names=below`. On macOS 26+ the colors follow 0003 instead.
+- Colors and metrics in `Palette`, `SwitcherPanel` and `WindowListPanel` come from `assets/prototype-switcher.html` with `?names=below`. On macOS 26+ the colors follow 0003 instead, and on every version the Switcher's spacing follows the native ⌘Tab (0003).

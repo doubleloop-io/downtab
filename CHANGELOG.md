@@ -8,6 +8,7 @@ User-facing changes to Downtab. Format: [Keep a Changelog](https://keepachangelo
 
 - Switcher and Window list: on macOS 26 and later they use the system Liquid Glass and follow the system appearance and glass settings (Clear or Tinted, Reduce transparency, Increase contrast). macOS 15 keeps the dark look.
 - Window list: a plain rounded rectangle under the selected icon, without the caret pointing at it.
+- Switcher: lower, with spacing and tile size in the proportions of the native ⌘Tab; icons fill more of their tile.
 
 ### Fixed
 

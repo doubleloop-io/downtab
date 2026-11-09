@@ -161,6 +161,7 @@ Before starting: `make run` on macOS 26 or later, with TextEdit holding 3 window
 4. System Settings › Accessibility › Display › `Reduce transparency` on: both panels become opaque. Turn it off.
 5. System Settings › Accessibility › Display › `Increase contrast` on: both panels gain a visible edge and stronger text. Turn it off.
 6. ⌥Tab still shows the Switcher after the usual show delay, with no extra lag compared to the previous release.
+7. Compare ⌥Tab with the native ⌘Tab: similar height and spacing, the selected name right under its tile. On an app with a Window count badge (TextEdit), the badge's circle stays whole inside the selected tile.
 
 ## Switcher: Window list
 

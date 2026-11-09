@@ -8,6 +8,8 @@ final class SwitcherPanel: NSPanel {
     private let appRow = NSStackView()
     private let selectedName = NSTextField(labelWithString: "")
     private let windowList = WindowListPanel()
+    private var margins: [NSLayoutConstraint] = []
+    private var spacing = RowSpacing(iconSize: Metrics.iconRange.upperBound)
 
     override var canBecomeKey: Bool { true }
 
@@ -33,6 +35,7 @@ final class SwitcherPanel: NSPanel {
         // The display is chosen at opening: moving the selection never moves the panel to another display.
         let target = isVisible ? screen : Self.pointerScreen()
         let iconSize = Metrics.iconSize(screenWidth: target?.frame.width, tileCount: displayed.appRow.count)
+        apply(RowSpacing(iconSize: iconSize))
         let selection: AppTile.Selection =
             switch displayed.level {
             case .app, .windowWithoutList: .selected
@@ -40,7 +43,7 @@ final class SwitcherPanel: NSPanel {
             }
         let views = displayed.appRow.enumerated().map { index, entry in
             AppTile(
-                icon: icon(entry.id), entry: entry, iconSize: iconSize,
+                icon: icon(entry.id), entry: entry, iconSize: iconSize, spacing: spacing,
                 selection: index == displayed.selectedIndex ? selection : .unselected
             )
         }
@@ -93,14 +96,15 @@ final class SwitcherPanel: NSPanel {
     private func placeSelectedName(under tile: NSView) {
         guard let content = selectedName.superview else { return }
         let tileFrame = tile.convert(tile.bounds, to: content)
-        let maxWidth = content.bounds.width - 2 * Metrics.panelPadding
+        let padding = spacing.sidePadding
+        let maxWidth = content.bounds.width - 2 * padding
         selectedName.sizeToFit()
         let width = min(ceil(selectedName.frame.width), maxWidth)
         let centeredX = tileFrame.midX - width / 2
-        let x = min(max(centeredX, Metrics.panelPadding), content.bounds.width - Metrics.panelPadding - width)
+        let x = min(max(centeredX, padding), content.bounds.width - padding - width)
         selectedName.frame = NSRect(
             x: x,
-            y: tileFrame.minY - Metrics.nameBand,
+            y: tileFrame.minY - spacing.nameBand,
             width: width,
             height: Metrics.nameHeight
         )
@@ -110,13 +114,6 @@ final class SwitcherPanel: NSPanel {
         let content = NSView()
         appRow.orientation = .horizontal
         appRow.alignment = .top
-        appRow.spacing = Metrics.tileGap
-        appRow.edgeInsets = NSEdgeInsets(
-            top: Metrics.panelPadding,
-            left: Metrics.panelPadding,
-            bottom: Metrics.nameBand + Metrics.panelPadding,
-            right: Metrics.panelPadding
-        )
         appRow.setAccessibilityElement(true)
         appRow.setAccessibilityRole(.list)
         appRow.setAccessibilityLabel("App row")
@@ -132,9 +129,28 @@ final class SwitcherPanel: NSPanel {
         selectedName.setAccessibilityElement(false)
         selectedName.cell?.setAccessibilityElement(false)
         content.addSubview(selectedName)
-        NSLayoutConstraint.activate(appRow.constraintsPinningEdges(to: content))
+        // Margins as constraints, not the stack's edge insets: inside system glass the vertical insets are lost.
+        margins = [
+            appRow.leadingAnchor.constraint(equalTo: content.leadingAnchor),
+            content.trailingAnchor.constraint(equalTo: appRow.trailingAnchor),
+            appRow.topAnchor.constraint(equalTo: content.topAnchor),
+            content.bottomAnchor.constraint(equalTo: appRow.bottomAnchor),
+        ]
+        NSLayoutConstraint.activate(margins)
+        apply(spacing)
         PanelBackground.install(
             content, in: self, cornerRadius: Metrics.panelCornerRadius, preGlass: Self.makeHUDBackground)
+    }
+
+    private func apply(_ spacing: RowSpacing) {
+        self.spacing = spacing
+        appRow.spacing = spacing.tileGap
+        let constants = [
+            spacing.sidePadding, spacing.sidePadding, spacing.topPadding, spacing.nameBand + spacing.bottomPadding,
+        ]
+        for (margin, constant) in zip(margins, constants) {
+            margin.constant = constant
+        }
     }
 
     private static func makeHUDBackground() -> NSView {
@@ -200,12 +216,12 @@ private final class AppTile: NSView {
 
     override var wantsUpdateLayer: Bool { true }
 
-    init(icon: NSImage?, entry: AppRowEntry, iconSize: CGFloat, selection: Selection) {
+    init(icon: NSImage?, entry: AppRowEntry, iconSize: CGFloat, spacing: RowSpacing, selection: Selection) {
         isSelected = selection != .unselected
         self.selection = selection
         super.init(frame: .zero)
         wantsLayer = true
-        layer?.cornerRadius = Metrics.tileCornerRadius
+        layer?.cornerRadius = spacing.tileCornerRadius
         if isSelected {
             layer?.borderWidth = 1
         }
@@ -223,7 +239,7 @@ private final class AppTile: NSView {
         image.translatesAutoresizingMaskIntoConstraints = false
         addSubview(image)
 
-        let side = iconSize + 2 * Metrics.tileMargin
+        let side = iconSize + 2 * spacing.tileMargin
         NSLayoutConstraint.activate([
             widthAnchor.constraint(equalToConstant: side),
             heightAnchor.constraint(equalToConstant: side),
@@ -234,7 +250,8 @@ private final class AppTile: NSView {
         ])
         if let count = entry.windowCountBadge {
             setAccessibilityValue("\(count) windows")
-            addBadge(count, iconSize: iconSize, isInverted: selection == .parentOfWindowList)
+            addBadge(
+                count, iconSize: iconSize, tileMargin: spacing.tileMargin, isInverted: selection == .parentOfWindowList)
         }
     }
 
@@ -246,11 +263,11 @@ private final class AppTile: NSView {
     }
 
     /// Centered on the artwork's corner, inside the icon box past its transparent margin.
-    private func addBadge(_ count: Int, iconSize: CGFloat, isInverted: Bool) {
+    private func addBadge(_ count: Int, iconSize: CGFloat, tileMargin: CGFloat, isInverted: Bool) {
         let badge = WindowCountBadge(
             count: count, diameter: Metrics.badgeDiameter(iconSize: iconSize), isInverted: isInverted)
         addSubview(badge)
-        let offset = Metrics.tileMargin + iconSize * Metrics.badgeCenterIconRatio
+        let offset = tileMargin + iconSize * Metrics.badgeCenterIconRatio
         NSLayoutConstraint.activate([
             badge.centerXAnchor.constraint(equalTo: leadingAnchor, constant: offset),
             badge.centerYAnchor.constraint(equalTo: topAnchor, constant: offset),
@@ -308,13 +325,39 @@ private final class WindowCountBadge: NSView {
     }
 }
 
+/// Spacing in and around the App row, following the native ⌘Tab's proportions (measured on macOS 27): it scales
+/// with the icon. Linear in the icon size, which `Metrics.iconSize` relies on to fit the row.
+private struct RowSpacing {
+    /// Between the icon and the selected tile's edge, on every side: just enough for the Window count badge, which
+    /// straddles the icon's corner, to stay inside the tile.
+    let tileMargin: CGFloat
+    let tileGap: CGFloat
+    let tileCornerRadius: CGFloat
+    let sidePadding: CGFloat
+    let topPadding: CGFloat
+    /// Below the selected name.
+    let bottomPadding: CGFloat
+
+    /// The room the Switcher grows at the bottom for the selected name.
+    var nameBand: CGFloat { Metrics.nameGap + Metrics.nameHeight }
+
+    init(iconSize: CGFloat) {
+        tileMargin = 0.06 * iconSize + 2
+        tileGap = 0.08 * iconSize
+        tileCornerRadius = 0.22 * iconSize
+        sidePadding = 0.3 * iconSize
+        topPadding = 0.3 * iconSize
+        bottomPadding = 0.1 * iconSize
+    }
+
+    func rowWidth(iconSize: CGFloat, tileCount: Int) -> CGFloat {
+        let count = CGFloat(tileCount)
+        return 2 * sidePadding + count * (iconSize + 2 * tileMargin) + (count - 1) * tileGap
+    }
+}
+
 private enum Metrics {
-    static let panelPadding: CGFloat = 14
     static let panelCornerRadius: CGFloat = 28
-    static let tileGap: CGFloat = 6
-    static let tileCornerRadius: CGFloat = 20
-    /// Between the icon and the selected tile's edge, on every side.
-    static let tileMargin: CGFloat = 14
     /// The prototype's `--badge: calc(var(--icon) * 0.3)`.
     static let badgeIconRatio: CGFloat = 0.3
     /// Variant E: with the tile wrapping only the icon, the badge sits at 86% of the icon, keeping a margin.
@@ -330,11 +373,9 @@ private enum Metrics {
     static let badgeShadowOpacity: Float = 0.35
     static let badgeShadowRadius: CGFloat = 3
     static let badgeShadowOffset = CGSize(width: 0, height: -2)
-    static let nameGap: CGFloat = 8
+    static let nameGap: CGFloat = 4
     static let nameHeight: CGFloat = 18
     static let nameFontSize: CGFloat = 13
-    /// The room the Switcher grows at the bottom for the selected name.
-    static let nameBand = nameGap + nameHeight
     /// The prototype's `clamp(56px, 8.6vw, 96px)`.
     static let iconRange: ClosedRange<CGFloat> = 56...96
     static let iconScreenRatio: CGFloat = 0.086
@@ -355,9 +396,11 @@ private enum Metrics {
     static func iconSize(screenWidth: CGFloat?, tileCount: Int) -> CGFloat {
         guard let screenWidth, tileCount > 0 else { return iconRange.upperBound }
         let preferred = min(max(screenWidth * iconScreenRatio, iconRange.lowerBound), iconRange.upperBound)
-        let count = CGFloat(tileCount)
-        let available = screenWidth * maxPanelScreenRatio - 2 * panelPadding - (count - 1) * tileGap
-        let fitted = max(available / count - 2 * tileMargin, minFittedIconSize)
+        // The row's width is linear in the icon size: its value at 0 and its slope give the fitting size.
+        let fixedWidth = RowSpacing(iconSize: 0).rowWidth(iconSize: 0, tileCount: tileCount)
+        let widthPerPoint = RowSpacing(iconSize: 1).rowWidth(iconSize: 1, tileCount: tileCount) - fixedWidth
+        let available = screenWidth * maxPanelScreenRatio - fixedWidth
+        let fitted = max(available / widthPerPoint, minFittedIconSize)
         return floor(min(preferred, fitted))
     }
 }
