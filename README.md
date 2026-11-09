@@ -12,7 +12,7 @@ Entirely keyboard-driven: `⌥Tab`, `Tab`, `Tab`, `↓`, `↓`, `release`.
 - **Current Space only**: only windows on the Spaces you're looking at, on every display.
 - **Titles, no thumbnails**: no Screen Recording permission, no capture lag.
 
-macOS 15 or later · Apple Silicon only. Download, install steps and troubleshooting: **[iacoware.github.io/downtab-app](https://iacoware.github.io/downtab-app/)**.
+macOS 15 or later · Apple Silicon only. Download, install steps and troubleshooting: **[doubleloop-io.github.io/downtab](https://doubleloop-io.github.io/downtab/)**.
 
 ## Development
 
@@ -40,8 +40,7 @@ All commands go through `make` (run it with no target for the list). Prefer it o
 | `make run` | Quits a running instance, bundles, then launches the app. |
 | `make stop` | Quits the running app. |
 | `make version V=X.Y.Z` | Closes `## [Unreleased]` in `CHANGELOG.md` as `## [X.Y.Z] - <today>` and writes `X.Y.Z` to `VERSION`. Refuses a malformed or non-greater `V`, or an empty `[Unreleased]`. Commits nothing. |
-| `make release` | Refuses unless on `main`, clean, not shallow, `VERSION` greater than every `v*` tag, no tag or public release for it yet, a non-empty changelog section for it, and `make test` passing. Then packages, tags `vX.Y.Z`, pushes the tag and publishes the release in `iacoware/downtab-app` (see Distribution). |
-| `make publish-site` | Refuses unless on `main` and clean. Then copies `website/downtab-landing.html` as `index.html` and `website/downtab-landing-screenshot.jpg` to `iacoware/downtab-app`, commits and pushes them to its `main`; prints `site up to date` when nothing changed. Independent of `make release`. |
+| `make release` | Refuses unless on `main`, clean, not shallow, `VERSION` greater than every `v*` tag, no tag or public release for it yet, a non-empty changelog section for it, and `make test` passing. Then packages, tags `vX.Y.Z`, pushes the tag and publishes the release in this repo (see Distribution). |
 
 ## Versioning
 
@@ -58,10 +57,10 @@ Release:
 
 ## Distribution
 
-Users download from the public repo [`iacoware/downtab-app`](https://github.com/iacoware/downtab-app):
+Users download from this repo:
 
-- Its GitHub Pages site (served from `main`, root) is the download page. `index.html` is a copy of `website/downtab-landing.html`, next to `downtab-landing-screenshot.jpg` from `website/`: edit them here, commit on `main`, then run `make publish-site`.
-- Its releases carry `Downtab.zip`, published by `make release` with the version's `CHANGELOG.md` section as notes. Stable link: `https://github.com/iacoware/downtab-app/releases/latest/download/Downtab.zip`.
+- The download page is its GitHub Pages site, deployed by `.github/workflows/pages.yml` on every push to `main` that touches `website/`: it publishes `website/downtab-landing.html` as `index.html`, next to `downtab-landing-screenshot.jpg`. URL: `https://doubleloop-io.github.io/downtab/`.
+- Its releases carry `Downtab.zip`, published by `make release` with the version's `CHANGELOG.md` section as notes. Stable link: `https://github.com/doubleloop-io/downtab/releases/latest/download/Downtab.zip`.
 - Apple Silicon only, self-signed, not notarized: the page explains clearing the quarantine with `xattr`.
 - If `make release` fails after pushing the tag, it prints the `gh release create` command to finish by hand.
 
@@ -74,7 +73,7 @@ Users download from the public repo [`iacoware/downtab-app`](https://github.com/
 - `docs/principles.md`: the intent later changes must not betray.
 - `docs/adr/`: decisions and their trade-offs; `docs/adr/assets/` holds the UI prototypes.
 - `docs/manual-checklist.md`: checks to run by hand on the real app.
-- `website/`: the download page and its screenshot, published by `make publish-site`.
+- `website/`: the download page and its screenshot, deployed by the Pages workflow.
 
 ## Signing and permissions
 

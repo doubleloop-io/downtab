@@ -107,7 +107,7 @@ One PR on `doubleloop-io/downtab`. Every reference to update:
 - `README.md:77`: `website/` is deployed by the Pages workflow.
 - `AGENTS.md:20` (also read as `CLAUDE.md`, which is a symlink): issue tracker `doubleloop-io/downtab`.
 - `docs/agents/issue-tracker.md`: check for the repo name.
-- `website/downtab-landing.html:232`: "Made for friends" may no longer fit a public page; your call.
+- `website/downtab-landing.html:232`: drop "Made for friends" (decided).
 
 ### Order constraint
 
@@ -148,12 +148,12 @@ Known gap: an old direct link `iacoware/downtab-app/releases/latest/download/Dow
 
 - [x] License chosen and `LICENSE` added (#37)
 - [x] Email decision taken
-- [ ] Local branches and `refs/original` deleted
+- [x] Local branches and `refs/original` deleted
 - [ ] Closed PRs and issues skimmed
-- [ ] Transferred to `doubleloop-io`, local remote updated
-- [ ] Repo public
-- [ ] Pages source set to GitHub Actions
+- [x] Transferred to `doubleloop-io`, local remote updated
+- [x] Repo public
+- [x] Pages source set to GitHub Actions
 - [ ] Consolidation PR merged
-- [ ] v0.1.2 release in `doubleloop-io/downtab`, download and page checked
+- [ ] v0.1.2 release in `doubleloop-io/downtab` (done, download checked), page checked after the PR merge
 - [ ] `downtab-app` redirect pushed, repo archived
 - [ ] #40–#43 triaged
