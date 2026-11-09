@@ -10,6 +10,12 @@ WORK=$(mktemp -d)
 LOG_PID=
 trap 'kill "$LOG_PID" 2>/dev/null || true; pkill -x "$EXE" || true; rm -rf "$WORK"' EXIT
 
+# The events below assume the default shortcuts: pin them for this launch only, through the volatile argument
+# domain, so the user's own preferences neither break the smoke nor get overwritten.
+shortcut_arg() { printf '<%s>' "$(printf '{"modifiers":["option"],"keyCode":%d}' "$1" | xxd -p | tr -d '\n')"; }
+# Keystrokes that reach the terminal instead of Downtab would be read by the shell after the script exits.
+discard_typeahead() { [ -t 0 ] && while read -r -s -t 1 -n 1000 _; do :; done || true; }
+
 crash_reports() { find "$REPORTS" -maxdepth 1 -name "$EXE*" 2>/dev/null | sort; }
 fail() { echo "smoke failed: $*"; exit 1; }
 
@@ -18,7 +24,7 @@ log stream --level info --predicate 'subsystem == "io.doubleloop.downtab"' >"$WO
 LOG_PID=$!
 sleep 1
 
-open "$APP"
+open "$APP" --args -appShortcut "$(shortcut_arg 48)" -windowShortcut "$(shortcut_arg 50)"
 # Without the tap the ⌥ events would reach no thread-crossing code, and the smoke would pass for nothing.
 for _ in $(seq 50); do grep -q "$TAP_STARTED" "$WORK/log" && break; sleep 0.1; done
 grep -q "$TAP_STARTED" "$WORK/log" \
@@ -47,7 +53,9 @@ tell application "System Events"
 end tell
 EOF
 sleep 2
+discard_typeahead
 
+grep -q "activate pid=" "$WORK/log" || fail "no switch happened: Downtab did not intercept the posted shortcuts"
 pgrep -x "$EXE" >/dev/null || fail "$EXE is no longer running"
 crash_reports >"$WORK/after"
 new_reports=$(comm -13 "$WORK/before" "$WORK/after")
