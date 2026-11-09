@@ -64,3 +64,16 @@ _Avoid_: active app, current app
 **Current Space**:
 The Spaces visible right now, one per display.
 _Avoid_: desktop, current desktop
+
+**Switcher placement**:
+The preference that picks the display the Switcher opens on: the Pointer display (default), the Menu bar display or the Focused window display. Chosen at opening; the Switcher stays on it while open.
+
+**Pointer display**:
+The display under the pointer when the Switcher opens.
+
+**Menu bar display**:
+The display set as main in System Settings › Displays, the one showing the menu bar.
+_Avoid_: main display, main screen, primary screen
+
+**Focused window display**:
+The display holding most of the Frontmost app's front window when the Switcher opens; the Menu bar display when the Frontmost app has no window on screen.

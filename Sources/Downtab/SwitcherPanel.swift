@@ -33,7 +33,7 @@ final class SwitcherPanel: NSPanel {
 
     func show(_ displayed: DisplayedState, icon: (AppID) -> NSImage?) {
         // The display is chosen at opening: moving the selection never moves the panel to another display.
-        let target = isVisible ? screen : Self.pointerScreen()
+        let target = isVisible ? screen : SwitcherScreen.forOpening(frontmostApp: displayed.frontmostApp)
         let iconSize = Metrics.iconSize(screenWidth: target?.frame.width, tileCount: displayed.appRow.count)
         apply(RowSpacing(iconSize: iconSize))
         let selection: AppTile.Selection =
@@ -185,11 +185,6 @@ final class SwitcherPanel: NSPanel {
         mask.capInsets = NSEdgeInsets(top: radius, left: radius, bottom: radius, right: radius)
         mask.resizingMode = .stretch
         return mask
-    }
-
-    private static func pointerScreen() -> NSScreen? {
-        let pointer = NSEvent.mouseLocation
-        return NSScreen.screens.first { NSMouseInRect(pointer, $0.frame, false) } ?? NSScreen.main
     }
 
     private func center(on screen: NSScreen?, size: NSSize) {
