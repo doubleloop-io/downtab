@@ -133,11 +133,12 @@ The tags `v0.1.0`–`v0.1.2` already exist in this repo (only the GitHub *releas
 
 ## 7. Retire `iacoware/downtab-app`
 
-1. Replace its `index.html` with a redirect page: `<meta http-equiv="refresh" content="0; url=https://doubleloop-io.github.io/downtab/">` plus a visible link. Leave the screenshot or delete it.
-2. Point its README to `doubleloop-io/downtab`.
-3. Archive the repo (Settings → Archive). Pages keep serving the redirect, and the old releases stay downloadable.
+Decided: no redirect page.
 
-Known gap: an old direct link `iacoware/downtab-app/releases/latest/download/Downtab.zip` keeps serving v0.1.2 forever. This is acceptable because the app has no auto-update that reads that URL.
+1. Point its README, description and homepage to `doubleloop-io/downtab`.
+2. Archive the repo. The old page and the old releases stay online, read-only.
+
+Known gaps: the old page `iacoware.github.io/downtab-app` stays live and still links to the old releases; an old direct link `iacoware/downtab-app/releases/latest/download/Downtab.zip` keeps serving v0.1.2 forever. This is acceptable because the app has no auto-update that reads that URL.
 
 ## 8. Afterwards
 
@@ -153,7 +154,8 @@ Known gap: an old direct link `iacoware/downtab-app/releases/latest/download/Dow
 - [x] Transferred to `doubleloop-io`, local remote updated
 - [x] Repo public
 - [x] Pages source set to GitHub Actions
-- [ ] Consolidation PR merged
-- [ ] v0.1.2 release in `doubleloop-io/downtab` (done, download checked), page checked after the PR merge
-- [ ] `downtab-app` redirect pushed, repo archived
+- [x] Consolidation PR merged (#44)
+- [x] v0.1.2 release in `doubleloop-io/downtab`, download and page checked
+- [x] Bundle identifier renamed to `io.doubleloop.downtab` (#45)
+- [x] `downtab-app` pointed to the new repo and archived
 - [ ] #40–#43 triaged
