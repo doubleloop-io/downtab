@@ -5,7 +5,7 @@ import os
 /// Looks for a newer Downtab release shortly after launch, then every day while running. Never sends more than
 /// one request per hour, relaunches included. A failed check changes nothing: the next scheduled one retries.
 final class UpdateCheck {
-    static let downloadPage = URL(string: "https://doubleloop-io.github.io/downtab/")
+    static let downloadPage = URL(string: "https://downtab.doubleloop.io/")
 
     private static let launchDelay: Duration = .seconds(10)
     private static let interval: Duration = .seconds(24 * 60 * 60)

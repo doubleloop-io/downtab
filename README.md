@@ -12,7 +12,7 @@ Entirely keyboard-driven: `⌥Tab`, `Tab`, `Tab`, `↓`, `↓`, `release`.
 - **Current Space only**: only windows on the Spaces you're looking at, on every display.
 - **Titles, no thumbnails**: no Screen Recording permission, no capture lag.
 
-macOS 15 or later · Apple Silicon only. Download, install steps and troubleshooting: **[doubleloop-io.github.io/downtab](https://doubleloop-io.github.io/downtab/)**.
+macOS 15 or later · Apple Silicon only. Download, install steps and troubleshooting: **[downtab.doubleloop.io](https://downtab.doubleloop.io/)**.
 
 ## Development
 
@@ -62,7 +62,7 @@ Or, after step 1, `make ship V=X.Y.Z` runs steps 2–4, smoke first. If it fails
 
 Users download from this repo:
 
-- The download page is its GitHub Pages site, deployed by `.github/workflows/pages.yml` on every push to `main` that touches `website/`: it publishes `website/downtab-landing.html` as `index.html`, next to `downtab-landing-screenshot.jpg`. URL: `https://doubleloop-io.github.io/downtab/`.
+- The download page is its GitHub Pages site, deployed by `.github/workflows/pages.yml` on every push to `main` that touches `website/`: it publishes `website/downtab-landing.html` as `index.html`, next to `downtab-landing-screenshot.jpg`. URL: `https://downtab.doubleloop.io/`.
 - Its releases carry `Downtab.zip`, published by `make release` with the version's `CHANGELOG.md` section as notes. Stable link: `https://github.com/doubleloop-io/downtab/releases/latest/download/Downtab.zip`.
 - Apple Silicon only, self-signed, not notarized: the page explains clearing the quarantine with `xattr`.
 - If `make release` fails after pushing the tag, it prints the `gh release create` command to finish by hand.
