@@ -42,7 +42,6 @@ final class WindowListPanel: PointerPanel {
         for view in [headerIcon, header, scroll] {
             content.addSubview(view)
         }
-        trackPointer()
     }
 
     /// A window's whole row, where the list shows it.

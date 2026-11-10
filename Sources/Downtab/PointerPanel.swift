@@ -15,29 +15,24 @@ class PointerPanel: NSPanel {
         nil
     }
 
-    /// Downtab is never the active app: only a tracking area that is always active reports the pointer moving.
-    /// Owned by the panel, so its events reach `mouseMoved(with:)` even if they bypass `sendEvent(_:)`.
-    func trackPointer() {
-        let options: NSTrackingArea.Options = [.mouseMoved, .activeAlways, .inVisibleRect]
-        contentView?.addTrackingArea(NSTrackingArea(rect: .zero, options: options, owner: self, userInfo: nil))
+    /// The item under `point`, in screen coordinates; nil outside the panel or between items.
+    func pointerTarget(atScreen point: NSPoint) -> PointerTarget? {
+        guard isVisible, frame.contains(point) else { return nil }
+        return pointerTarget(at: convertPoint(fromScreen: point))
     }
 
     /// Taken here, before the views: the first click on a panel that is not key is not lost either.
     override func sendEvent(_ event: NSEvent) {
         if PointerInput.isPointerEvent(event) {
-            receivePointer(event)
+            receivePointer(event, over: pointerTarget(at: event.locationInWindow))
         } else {
             super.sendEvent(event)
         }
     }
 
-    override func mouseMoved(with event: NSEvent) {
-        receivePointer(event)
-    }
-
-    private func receivePointer(_ event: NSEvent) {
+    func receivePointer(_ event: NSEvent, over target: PointerTarget?) {
         // Before the show delay the Switcher is transparent: there is nothing to point at.
         guard alphaValue > 0 else { return }
-        pointer?.receive(event, over: pointerTarget(at: event.locationInWindow))
+        pointer?.receive(event, over: target)
     }
 }

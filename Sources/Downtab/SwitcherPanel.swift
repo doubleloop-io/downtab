@@ -12,6 +12,7 @@ final class SwitcherPanel: PointerPanel {
     private var margins: [NSLayoutConstraint] = []
     private var spacing = RowSpacing(iconSize: Metrics.iconRange.upperBound)
     private var tiles: [AppTile] = []
+    private var pointerMonitors: [Any] = []
 
     override var canBecomeKey: Bool { true }
 
@@ -31,7 +32,6 @@ final class SwitcherPanel: PointerPanel {
         hasShadow = true
         title = "Switcher"
         installContent()
-        trackPointer()
     }
 
     override func attach(_ pointer: PointerInput) {
@@ -81,13 +81,39 @@ final class SwitcherPanel: PointerPanel {
         // Frontmost app, and a quick press never flashes it.
         alphaValue = displayed.isVisible ? 1 : 0
         makeKeyAndOrderFront(nil)
+        followPointer()
         showWindowList(of: displayed, under: views.first(where: \.isSelected), icon: icon)
     }
 
     func hide() {
+        stopFollowingPointer()
         tiles = []
         hideWindowList()
         orderOut(nil)
+    }
+
+    /// Downtab is never the active app, so its panels get no mouse moved events, not even through a tracking area:
+    /// they go to the Frontmost app, where only a global monitor sees them.
+    private func followPointer() {
+        guard pointerMonitors.isEmpty else { return }
+        let global = NSEvent.addGlobalMonitorForEvents(matching: .mouseMoved) { [weak self] event in
+            self?.pointerMoved(event)
+        }
+        let local = NSEvent.addLocalMonitorForEvents(matching: .mouseMoved) { [weak self] event in
+            self?.pointerMoved(event)
+            return event
+        }
+        pointerMonitors = [global, local].compactMap { $0 }
+    }
+
+    private func stopFollowingPointer() {
+        pointerMonitors.forEach(NSEvent.removeMonitor)
+        pointerMonitors = []
+    }
+
+    private func pointerMoved(_ event: NSEvent) {
+        let location = NSEvent.mouseLocation
+        receivePointer(event, over: windowList.pointerTarget(atScreen: location) ?? pointerTarget(atScreen: location))
     }
 
     private func showWindowList(of displayed: DisplayedState, under tile: NSView?, icon: (AppID) -> NSImage?) {
