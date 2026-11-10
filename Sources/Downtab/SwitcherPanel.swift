@@ -1,15 +1,18 @@
 import AppKit
 import SwitcherCore
 
-/// Renders the core's displayed state and nothing else. Non-activating, so the Frontmost app keeps focus.
+/// Renders the core's displayed state and tells which tile is under the pointer. Non-activating, so the Frontmost
+/// app keeps focus.
 /// Look and metrics follow prototype variant A, with long names fitted as in variant E
 /// (`docs/adr/assets/prototype-switcher.html`, `?names=below`).
-final class SwitcherPanel: NSPanel {
+final class SwitcherPanel: PointerPanel {
     private let appRow = NSStackView()
     private let selectedName = NSTextField(labelWithString: "")
     private let windowList = WindowListPanel()
     private var margins: [NSLayoutConstraint] = []
     private var spacing = RowSpacing(iconSize: Metrics.iconRange.upperBound)
+    private var tiles: [AppTile] = []
+    private var pointerMonitors: [Any] = []
 
     override var canBecomeKey: Bool { true }
 
@@ -31,6 +34,22 @@ final class SwitcherPanel: NSPanel {
         installContent()
     }
 
+    override func attach(_ pointer: PointerInput) {
+        super.attach(pointer)
+        windowList.attach(pointer)
+    }
+
+    /// The whole tile is the target, not only its icon or its badge.
+    override func pointerTarget(at location: NSPoint) -> PointerTarget? {
+        tiles.firstIndex { $0.bounds.contains($0.convert(location, from: nil)) }.map(PointerTarget.app)
+    }
+
+    /// Where a click reaches the Switcher: none while it is closed or still transparent.
+    var pointerFrames: [NSRect] {
+        guard isVisible, alphaValue > 0 else { return [] }
+        return windowList.isVisible ? [frame, windowList.frame] : [frame]
+    }
+
     func show(_ displayed: DisplayedState, icon: (AppID) -> NSImage?) {
         // The display is chosen at opening: moving the selection never moves the panel to another display.
         let target = isVisible ? screen : SwitcherScreen.forOpening(frontmostApp: displayed.frontmostApp)
@@ -47,6 +66,7 @@ final class SwitcherPanel: NSPanel {
                 selection: index == displayed.selectedIndex ? selection : .unselected
             )
         }
+        tiles = views
         appRow.setViews(views, in: .leading)
         appRow.setAccessibilitySelectedChildren(views.filter(\.isSelected))
         selectedName.stringValue = displayed.selectedEntry.name
@@ -61,12 +81,39 @@ final class SwitcherPanel: NSPanel {
         // Frontmost app, and a quick press never flashes it.
         alphaValue = displayed.isVisible ? 1 : 0
         makeKeyAndOrderFront(nil)
+        followPointer()
         showWindowList(of: displayed, under: views.first(where: \.isSelected), icon: icon)
     }
 
     func hide() {
+        stopFollowingPointer()
+        tiles = []
         hideWindowList()
         orderOut(nil)
+    }
+
+    /// Downtab is never the active app, so its panels get no mouse moved events, not even through a tracking area:
+    /// they go to the Frontmost app, where only a global monitor sees them.
+    private func followPointer() {
+        guard pointerMonitors.isEmpty else { return }
+        let global = NSEvent.addGlobalMonitorForEvents(matching: .mouseMoved) { [weak self] event in
+            self?.pointerMoved(event)
+        }
+        let local = NSEvent.addLocalMonitorForEvents(matching: .mouseMoved) { [weak self] event in
+            self?.pointerMoved(event)
+            return event
+        }
+        pointerMonitors = [global, local].compactMap { $0 }
+    }
+
+    private func stopFollowingPointer() {
+        pointerMonitors.forEach(NSEvent.removeMonitor)
+        pointerMonitors = []
+    }
+
+    private func pointerMoved(_ event: NSEvent) {
+        let location = NSEvent.mouseLocation
+        receivePointer(event, over: windowList.pointerTarget(atScreen: location) ?? pointerTarget(atScreen: location))
     }
 
     private func showWindowList(of displayed: DisplayedState, under tile: NSView?, icon: (AppID) -> NSImage?) {

@@ -17,7 +17,7 @@ public enum SwitcherDisplay {
             return displays.firstIndex { $0.containsPointer(pointer) } ?? menuBarDisplay
         case .focusedWindowDisplay:
             guard let focusedWindow else { return menuBarDisplay }
-            return displayHoldingMostOf(appKitFrame(of: focusedWindow, in: displays), in: displays)
+            return displayHoldingMostOf(focusedWindow.flipped(around: displays[menuBarDisplay]), in: displays)
         case .menuBarDisplay:
             return menuBarDisplay
         }
@@ -32,12 +32,5 @@ public enum SwitcherDisplay {
             return menuBarDisplay
         }
         return index
-    }
-
-    /// The window server measures down from the menu bar display's top edge, AppKit up from its bottom edge.
-    private static func appKitFrame(of serverBounds: ScreenRect, in displays: [ScreenRect]) -> ScreenRect {
-        ScreenRect(
-            x: serverBounds.x, y: displays[menuBarDisplay].maxY - serverBounds.maxY,
-            width: serverBounds.width, height: serverBounds.height)
     }
 }

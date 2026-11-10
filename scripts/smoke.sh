@@ -19,6 +19,14 @@ discard_typeahead() { [ -t 0 ] && while read -r -s -t 1 -n 1000 _; do :; done ||
 crash_reports() { find "$REPORTS" -maxdepth 1 -name "$EXE*" 2>/dev/null | sort; }
 fail() { echo "smoke failed: $*"; exit 1; }
 
+# A locked screen or another app holding secure input swallows the posted events: the smoke would fail looking like a
+# Downtab bug.
+console_session() { ioreg -n Root -d1 -w0 | grep IOConsoleUsers; }
+console_session | grep -q '"CGSSessionScreenIsLocked"=Yes' && fail "the screen is locked: unlock it and run again"
+secure_input_pid=$(console_session | grep -o '"kCGSSessionSecureInputPID"=[0-9]*' | cut -d= -f2 || true)
+[ -z "$secure_input_pid" ] \
+  || fail "secure input is on (held by $(ps -o comm= -p "$secure_input_pid" || echo "pid $secure_input_pid")): close the password prompt or app holding it and run again"
+
 crash_reports >"$WORK/before"
 log stream --level info --predicate 'subsystem == "io.doubleloop.downtab"' >"$WORK/log" &
 LOG_PID=$!
