@@ -11,7 +11,15 @@ enum PanelBackground {
             let glass = NSGlassEffectView()
             glass.cornerRadius = cornerRadius
             glass.contentView = content
-            background = glass
+            // In a key window the glass fills its whole rectangle past its rounded corners, and the shadow follows
+            // that rectangle (#57): a rounded clip trims both.
+            background = NSView()
+            background.wantsLayer = true
+            background.layer?.cornerRadius = cornerRadius
+            background.layer?.masksToBounds = true
+            glass.translatesAutoresizingMaskIntoConstraints = false
+            background.addSubview(glass)
+            NSLayoutConstraint.activate(glass.constraintsPinningEdges(to: background))
         } else {
             // The prototype is a dark HUD whatever the system appearance.
             panel.appearance = NSAppearance(named: .darkAqua)
