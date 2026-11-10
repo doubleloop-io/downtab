@@ -4,6 +4,8 @@ User-facing changes to Downtab. Format: [Keep a Changelog](https://keepachangelo
 
 ## [Unreleased]
 
+## [0.4.0] - 2026-11-10
+
 ### Added
 
 - Switcher: the mouse and the trackpad select like the native switcher. Moving the pointer onto an app or a window selects it; clicking an app with a Window count badge opens its Window list, clicking any other app or a window confirms it, and clicking outside the Switcher cancels without reaching the app underneath. Scrolling over the Switcher walks the Window list one window per wheel notch or per swipe, following the natural scrolling setting.
