@@ -4,6 +4,8 @@ User-facing changes to Downtab. Format: [Keep a Changelog](https://keepachangelo
 
 ## [Unreleased]
 
+## [0.4.1] - 2026-11-11
+
 ### Fixed
 
 - Switcher and Window list: on macOS 26 and later a grey rectangle no longer shows past their rounded corners on a light background.
