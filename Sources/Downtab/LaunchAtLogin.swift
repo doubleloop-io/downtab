@@ -12,11 +12,17 @@ struct LaunchAtLogin {
     private let store = SettingsStore()
     private let service = SMAppService.mainApp
     private let logger = Logger(subsystem: "io.doubleloop.downtab", category: "login")
+    /// `make run` and `make smoke` pass `-registerLoginItem NO`. Any `SMAppService` call, even reading `status`, moves
+    /// the login item to the calling bundle: a development build would replace the installed app at login.
+    private let registersLoginItem =
+        UserDefaults.standard.object(forKey: "registerLoginItem") == nil
+        || UserDefaults.standard.bool(forKey: "registerLoginItem")
 
     var isWanted: Bool { store.launchAtLogin() }
 
     var status: Status {
-        switch service.status {
+        guard registersLoginItem else { return .off }
+        return switch service.status {
         case .enabled: .on
         case .requiresApproval: .needsApproval
         default: .off
@@ -39,6 +45,10 @@ struct LaunchAtLogin {
 
     // Registering again while approval is pending would not override the user's choice in System Settings.
     private func apply(_ wanted: Bool) {
+        guard registersLoginItem else {
+            logger.info("login item left untouched: launched with -registerLoginItem NO")
+            return
+        }
         do {
             switch (wanted, service.status) {
             case (true, .notRegistered), (true, .notFound):

@@ -99,7 +99,7 @@ bundle:
 # Quit first: `open` would reactivate a still-exiting instance instead of launching the new build.
 run: stop bundle
 	@# Launch through LaunchServices so macOS attributes permissions to the bundle, not to the terminal.
-	@open "$(APP)"
+	@open "$(APP)" --args -registerLoginItem NO
 	@echo "running: look for the Downtab icon in the menu bar"
 
 stop:

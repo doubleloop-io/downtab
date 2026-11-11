@@ -32,7 +32,7 @@ log stream --level info --predicate 'subsystem == "io.doubleloop.downtab"' >"$WO
 LOG_PID=$!
 sleep 1
 
-open "$APP" --args -appShortcut "$(shortcut_arg 48)" -windowShortcut "$(shortcut_arg 50)"
+open "$APP" --args -registerLoginItem NO -appShortcut "$(shortcut_arg 48)" -windowShortcut "$(shortcut_arg 50)"
 # Without the tap the ⌥ events would reach no thread-crossing code, and the smoke would pass for nothing.
 for _ in $(seq 50); do grep -q "$TAP_STARTED" "$WORK/log" && break; sleep 0.1; done
 grep -q "$TAP_STARTED" "$WORK/log" \

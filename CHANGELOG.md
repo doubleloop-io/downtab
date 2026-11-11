@@ -4,6 +4,10 @@ User-facing changes to Downtab. Format: [Keep a Changelog](https://keepachangelo
 
 ## [Unreleased]
 
+### Changed
+
+- Only one Downtab runs at a time: opening another copy while one is running shows `Downtab is already running` with the running version and location, and the new copy quits. Quit the running Downtab first to switch copies.
+
 ## [0.4.1] - 2026-11-11
 
 ### Fixed
