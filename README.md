@@ -2,7 +2,7 @@
 
 A macOS app switcher that works like ⌘Tab, and lets you drop down to a single window of an app.
 
-![Downtab switcher](website/downtab-landing-screenshot.jpg)
+![Downtab switcher](website/downtab-demo-cover.jpg)
 
 Entirely keyboard-driven: `⌥Tab`, `Tab`, `Tab`, `↓`, `↓`, `release`.
 
@@ -62,7 +62,7 @@ Or, after step 1, `make ship V=X.Y.Z` runs steps 2–4, smoke first. If it fails
 
 Users download from this repo:
 
-- The download page is its GitHub Pages site, deployed by `.github/workflows/pages.yml` on every push to `main` that touches `website/`: it publishes `website/downtab-landing.html` as `index.html`, next to `downtab-landing-screenshot.jpg`. URL: `https://downtab.doubleloop.io/`.
+- The download page is its GitHub Pages site, deployed by `.github/workflows/pages.yml` on every push to `main` that touches `website/`: it publishes `website/downtab-landing.html` as `index.html`, next to the demo video `downtab-demo.mp4` and its cover `downtab-demo-cover.jpg`. URL: `https://downtab.doubleloop.io/`.
 - Its releases carry `Downtab.zip`, published by `make release` with the version's `CHANGELOG.md` section as notes. Stable link: `https://github.com/doubleloop-io/downtab/releases/latest/download/Downtab.zip`.
 - Apple Silicon only, self-signed, not notarized: the page explains clearing the quarantine with `xattr`.
 - If `make release` fails after pushing the tag, it prints the `gh release create` command to finish by hand.
@@ -76,7 +76,7 @@ Users download from this repo:
 - `docs/principles.md`: the intent later changes must not betray.
 - `docs/adr/`: decisions and their trade-offs; `docs/adr/assets/` holds the UI prototypes.
 - `docs/manual-checklist.md`: checks to run by hand on the real app.
-- `website/`: the download page and its screenshot, deployed by the Pages workflow.
+- `website/`: the download page, its demo video and cover, deployed by the Pages workflow; `website/recording/` holds the recording prop (`backdrop.html`), not published.
 
 ## Signing and permissions
 

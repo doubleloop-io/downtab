@@ -183,8 +183,11 @@ footer a:hover { text-decoration: underline; }
       <a href="https://github.com/doubleloop-io/downtab/releases">Release notes <svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M15 3h6v6"/><path d="M10 14 21 3"/><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/></svg></a>
     </p>
   </div>
-  <img class="shot" src="downtab-landing-screenshot.jpg" width="1860" height="530"
-       alt="Downtab switcher: Visual Studio Code selected, with its Window list of eight windows open below the app row">
+  <video class="shot" id="demo" muted loop playsinline preload="metadata"
+         poster="downtab-demo-cover.jpg" width="1860" height="1072"
+         aria-label="Downtab: dropping from an app to one of its windows with the keyboard">
+    <source src="downtab-demo.mp4" type="video/mp4">
+  </video>
 </header>
 
 <main>
@@ -238,6 +241,24 @@ footer a:hover { text-decoration: underline; }
 </footer>
 
 <script>
+// Autoplay from script, not the attribute, so reduced-motion users never see a first frame of motion.
+(function () {
+  var video = document.getElementById("demo");
+  var reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
+  function applyMotionPreference() {
+    if (reducedMotion.matches) {
+      video.pause();
+      video.controls = true;
+    } else {
+      video.controls = false;
+      var playing = video.play();
+      if (playing) playing.catch(function () { video.controls = true; });
+    }
+  }
+  applyMotionPreference();
+  reducedMotion.addEventListener("change", applyMotionPreference);
+})();
+
 document.querySelectorAll(".cmd button").forEach(function (btn) {
   btn.addEventListener("click", function () {
     var box = btn.closest(".cmd");
