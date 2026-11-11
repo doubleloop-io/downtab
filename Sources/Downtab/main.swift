@@ -88,6 +88,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 let app = NSApplication.shared
 // LSUIElement already hides the Dock icon in the bundle; this also covers `swift run`.
 app.setActivationPolicy(.accessory)
+SingleInstance.exitIfAnotherIsRunning()
 let delegate = AppDelegate()
 app.delegate = delegate
 app.run()

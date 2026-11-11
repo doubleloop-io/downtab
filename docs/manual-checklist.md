@@ -329,6 +329,14 @@ Before starting: `defaults delete io.doubleloop.downtab launchAtLogin` (ignore "
 4. Log out and log back in: the Downtab icon appears in the menu bar without launching it by hand.
 5. Turn Downtab off in System Settings' `Open at Login` (if listed as a switch), then focus the Preferences: `Launch at login` stays checked and a note `Turned off in System Settings...` with `Open Login Items…` appears; the button opens Login Items. Turn it back on there and focus the Preferences: the note disappears. Skip if System Settings shows no switch for Downtab.
 
+## Single instance
+
+Before starting: `make run`, then copy the bundle elsewhere: `rm -rf /tmp/downtab-copy && mkdir /tmp/downtab-copy && cp -R build/Downtab.app /tmp/downtab-copy/`. Note where `Open at Login` points: `sfltool dumpbtm | grep -A1 "Identifier: 2.io.doubleloop.downtab"`.
+
+1. `open /tmp/downtab-copy/Downtab.app`: an alert `Downtab is already running` shows the Downtab icon, the running version and its path (`.../build/Downtab.app`). Click `OK`: the copy quits, one Downtab icon stays in the menu bar, and ⌥Tab still works.
+2. The login item still points where it did before step 1.
+3. Quit Downtab from its menu, then `open /tmp/downtab-copy/Downtab.app`: it starts without the alert. Quit it, then reopen the copy you normally use (`/Applications/Downtab.app`) so the login item points at it again.
+
 ## Native ⌘Tab / ⌘` takeover and Emergency restore
 
 Downtab turns native ⌘Tab (with ⌘⇧Tab) and ⌘`` ` `` off only while one of its shortcuts is exactly that combination, or while a shortcut is being recorded. macOS keeps them off after Downtab exits unless they are turned back on: Emergency restore does that from the terminal, without Downtab.
