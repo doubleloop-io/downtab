@@ -319,10 +319,12 @@ Downtab asks GitHub for the latest release about 10 seconds after launch, then e
 
 ## Launch at login
 
-Before starting: `defaults delete io.doubleloop.downtab launchAtLogin` (ignore "does not exist"), then `make run`. The login item points at the bundle that last registered it: run these checks from one checkout only.
+Before starting: `defaults delete io.doubleloop.downtab launchAtLogin` (ignore "does not exist"), then `make stop`, `make bundle`, `open build/Downtab.app`: `make run` launches with `-registerLoginItem NO` and never touches the login item. The login item points at the bundle that last registered it: run these checks from one checkout only, and at the end turn it off or reinstall the app in /Applications and launch it once.
+
+0. `make run`: `log show --info --last 1m --predicate 'subsystem == "io.doubleloop.downtab" AND category == "login"'` shows `login item left untouched`, and `Open at Login` is unchanged.
 
 1. First launch turns it on: System Settings › General › Login Items & Extensions lists Downtab under `Open at Login`, enabled. The Preferences show `Launch at login` checked, under `Show Switcher on`, with no note below it.
-2. Uncheck `Launch at login`: Downtab disappears from `Open at Login` (reopen System Settings if it does not refresh). `defaults read io.doubleloop.downtab launchAtLogin` prints `0`. `make stop`, `make run`: the toggle is still unchecked and Downtab is still not listed.
+2. Uncheck `Launch at login`: Downtab disappears from `Open at Login` (reopen System Settings if it does not refresh). `defaults read io.doubleloop.downtab launchAtLogin` prints `0`. `make stop`, `open build/Downtab.app`: the toggle is still unchecked and Downtab is still not listed.
 3. Check it again: Downtab is listed and enabled again; `defaults read io.doubleloop.downtab launchAtLogin` prints `1`.
 4. Log out and log back in: the Downtab icon appears in the menu bar without launching it by hand.
 5. Turn Downtab off in System Settings' `Open at Login` (if listed as a switch), then focus the Preferences: `Launch at login` stays checked and a note `Turned off in System Settings...` with `Open Login Items…` appears; the button opens Login Items. Turn it back on there and focus the Preferences: the note disappears. Skip if System Settings shows no switch for Downtab.
