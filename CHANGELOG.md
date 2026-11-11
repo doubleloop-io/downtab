@@ -4,6 +4,10 @@ User-facing changes to Downtab. Format: [Keep a Changelog](https://keepachangelo
 
 ## [Unreleased]
 
+### Fixed
+
+- Switcher: holding Tab, or the Window shortcut key, with the Modifier keeps moving the selection like the native switcher, stopping on the last app or window; with ⇧, on the first. Separate presses still wrap around.
+
 ### Changed
 
 - Only one Downtab runs at a time: opening another copy while one is running shows `Downtab is already running` with the running version and location, and the new copy quits. Quit the running Downtab first to switch copies.

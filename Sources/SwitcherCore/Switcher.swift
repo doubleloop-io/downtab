@@ -2,6 +2,9 @@ public enum SwitcherEvent: Equatable, Sendable {
     /// A key pressed with the modifiers held at that moment. Closed, only the App or Window shortcut opens; open,
     /// only their keys act, pressed with the Modifier. ⇧ added moves the selection back.
     case keyPressed(Shortcut)
+    /// The key of a press still held, repeating. Open, it moves like a press but stops at either end instead of
+    /// wrapping around, like the native switcher; closed, it does nothing.
+    case keyRepeated(Shortcut)
     /// The modifiers now held. Open, releasing any key of the Modifier confirms.
     case modifiersChanged(held: Set<ShortcutModifier>)
     case enterPressed
@@ -120,25 +123,24 @@ public struct DisplayedState: Equatable, Sendable {
         }
     }
 
-    /// Wraps around at both ends of the App row, back at App level.
-    func movingSelection(by step: Int) -> DisplayedState {
-        let count = appRow.count
+    /// Back at App level.
+    func movingSelection(by step: Int, atEnds: EndBehavior = .wrap) -> DisplayedState {
         var moved = self
-        moved.selectedIndex = ((selectedIndex + step) % count + count) % count
+        moved.selectedIndex = atEnds.index(selectedIndex + step, count: appRow.count)
         moved.level = .app
         return moved
     }
 
     /// The Window shortcut key: at App level opens the Window list like `↓`, with ⇧ on its last window; in the
-    /// list, wraps around at both ends.
-    func movingWindowSelection(by step: Int) -> DisplayedState {
+    /// list, moves within it.
+    func movingWindowSelection(by step: Int, atEnds: EndBehavior = .wrap) -> DisplayedState {
         let count = selectedEntry.windows.count
         switch level {
         case .app:
             guard let opening = windowListOpening else { return self }
             return at(step < 0 ? .window(count - 1) : opening)
         case .window(let index):
-            return at(.window(((index + step) % count + count) % count))
+            return at(.window(atEnds.index(index + step, count: count)))
         case .windowWithoutList:
             return self
         }
@@ -279,6 +281,8 @@ public struct Switcher: Sendable {
             return cancel()
         case .keyPressed(let combination):
             press(combination, desktop: desktop)
+        case .keyRepeated(let combination):
+            repeatPress(of: combination)
         case .downPressed, .upPressed, .leftPressed, .rightPressed:
             updateWhileOpen { Self.moving($0, by: event) }
         case .showDelayElapsed:
@@ -316,6 +320,15 @@ public struct Switcher: Sendable {
         switch press.slot {
         case .app: moveSelection(by: step, desktop: desktop, modifier: press.modifier)
         case .window: moveWindowSelection(by: step, desktop: desktop, modifier: press.modifier)
+        }
+    }
+
+    private mutating func repeatPress(of combination: Shortcut) {
+        guard case .open(let displayed) = state, let press = shortcutPress(of: combination) else { return }
+        let step = press.isReversed ? -1 : 1
+        switch press.slot {
+        case .app: state = .open(displayed.movingSelection(by: step, atEnds: .stop))
+        case .window: state = .open(displayed.movingWindowSelection(by: step, atEnds: .stop))
         }
     }
 
@@ -395,6 +408,21 @@ public struct Switcher: Sendable {
                 appRow: appRow, frontmostApp: desktop.frontmostApp, modifier: modifier, selectedIndex: frontmostIndex,
                 level: .window(0))
             state = .open(opening.movingWindowSelection(by: step))
+        }
+    }
+}
+
+/// What moving past either end of the App row or a Window list does.
+enum EndBehavior {
+    /// A key pressed: goes round to the other end.
+    case wrap
+    /// A key held: stays on the end reached.
+    case stop
+
+    func index(_ index: Int, count: Int) -> Int {
+        switch self {
+        case .wrap: (index % count + count) % count
+        case .stop: min(max(index, 0), count - 1)
         }
     }
 }

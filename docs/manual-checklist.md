@@ -84,6 +84,9 @@ Before starting: `make run`, Accessibility granted to Downtab, then open TextEdi
 7. Hold ⌥, press Tab, then press `Enter` without releasing ⌥: the highlighted app comes to the front and the Switcher closes. Releasing ⌥ afterwards does nothing more.
 8. Hide Safari (⌘H), then hold ⌥, select Safari and release: Safari comes back to the front.
 9. `log stream --predicate 'subsystem == "io.doubleloop.downtab"'` shows `modifier release tap started` at launch and an `activate pid=... ok=true` line for each Confirm.
+10. Hold ⌥, press Tab once, release Tab, then press Tab and keep it held: the highlight keeps moving right and stops on the last icon, without wrapping. Keep holding ⌥, release Tab and press it once more: it wraps to the first icon. Press `Esc`.
+11. Hold ⌥ and ⇧, press Tab and keep it held: the highlight moves left and stops on the first icon. Press `Esc`.
+12. Hold ⌥ and Tab together from the start: the Switcher opens and the highlight walks to the last icon, stopping there. Press `Esc`. In TextEdit, hold Tab alone: tabs keep being typed, the Switcher does not interfere.
 
 ## Switcher: quick press
 
@@ -208,7 +211,8 @@ Before starting: `make run`, Accessibility granted to Downtab. Open TextEdit wit
 10. Rapid presses: close the `three` window (⌘W), so TextEdit has 2 windows. Press `` ⌥` `` and release it 10 times in a row, less than a second apart: the 2 windows alternate in front every time, with no press that changes nothing.
 11. Click TextEdit's back window, then press `` ⌥` `` at once: the window that was in front before the click comes forward. Hold ⌥ and press `` ` ``: the Window list shows the clicked window first. Press `Esc`.
 12. `log stream --level debug --predicate 'subsystem == "io.doubleloop.downtab" AND category == "scan"'` shows a `window order windows=... took=...` line at each opening; `took` stays in the low milliseconds, even with many windows open.
-13. `log show --last 1h --predicate 'subsystem == "io.doubleloop.downtab" AND category == "keyboard"'` shows `` shortcut ⌥` registered `` and `` shortcut ⌥⇧` registered `` at launch, next to the ⌥Tab ones.
+13. Hold ⌥, press `` ` `` and keep it held: the highlight walks down to `three` and stops there. Release `` ` ``, hold ⇧ and press `` ` `` again, keeping it held: it walks up to `one` and stops. Press `Esc`.
+14. `log show --last 1h --predicate 'subsystem == "io.doubleloop.downtab" AND category == "keyboard"'` shows `` shortcut ⌥` registered `` and `` shortcut ⌥⇧` registered `` at launch, next to the ⌥Tab ones.
 
 ## Switcher: minimized and hidden windows
 

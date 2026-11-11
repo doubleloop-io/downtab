@@ -10,7 +10,7 @@ final class KeyboardInput {
     private let onEvent: (SwitcherEvent) -> Void
     private let logger = Logger(subsystem: "io.doubleloop.downtab", category: "keyboard")
     private let modifierRelease = ModifierReleaseTap()
-    private let escapeTap = EscapeKeyTap()
+    private let switcherKeys = SwitcherKeyTap()
     private let hotKeyPresses = HotKeyPressHandler()
     /// The combinations held on the keyboard: each shortcut, plus ⇧ for the reverse. Indexed by Carbon hot key id.
     private var registrations: [Shortcut] = []
@@ -34,16 +34,18 @@ final class KeyboardInput {
         }
     }
 
-    /// The Modifier release and Esc held with the Modifier are detected only once the Accessibility permission is
-    /// granted; calling again is harmless.
+    /// The Modifier release, Esc held with the Modifier and a held shortcut key are detected only once the
+    /// Accessibility permission is granted; calling again is harmless.
     func startEventTaps() {
         modifierRelease.start { [weak self] held in self?.onEvent(.modifiersChanged(held: held)) }
-        escapeTap.start { [weak self] in self?.onEvent(.escapePressed) }
+        switcherKeys.start { [weak self] event in self?.onEvent(event) }
+        switcherKeys.setShortcuts(shortcuts)
     }
 
-    /// While the Switcher is open, Esc reaches it even when another app or the system holds Esc with the Modifier.
-    func captureEscape(_ isOpen: Bool) {
-        escapeTap.setCapturing(isOpen)
+    /// While the Switcher is open, Esc reaches it even when another app or the system holds Esc with the Modifier,
+    /// and so do the repeats of a held shortcut key.
+    func captureSwitcherKeys(_ isOpen: Bool) {
+        switcherKeys.setCapturing(isOpen)
     }
 
     /// A shortcut key the Carbon hot keys do not hold reaches the Switcher here, such as ⌥` opened with ⌥Tab
@@ -74,6 +76,7 @@ final class KeyboardInput {
     func register(_ shortcuts: Shortcuts) -> Set<Shortcut> {
         suspendShortcuts()
         self.shortcuts = shortcuts
+        switcherKeys.setShortcuts(shortcuts)
         registrations = [shortcuts.app, shortcuts.app.withShift, shortcuts.window, shortcuts.window.withShift]
         var refused: Set<Shortcut> = []
         shortcutRefs = registrations.enumerated().map { index, combination in
