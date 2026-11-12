@@ -4,6 +4,8 @@ User-facing changes to Downtab. Format: [Keep a Changelog](https://keepachangelo
 
 ## [Unreleased]
 
+## [0.4.2] - 2026-11-12
+
 ### Fixed
 
 - Switcher: holding Tab, or the Window shortcut key, with the Modifier keeps moving the selection like the native switcher, stopping on the last app or window; with ⇧, on the first. Separate presses still wrap around.
