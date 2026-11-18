@@ -12,11 +12,6 @@ let strictSettings: [SwiftSetting] = [
 let package = Package(
     name: "Downtab",
     platforms: [.macOS(.v15)],
-    products: [
-        .executable(name: "Downtab", targets: ["Downtab"]),
-        // Emergency restore: named for what it does, since users type it in Terminal.
-        .executable(name: "restore-native-shortcuts", targets: ["EmergencyRestore"]),
-    ],
     dependencies: [
         // Lint only (`make lint`): pinned exactly so local runs and CI apply the same rules.
         .package(url: "https://github.com/SimplyDanny/SwiftLintPlugins", exact: "0.65.1"),
@@ -40,7 +35,7 @@ let package = Package(
         ),
         // Separate from the app: it must work when Downtab was killed with native ⌘Tab and ⌘` off.
         .executableTarget(
-            name: "EmergencyRestore", dependencies: ["SwitcherCore", "BackgroundAdapters"],
+            name: "RestoreCommandTab", dependencies: ["SwitcherCore", "BackgroundAdapters"],
             swiftSettings: strictSettings),
         .testTarget(name: "SwitcherCoreTests", dependencies: ["SwitcherCore"], swiftSettings: strictSettings),
         .testTarget(

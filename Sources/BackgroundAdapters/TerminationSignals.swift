@@ -1,7 +1,7 @@
 import Foundation
 
 /// On SIGTERM (`make stop`, logout), SIGINT or SIGHUP: runs `cleanUp`, then dies of the signal as if unhandled.
-/// SIGKILL and crashes skip it: Emergency restore covers those.
+/// SIGKILL and crashes skip it: Restore ⌘Tab covers those.
 public final class TerminationSignals {
     private static let handled = [SIGTERM, SIGINT, SIGHUP]
     private var sources: [any DispatchSourceSignal] = []

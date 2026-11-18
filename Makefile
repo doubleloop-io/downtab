@@ -5,7 +5,7 @@
 
 EXE := Downtab
 APP := build/$(EXE).app
-RESTORE_EXE := restore-native-shortcuts
+RESTORE_EXE := RestoreCommandTab
 RESTORE := build/$(RESTORE_EXE)
 DMG := build/$(EXE).dmg
 APPCAST := build/appcast.xml
@@ -42,13 +42,13 @@ SWIFT_FLAGS = -Xswiftc -plugin-path -Xswiftc "$(TESTING_PLUGINS)"
 
 help:
 	@echo "make setup-signing   once per clone: create the self-signed certificate in a dedicated keychain"
-	@echo "make build           debug build of the app and of Emergency restore"
+	@echo "make build           debug build of the app and of Restore ⌘Tab"
 	@echo "make test            check the core boundary and lint, then run the tests"
 	@echo "make check-core      fail if the Switcher core imports anything but Foundation or loads private APIs"
 	@echo "make lint            swift-format check (.swift-format) and SwiftLint (.swiftlint.yml); any violation fails"
 	@echo "make format          rewrite sources with swift-format"
 	@echo "make icon            render App/Icon/*.svg into App/AppIcon.icns (needs rsvg-convert)"
-	@echo "make bundle          release build, assemble and sign $(APP) with Emergency restore inside, copied to $(RESTORE)"
+	@echo "make bundle          release build, assemble and sign $(APP) with Restore ⌘Tab inside, copied to $(RESTORE)"
 	@echo "                     (with $(DEVELOPER_ID) when the keychain holds it, else self-signed;"
 	@echo "                     SIGN_WITH=developer-id or SIGN_WITH=self-signed forces one)"
 	@echo "make notarize-check  bundle with Developer ID, build $(DMG), sign, notarize, staple and verify it,"
@@ -56,7 +56,7 @@ help:
 	@echo "                     make release runs the same steps"
 	@echo "make run             bundle, then launch the app (quitting a running instance first)"
 	@echo "make stop            quit the running app"
-	@echo "make restore         Emergency restore: turn native ⌘Tab and ⌘\` back on, after a forced kill or a crash"
+	@echo "make restore         Restore ⌘Tab: turn native ⌘Tab and ⌘\` back on, after a forced kill or a crash"
 	@echo "make restore-status  show whether native ⌘Tab and ⌘\` are on, changing nothing"
 	@echo "make smoke           bundle, launch, post ⌥/⌥Tab/⌥⇧Tab/⌥\`/⌥⇧\`/Esc, fail on a crash; must pass before closing an issue that touches the app"
 	@echo "make version V=X.Y.Z close the [Unreleased] changelog section as X.Y.Z and write X.Y.Z to VERSION; commits nothing"
@@ -137,7 +137,7 @@ stop:
 		while pgrep -x $(EXE) >/dev/null; do sleep 0.1; done; echo stopped; \
 	else echo "not running"; fi
 
-# Prefers the copy `make bundle` left: in an emergency it runs at once, without compiling.
+# Prefers the copy `make bundle` left: when ⌘Tab is broken it runs at once, without compiling.
 $(RESTORE):
 	swift build --product $(RESTORE_EXE) $(SWIFT_FLAGS)
 	mkdir -p build

@@ -357,15 +357,15 @@ Before starting: `make run`, then copy the bundle elsewhere: `rm -rf /tmp/downta
 2. The login item still points where it did before step 1.
 3. Quit Downtab from its menu, then `open /tmp/downtab-copy/Downtab.app`: it starts without the alert. Quit it, then reopen the copy you normally use (`/Applications/Downtab.app`) so the login item points at it again.
 
-## Native ⌘Tab / ⌘` takeover and Emergency restore
+## Native ⌘Tab / ⌘` takeover and Restore ⌘Tab
 
-Downtab turns native ⌘Tab (with ⌘⇧Tab) and ⌘`` ` `` off only while one of its shortcuts is exactly that combination, or while a shortcut is being recorded. macOS keeps them off after Downtab exits unless they are turned back on: Emergency restore does that from the terminal, without Downtab.
+Downtab turns native ⌘Tab (with ⌘⇧Tab) and ⌘`` ` `` off only while one of its shortcuts is exactly that combination, or while a shortcut is being recorded. macOS keeps them off after Downtab exits unless they are turned back on: Restore ⌘Tab does that from the terminal, without Downtab.
 
-**Emergency restore, first.** Run this before anything else in the section, and whenever native ⌘Tab stops working:
+**Restore ⌘Tab, first.** Run this before anything else in the section, and whenever native ⌘Tab stops working:
 
 - `make restore-status` changes nothing and prints three lines, `commandTab id=1 keyCode=48 modifiers=0x100000: on`, `commandTab id=2 keyCode=48 modifiers=0x120000: on`, `commandGrave id=27 keyCode=50 modifiers=0x100000: on`. A different `keyCode` or `modifiers` means macOS renumbered the shortcuts: stop here, the takeover would turn off the wrong ones.
-- `make restore` turns all three on, prints `... -> on` for each and ``restore ok: native ⌘Tab and ⌘` are on``. `make bundle` leaves a prebuilt copy in `build/restore-native-shortcuts`, so it runs without compiling; it also works as `build/restore-native-shortcuts` from any terminal.
-- The copy shipped in the bundle: `build/Downtab.app/Contents/MacOS/restore-native-shortcuts --status` prints the same three lines, and `build/Downtab.app/Contents/MacOS/restore-native-shortcuts` turns them on with the same output as `make restore`.
+- `make restore` turns all three on, prints `... -> on` for each and ``restore ok: native ⌘Tab and ⌘` are on``. `make bundle` leaves a prebuilt copy in `build/RestoreCommandTab`, so it runs without compiling; it also works as `build/RestoreCommandTab` from any terminal.
+- The copy shipped in the bundle: `build/Downtab.app/Contents/MacOS/RestoreCommandTab --status` prints the same three lines, and `build/Downtab.app/Contents/MacOS/RestoreCommandTab` turns them on with the same output as `make restore`.
 - Last resort if both fail: log out and back in.
 
 Before starting: `make run`, Accessibility granted to Downtab, TextEdit, Safari and Notes open, Preferences open, default shortcuts (`Restore Defaults`).
@@ -378,6 +378,6 @@ Before starting: `make run`, Accessibility granted to Downtab, TextEdit, Safari 
 6. Quit restores: record ⌘Tab and `` ⌘` ``, then menu bar icon › `Quit Downtab`: `make restore-status` shows all `on` and native ⌘Tab works.
 7. `make stop` restores too: `make run` (the stored ⌘Tab is taken over at launch: `id=1` `off`), then `make stop`: all `on`.
 8. Recording turns all of them off, even those its shortcuts do not take over (a deliberate deviation from story 65: macOS would swallow ⌘Tab or ⌘`` ` `` before the recorder sees it), and only while it lasts: they are back on as soon as recording ends (leaving the Preferences stops recording, hence the delay). With ⌥Tab stored, run `sleep 5; make restore-status` and click the App shortcut field within 5 s: all `off`. Press `Esc` in the field, then `make restore-status`: all `on`. Click the field, then click another app's window: all `on`.
-9. Forced kill: record ⌘Tab, then `pkill -9 -x Downtab`. Native ⌘Tab stays off (`id=1` `off`, ⌘Tab shows no native switcher). `make restore`: native ⌘Tab works again. `make run` restarts with ⌘Tab taken over. Relaunch after a forced kill, without Emergency restore: `pkill -9 -x Downtab` again (`id=1` `off`), `make run`, then menu bar icon › `Quit Downtab`: `make restore-status` shows all `on`. `make run`, set the defaults back with `Restore Defaults` and check all `on`.
+9. Forced kill: record ⌘Tab, then `pkill -9 -x Downtab`. Native ⌘Tab stays off (`id=1` `off`, ⌘Tab shows no native switcher). `make restore`: native ⌘Tab works again. `make run` restarts with ⌘Tab taken over. Relaunch after a forced kill, without Restore ⌘Tab: `pkill -9 -x Downtab` again (`id=1` `off`), `make run`, then menu bar icon › `Quit Downtab`: `make restore-status` shows all `on`. `make run`, set the defaults back with `Restore Defaults` and check all `on`.
 10. A native shortcut already off when Downtab takes it over is turned on when Downtab hands it back: Downtab cannot tell it from one a forced kill left off. In System Settings › Keyboard › Keyboard Shortcuts › Keyboard, turn off `Move focus to next window`; record `` ⌘` ``, then record `` ⌥` ``: `id=27` reads `on`. Turn the setting back on. Skip if the setting does not change `id=27`.
 11. Without the Accessibility permission the native ones answer: record ⌘Tab, then turn Downtab off in System Settings › Privacy & Security › Accessibility: `make restore-status` shows all `on` and native ⌘Tab works. Turn it back on: `id=1` `off` again, ⌘Tab goes through Downtab. `Restore Defaults` afterwards.

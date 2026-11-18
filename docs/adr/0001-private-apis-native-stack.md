@@ -34,5 +34,5 @@ All are resolved at runtime with `dlsym` (`PrivateSymbol`): a missing symbol log
 - No Mac App Store and no App Sandbox: private APIs rule both out.
 - Only Accessibility is needed. Titles come from Accessibility, not from `CGWindowList`, whose titles require Screen Recording.
 - Every macOS update can break a private API. The fallbacks above keep the app usable but degraded.
-- A native shortcut turned off stays off if Downtab is killed or crashes: `make restore` (Emergency restore) turns it back on.
+- A native shortcut turned off stays off if Downtab is killed or crashes: `make restore` (Restore ⌘Tab) turns it back on.
 - Not verified by the spike, so carried over as known risks: multiple displays, slow or frozen apps, a real tap timeout (only simulated), more than about 5 minutes of continuous use, and turning off the native ⌘Tab and ⌘\`.

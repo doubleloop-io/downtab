@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Packs the Developer ID signed app (Emergency restore inside), the license and an /Applications link into a DMG,
+# Packs the Developer ID signed app (Restore ⌘Tab inside), the license and an /Applications link into a DMG,
 # signs, notarizes and staples it, then verifies it as Gatekeeper judges a download. A DMG, not a zip, for the
 # drag-to-Applications window.
 set -euo pipefail
@@ -57,7 +57,7 @@ listing=$(ls "$mounted" | tr '\n' ' ')
 [ "$listing" = "Applications Downtab.app LICENSE " ] || fail "unexpected DMG layout: $listing"
 [ "$(readlink "$mounted/Applications")" = /Applications ] || fail "the DMG Applications link does not point to /Applications"
 codesign --verify --strict "$mounted/Downtab.app" || fail "Downtab.app signature broken in the DMG"
-codesign --verify --strict "$mounted/Downtab.app/Contents/MacOS/restore-native-shortcuts" \
-  || fail "restore-native-shortcuts signature broken in the DMG"
+codesign --verify --strict "$mounted/Downtab.app/Contents/MacOS/RestoreCommandTab" \
+  || fail "RestoreCommandTab signature broken in the DMG"
 expect_notarized -t exec "$mounted/Downtab.app"
 echo "notarized $dmg"
