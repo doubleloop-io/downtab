@@ -62,8 +62,14 @@ final class Updater: NSObject, SPUUpdaterDelegate, SPUStandardUserDriverDelegate
     ) -> Bool {
         logger.notice("update \(item.displayVersionString, privacy: .public) downloaded, installs on quit")
         pending = (item, immediateInstallHandler)
-        let now = Date.now
-        store.update { $0.signalled(build: Int(item.versionString) ?? 0, at: now) }
+        if let build = Int(item.versionString) {
+            let now = Date.now
+            store.update { $0.signalled(build: build, at: now) }
+        } else {
+            // `appcast.sh` publishes `CFBundleVersion`, a commit count: only a broken release gets here. Recording it as
+            // build 0 would make the next launch forget the reminder, so the badge alone signals this Update.
+            logger.error("update \(item.versionString, privacy: .public) has a non-numeric build: no reminder")
+        }
         onPending(item.displayVersionString)
         startReminderTicks()
         // Taking control: Sparkle shows no prompts of its own, the reminder window is Downtab's.
