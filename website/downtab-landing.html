@@ -68,6 +68,13 @@ svg.i { width: 1em; height: 1em; fill: none; stroke: currentColor; stroke-width:
 
 header { background-image: var(--hero-glow); padding: 5rem 1.5rem 5rem; text-align: center; }
 .app-icon { display: block; width: 6rem; height: 6rem; margin: 0 auto; filter: drop-shadow(0 20px 13px rgb(0 0 0 / 0.03)) drop-shadow(0 8px 5px rgb(0 0 0 / 0.08)); }
+.pill {
+  display: inline-flex; margin-top: 2rem; border: 1px solid var(--border); border-radius: 9999px;
+  background: var(--card); padding: 0.25rem 0.875rem; font-size: 0.8125rem; text-decoration: none;
+  transition: border-color 0.15s;
+}
+.pill:hover { border-color: var(--muted-foreground); }
+.pill + h1 { margin-top: 1.25rem; }
 h1 { margin-top: 2rem; font-family: var(--font-display); font-size: 3rem; line-height: 1; font-weight: 600; letter-spacing: -0.025em; }
 .tagline { max-width: 36rem; margin: 1.25rem auto 0; font-size: 1.125rem; }
 .cta { margin-top: 2.25rem; display: flex; flex-direction: column; align-items: center; gap: 1rem; }
@@ -168,6 +175,7 @@ footer a:hover { text-decoration: underline; }
     <rect x="106" y="200" width="300" height="195" rx="22" fill="#FFFFFF"/>
     <rect x="106" y="200" width="300" height="45" fill="#5E5CE6" clip-path="url(#dt-front)"/>
   </svg>
+  <a class="pill muted" href="https://github.com/doubleloop-io/downtab">Free and open source · GPLv3</a>
   <h1>Downtab</h1>
   <p class="tagline muted">A macOS app switcher that works like ⌘Tab, and lets you drop down to a single window of an app.</p>
   <div class="cta">
@@ -176,8 +184,7 @@ footer a:hover { text-decoration: underline; }
       Download for Mac
     </a>
     <p class="meta muted">
-      <span><a href="https://github.com/doubleloop-io/downtab">Free and open source</a> (GPLv3)</span> · <span>macOS Sequoia (15) or later</span> · <span>Apple Silicon only</span><br>
-      <span>Notarized by Apple</span> · <span>DOWNTAB_VERSION</span> · <a href="https://github.com/doubleloop-io/downtab/releases/tag/DOWNTAB_VERSION">Release notes <svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M15 3h6v6"/><path d="M10 14 21 3"/><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/></svg></a>
+      <span>macOS Sequoia (15) or later</span> · <span>Apple Silicon only</span> · <span>DOWNTAB_VERSION</span> · <a href="https://github.com/doubleloop-io/downtab/releases/tag/DOWNTAB_VERSION">Release notes <svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M15 3h6v6"/><path d="M10 14 21 3"/><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/></svg></a>
     </p>
   </div>
   <video class="shot" id="demo" muted loop playsinline preload="metadata"
