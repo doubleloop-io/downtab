@@ -87,12 +87,12 @@ The display holding most of the Frontmost app's front window when the Switcher o
 
 **Update**:
 A newer Downtab release, downloaded by Sparkle in the background and installed on quit or with `Restart to Update`.
-_Avoid_: upgrade, new version (in code and docs)
+_Avoid_: upgrade, new version (in code and docs; user-facing prose such as the changelog may say new version)
 
 **Appcast**:
 The feed Sparkle reads to find an Update: `appcast.xml`, an asset of each GitHub release.
 _Avoid_: feed (in docs), update manifest
 
 **Update reminder**:
-The window that recalls a downloaded Update still not installed, 7 days after it was first signalled, then every 7 days.
+Recalling a downloaded Update still not installed, 7 days after it was first signalled, then every 7 days, by showing the Update's window.
 _Avoid_: nag, escalation
