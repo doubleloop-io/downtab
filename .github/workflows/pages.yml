@@ -6,6 +6,8 @@ on:
     paths:
       - website/**
       - .github/workflows/pages.yml
+  # scripts/release-publish.sh dispatches it on main, so the page shows the new release's version; a release event
+  # would run on the tag, which the github-pages environment refuses.
   workflow_dispatch:
 
 permissions:
@@ -27,9 +29,14 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       # The page keeps its descriptive name in website/; Pages serves it as the site's index.
       - name: Stage site
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: |
           mkdir -p _site
-          cp website/downtab-landing.html _site/index.html
+          version=$(gh release view --repo "$GITHUB_REPOSITORY" --json tagName --jq .tagName)
+          [[ $version =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]] || { echo "unexpected latest release tag: $version"; exit 1; }
+          sed "s/DOWNTAB_VERSION/$version/g" website/downtab-landing.html > _site/index.html
+          if grep -q DOWNTAB_VERSION _site/index.html; then echo "version placeholder left"; exit 1; fi
           cp website/downtab-demo.mp4 website/downtab-demo-cover.jpg website/downtab-og.jpg _site/
       - uses: actions/upload-pages-artifact@fc324d3547104276b827a68afc52ff2a11cc49c9 # v5.0.0
       - id: deployment

@@ -24,6 +24,7 @@ cat >"$ROOT/bin/gh" <<STUB
 #!/usr/bin/env bash
 [ "\$1" = auth ] && exit "\${GH_AUTH_EXIT:-0}"
 [ "\$1" = api ] && { echo "\${GH_PUSH:-true}"; exit 0; }
+[ "\$1" = workflow ] && { echo "\$*" >"$ROOT/gh-workflow"; exit 0; }
 if [ "\$2" = create ]; then
   echo "\$*" >"$ROOT/gh-create"
   while [ \$# -gt 0 ]; do [ "\$1" = --notes-file ] && cat "\$2" >"$ROOT/gh-notes"; shift; done
@@ -252,6 +253,8 @@ git -C "$origin" rev-parse --quiet --verify refs/tags/v0.2.0 >/dev/null || faile
 [ "$(cat "$ROOT/gh-create")" = "release create v0.2.0 $ROOT/Downtab.dmg $ROOT/appcast.xml --repo doubleloop-io/downtab --title Downtab 0.2.0 --notes-file $(sed -n 's/.*--notes-file //p' "$ROOT/gh-create")" ] \
   || failed "publish gh arguments: $(cat "$ROOT/gh-create")"
 [ "$(cat "$ROOT/gh-notes")" = "$(printf '### Added\n\n- New thing')" ] || failed "publish notes: $(cat "$ROOT/gh-notes")"
+[ "$(cat "$ROOT/gh-workflow")" = "workflow run pages.yml --repo doubleloop-io/downtab --ref main" ] \
+  || failed "publish did not redeploy the website: $(cat "$ROOT/gh-workflow" 2>/dev/null)"
 
 new_repo
 "$SCRIPTS/bump-version.sh" 0.2.0 >/dev/null && commit_all

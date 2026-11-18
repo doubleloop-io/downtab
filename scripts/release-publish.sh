@@ -23,3 +23,6 @@ gh release create "$tag" "$dmg" "$appcast" --repo "$RELEASE_REPO" --title "Downt
   || fail "tag $tag pushed but the release failed; fix the cause, then rerun:
   gh release create $tag $dmg $appcast --repo $RELEASE_REPO --title \"Downtab $version\" --notes-file <(source scripts/lib/version.sh && changelog_section $version)"
 echo "released $tag: https://github.com/$RELEASE_REPO/releases/tag/$tag"
+# The website shows the latest release's version. The release is out either way, so a failed dispatch only warns.
+gh workflow run pages.yml --repo "$RELEASE_REPO" --ref main \
+  || echo "warning: the website still shows the previous version; run: gh workflow run pages.yml --repo $RELEASE_REPO --ref main"
