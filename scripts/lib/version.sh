@@ -3,6 +3,10 @@ VERSION_FILE=VERSION
 CHANGELOG_FILE=CHANGELOG.md
 # Hosts the releases: this repo.
 RELEASE_REPO=doubleloop-io/downtab
+# Release signing and notarization, set up on the release Mac: the identity in the login keychain, the
+# notarytool credentials in a keychain profile.
+DEVELOPER_ID="Developer ID Application: doubleloop srl (49CP6UC6KC)"
+NOTARY_PROFILE=downtab-notary
 SEMVER_PATTERN='^(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)$'
 
 fail() { echo "$*" >&2; exit 1; }
