@@ -106,16 +106,6 @@ kbd {
   color: var(--foreground); box-shadow: 0 1px 0 0 var(--border);
 }
 
-.border-top { border-top: 1px solid var(--border); }
-.steps { list-style: none; padding: 0; margin-top: 2rem; display: grid; gap: 2rem; }
-.steps li { display: grid; gap: 1rem; }
-.num {
-  display: flex; width: 2.25rem; height: 2.25rem; align-items: center; justify-content: center;
-  border-radius: 9999px; background: var(--accent); color: var(--accent-foreground);
-  font-size: 0.875rem; font-weight: 600;
-}
-.steps p { margin-top: 0.25rem; max-width: 42rem; line-height: 1.625; }
-
 .cmd {
   display: flex; align-items: center; gap: 0.75rem; max-width: 42rem;
   border-radius: 0.625rem; background: var(--code); color: var(--code-foreground);
@@ -157,7 +147,6 @@ footer a:hover { text-decoration: underline; }
   h2 { font-size: 2.25rem; }
   .restore h2 { font-size: 1.5rem; }
   .features { grid-template-columns: 1fr 1fr; }
-  .steps li { grid-template-columns: 3rem 1fr; }
 }
 </style>
 </head>
@@ -186,7 +175,7 @@ footer a:hover { text-decoration: underline; }
       Download for Mac
     </a>
     <p class="meta muted">
-      macOS 15 or later · Apple Silicon only ·
+      macOS Sequoia (15) or later · Apple Silicon only · Notarized by Apple ·
       <a href="https://github.com/doubleloop-io/downtab/releases">Release notes <svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M15 3h6v6"/><path d="M10 14 21 3"/><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/></svg></a>
     </p>
   </div>
@@ -213,22 +202,12 @@ footer a:hover { text-decoration: underline; }
     </div>
   </section>
 
-  <section class="border-top install">
-    <h2>Install</h2>
-    <ol class="steps">
-      <li><span class="num">1</span><div><h3>Download and open</h3><p class="muted">Open Downtab.dmg: it holds Downtab.app, signed and notarized by Apple.</p></div></li>
-      <li><span class="num">2</span><div><h3>Move it to Applications</h3><p class="muted">Drag Downtab.app onto the Applications folder in the same window.</p></div></li>
-      <li><span class="num">3</span><div><h3>Grant Accessibility</h3><p class="muted">System Settings → Privacy &amp; Security → Accessibility, then turn on Downtab. Updates keep the permission. Coming from a version before the DMG? Grant it once more (see Troubleshooting).</p></div></li>
-    </ol>
-  </section>
-
   <details class="restore">
     <summary><h2>Troubleshooting</h2><svg class="i chev" viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></summary>
     <h3 style="margin-top:1.5rem;font-size:1.125rem;font-weight:600">Downtab doesn't react, but Accessibility is on</h3>
-    <p style="margin-top:0.5rem;max-width:42rem;line-height:1.625">A grant from an older version doesn't apply: Downtab is signed by Apple Developer ID since the first DMG release, and has a new bundle identifier since 0.2.0. Reset both entries, relaunch Downtab and grant Accessibility again.</p>
+    <p style="margin-top:0.5rem;max-width:42rem;line-height:1.625">Updated from 0.4.x or earlier? That grant doesn't apply to the notarized app. Reset it, relaunch Downtab and grant Accessibility again.</p>
     <div class="cmd" style="margin-top:1rem"><span class="prompt">$</span><code>tccutil reset Accessibility io.doubleloop.downtab</code><button type="button" aria-label="Copy command"><svg class="i cp" viewBox="0 0 24 24" aria-hidden="true"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg><svg class="i ok" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg></button></div>
-    <div class="cmd" style="margin-top:0.5rem"><span class="prompt">$</span><code>tccutil reset Accessibility io.github.iacoware.downtab</code><button type="button" aria-label="Copy command"><svg class="i cp" viewBox="0 0 24 24" aria-hidden="true"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg><svg class="i ok" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg></button></div>
-    <p class="muted" style="margin-top:0.5rem;font-size:0.875rem">If the second command says “No such bundle identifier”, remove the old Downtab entry from System Settings → Privacy &amp; Security → Accessibility with the − button.</p>
+    <p class="muted" style="margin-top:0.5rem;font-size:0.875rem">An older Downtab entry still in System Settings → Privacy &amp; Security → Accessibility? Remove it with the − button.</p>
     <h3 style="margin-top:2rem;font-size:1.125rem;font-weight:600">⌘Tab is broken</h3>
     <p class="muted" style="margin-top:0.5rem">Only needed if you set ⌘Tab or ⌘` as a Downtab shortcut. The defaults, ⌥Tab and ⌥`, never touch them.</p>
     <p style="margin-top:1rem;max-width:42rem;line-height:1.625">After a crash or a forced quit, the native ⌘Tab / ⌘` can stay off. Open Downtab and quit it from the menu bar: they come back on.</p>
