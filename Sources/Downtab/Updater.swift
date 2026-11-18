@@ -7,7 +7,7 @@ import os
 /// Downtab's updates through Sparkle: checks daily, downloads in the background, installs on quit. Downtab rarely
 /// quits, so a downloaded Update is also signalled in the menu bar, installable at once, and recalled by a window
 /// every 7 days (`UpdateReminder`).
-final class Updater: NSObject, SPUUpdaterDelegate {
+final class Updater: NSObject, SPUUpdaterDelegate, SPUStandardUserDriverDelegate {
     /// While an Update waits, Sparkle runs no further checks, so the reminder needs its own clock. Wall-clock dates,
     /// compared on each tick: a sleeping Mac catches up on the first tick after waking.
     private static let reminderTick: Duration = .seconds(60 * 60)
@@ -15,7 +15,7 @@ final class Updater: NSObject, SPUUpdaterDelegate {
     private let logger = Logger(subsystem: "io.doubleloop.downtab", category: "update")
     private let store = UpdateReminderStore()
     private lazy var controller = SPUStandardUpdaterController(
-        startingUpdater: false, updaterDelegate: self, userDriverDelegate: nil)
+        startingUpdater: false, updaterDelegate: self, userDriverDelegate: self)
     private var pending: (item: SUAppcastItem, install: () -> Void)?
     private var reminderTicks: Task<Void, Never>?
     private var window: UpdateWindow?
@@ -70,6 +70,31 @@ final class Updater: NSObject, SPUUpdaterDelegate {
 
     func updater(_ updater: SPUUpdater, didAbortWithError error: any Error) {
         logger.error("update check failed: \(error.localizedDescription, privacy: .public)")
+    }
+
+    var supportsGentleScheduledUpdateReminders: Bool { true }
+
+    /// Sparkle shows its own alert on a scheduled check only when it cannot install silently, e.g. a `Downtab.app` the
+    /// user cannot write: there is no immediate-install block, so the badge and `Restart to Update` cannot stand in for
+    /// it. Sparkle shows it, and for a background app it would open behind the active app's windows: bring it forward.
+    func standardUserDriverWillHandleShowingUpdate(
+        _ handleShowingUpdate: Bool, forUpdate update: SUAppcastItem, state: SPUUserUpdateState
+    ) {
+        guard handleShowingUpdate, !state.userInitiated else { return }
+        let version = update.displayVersionString
+        logger.notice("update \(version, privacy: .public) needs Sparkle's alert: showing it in front")
+        // Sparkle opens the alert after this call returns.
+        Task {
+            NSApp.activate()
+            for window in Self.sparkleWindows { window.orderFrontRegardless() }
+        }
+    }
+
+    private static var sparkleWindows: [NSWindow] {
+        let sparkle = Bundle(for: SPUStandardUpdaterController.self)
+        return NSApp.windows.filter { window in
+            window.isVisible && window.windowController.map { Bundle(for: type(of: $0)) == sparkle } == true
+        }
     }
 
     private func startReminderTicks() {
