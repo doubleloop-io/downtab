@@ -8,5 +8,10 @@
 <key>CFBundlePackageType</key><string>APPL</string>
 <key>LSMinimumSystemVersion</key><string>15.0</string>
 <key>LSUIElement</key><true/>
+<key>SUFeedURL</key><string>https://github.com/doubleloop-io/downtab/releases/latest/download/appcast.xml</string>
+<key>SUPublicEDKey</key><string>K5rT+uFQghnJF07lhuMGChJ+Nr4Imgr2nkPPRohsV0A=</string>
+<key>SUEnableAutomaticChecks</key><true/>
+<key>SUAutomaticallyUpdate</key><true/>
+<key>SUScheduledCheckInterval</key><integer>86400</integer>
 <key>NSHumanReadableCopyright</key><string>Copyright © 2026 doubleloop. GPL-3.0-or-later.</string>
 </dict></plist>
