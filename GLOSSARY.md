@@ -81,3 +81,17 @@ _Avoid_: main display, main screen, primary screen
 
 **Focused window display**:
 The display holding most of the Frontmost app's front window when the Switcher opens; the Menu bar display when the Frontmost app has no window on screen.
+
+### Updates
+
+**Update**:
+A newer Downtab release, downloaded by Sparkle in the background and installed on quit or with `Restart to Update`.
+_Avoid_: upgrade, new version (in code and docs)
+
+**Appcast**:
+The feed Sparkle reads to find an Update: `appcast.xml`, an asset of each GitHub release.
+_Avoid_: feed (in docs), update manifest
+
+**Update reminder**:
+The window that recalls a downloaded Update still not installed, 7 days after it was first signalled, then every 7 days.
+_Avoid_: nag, escalation

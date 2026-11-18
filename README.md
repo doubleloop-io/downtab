@@ -66,14 +66,15 @@ Users download from this repo:
 - Its releases carry `Downtab.dmg`, published by `make release` with the version's `CHANGELOG.md` section as notes. Stable link: `https://github.com/doubleloop-io/downtab/releases/latest/download/Downtab.dmg`. Releases up to 0.4.2 carry `Downtab.zip` instead.
 - Apple Silicon only. Releases are signed with `Developer ID Application: doubleloop srl (49CP6UC6KC)`, notarized and stapled: the DMG, not a zip, because a bare Mach-O like EmergencyRestore cannot be stapled, while the disk image covers it offline. `make run` and `make smoke` sign with the Developer ID too where the login keychain holds it (see Signing and permissions), and with the self-signed certificate elsewhere, so contributors need no Apple account.
 - The release Mac holds the identity in the login keychain and the notarytool credentials in the keychain profile `downtab-notary`. The release preflight, run by `make ship` before anything changes and by `make notarize-check`, checks both, and that `gh` is authenticated with push permission on this repo.
-- The release Mac also holds the Sparkle EdDSA private key that signs updates, in the login keychain under the account `io.doubleloop.downtab` (`generate_keys -p --account io.doubleloop.downtab` prints its public key, `SUPublicEDKey`). Its backup, the file `downtab-sparkle-key`, lives in the team password manager, never in the repo. Losing the key means installed copies can never update again. To use it on another Mac: `generate_keys -f downtab-sparkle-key --account io.doubleloop.downtab`. The `generate_keys` tool ships in the `bin/` of the Sparkle 2 release tarball.
+- The release Mac also holds the Sparkle EdDSA private key that signs updates, in the login keychain under the account `io.doubleloop.downtab` (`generate_keys -p --account io.doubleloop.downtab` prints its public key, `SUPublicEDKey`). Its backup, the file `downtab-sparkle-key`, lives in the team password manager, never in the repo. Losing the key means installed copies can never update again. To use it on another Mac: `generate_keys -f downtab-sparkle-key --account io.doubleloop.downtab`. The `generate_keys` tool is in `.build/artifacts/sparkle/Sparkle/bin/` once the package is resolved (`swift package resolve`).
 - If `make release` fails after pushing the tag, it prints the `gh release create` command to finish by hand. Notarization runs before the tag, so it never leaves a tag without a release.
 
 ## Layout
 
 - `Sources/SwitcherCore`: pure Switcher logic, no AppKit, AX or private APIs. Tested in `Tests/SwitcherCoreTests`.
 - `Sources/Downtab`: the app (menu bar item, AppKit adapters).
-- `App/Info.plist`: bundle metadata (`LSUIElement`, no Dock icon); no version keys, `make bundle` stamps them.
+- `App/Info.plist`: bundle metadata (`LSUIElement`, no Dock icon) and Sparkle's settings (Appcast URL, public key, daily automatic checks and installs); no version keys, `make bundle` stamps them. `App/SelfSigned.entitlements`: what self-signed builds need to load `Sparkle.framework`.
+- Sparkle, the updater (ADR 0005), is the only runtime dependency: `make bundle` copies `Sparkle.framework` into `Contents/Frameworks` and signs it before the app.
 - `Makefile`, `scripts/`: developer commands; `scripts/` holds the steps too long for a Makefile recipe.
 - `docs/principles.md`: the intent later changes must not betray.
 - `docs/adr/`: decisions and their trade-offs; `docs/adr/assets/` holds the UI prototypes.
@@ -85,7 +86,7 @@ Users download from this repo:
 The bundle is signed with the same identity on every build, so the Accessibility permission survives rebuilds. macOS keeps one Accessibility grant per bundle id, tied to the signature's designated requirement: a build signed differently from the granted one does nothing until granted again, and that grant drops the other's.
 
 - Where the login keychain holds the Developer ID (the release Mac), every build signs with it: `make run` and the installed release share one grant (requirement on the Team ID).
-- Elsewhere, builds sign with the self-signed certificate of `make setup-signing`. Deleting `.signing/` (or a fresh clone) creates a new certificate: run `setup-signing` again and re-grant Accessibility. Running a release there too means re-granting at each switch.
+- Elsewhere, builds sign with the self-signed certificate of `make setup-signing`, plus the `disable-library-validation` entitlement: a certificate without a Team ID cannot load `Sparkle.framework` otherwise. Deleting `.signing/` (or a fresh clone) creates a new certificate: run `setup-signing` again and re-grant Accessibility. Running a release there too means re-granting at each switch.
 
 CI (`.github/workflows/ci.yml`) only builds and tests; it never signs or bundles. It uses the runner's default Xcode, which can be older than the local toolchain (no hosted runner ships Swift 6.4 / the macOS 27 SDK yet); the `Versions` step logs what it ran with. Code must therefore also build with that older toolchain.
 

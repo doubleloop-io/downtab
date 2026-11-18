@@ -12,18 +12,22 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private lazy var preferences = PreferencesWindow(settings: shortcuts)
     private let permissionMissingItem = NSMenuItem(
         title: "Accessibility Permission Missing…", action: #selector(openPreferences), keyEquivalent: "")
-    private let updateCheck = UpdateCheck()
-    private let updateAvailableItem = NSMenuItem(title: "", action: #selector(openDownloadPage), keyEquivalent: "")
+    private let updater = Updater()
+    private let restartToUpdateItem = NSMenuItem(title: "", action: #selector(restartToUpdate), keyEquivalent: "")
+    private var isGranted = false
+    private var hasUpdate = false
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         let item = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
         let menu = NSMenu()
         permissionMissingItem.target = self
         menu.addItem(permissionMissingItem)
-        updateAvailableItem.target = self
-        updateAvailableItem.isHidden = true
-        menu.addItem(updateAvailableItem)
+        restartToUpdateItem.target = self
+        restartToUpdateItem.isHidden = true
+        menu.addItem(restartToUpdateItem)
         menu.addItem(withTitle: "About Downtab", action: #selector(openAbout), keyEquivalent: "").target = self
+        menu.addItem(withTitle: "Check for Updates…", action: #selector(checkForUpdates), keyEquivalent: "").target =
+            self
         menu.addItem(withTitle: "Preferences…", action: #selector(openPreferences), keyEquivalent: ",").target = self
         menu.addItem(.separator())
         menu.addItem(withTitle: "Quit Downtab", action: #selector(NSApplication.terminate(_:)), keyEquivalent: "q")
@@ -34,7 +38,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         switcher.start()
         LaunchAtLogin().applyStored()
         permission.start { [weak self] change in self?.apply(change) }
-        updateCheck.start { [weak self] newer in self?.showUpdateAvailable(newer) }
+        updater.start { [weak self] version in self?.showPendingUpdate(version) }
         // Guided setup: the Preferences show the missing permission highlighted.
         if !permission.isGranted {
             preferences.open()
@@ -42,7 +46,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     private func apply(_ change: PermissionWatch.Change) {
-        let isGranted = change == .granted
+        isGranted = change == .granted
         if isGranted {
             switcher.keyboard.startEventTaps()
             switcher.pointer.startEventTaps()
@@ -50,19 +54,20 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         } else {
             shortcuts.disable()
         }
-        statusItem?.button?.image = NSImage(
-            systemSymbolName: isGranted ? "rectangle.stack" : "exclamationmark.triangle",
-            accessibilityDescription: isGranted ? "Downtab" : "Downtab: Accessibility permission missing"
-        )
+        showIcon()
         permissionMissingItem.isHidden = isGranted
         preferences.showPermission(isGranted: isGranted)
     }
 
-    private func showUpdateAvailable(_ newerRelease: ReleaseVersion?) {
-        updateAvailableItem.isHidden = newerRelease == nil
-        if let newerRelease {
-            updateAvailableItem.title = "Update Available: \(newerRelease)…"
-        }
+    private func showPendingUpdate(_ version: String) {
+        hasUpdate = true
+        restartToUpdateItem.title = "Restart to Update \(version)"
+        restartToUpdateItem.isHidden = false
+        showIcon()
+    }
+
+    private func showIcon() {
+        statusItem?.button?.image = MenuBarIcon.image(isGranted: isGranted, hasUpdate: hasUpdate)
     }
 
     func applicationWillTerminate(_ notification: Notification) {
@@ -79,9 +84,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         preferences.open()
     }
 
-    @objc private func openDownloadPage() {
-        guard let page = UpdateCheck.downloadPage else { return }
-        NSWorkspace.shared.open(page)
+    @objc private func restartToUpdate() {
+        updater.installNow()
+    }
+
+    @objc private func checkForUpdates() {
+        updater.checkForUpdates()
     }
 }
 

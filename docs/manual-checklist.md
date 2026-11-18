@@ -22,7 +22,7 @@ Before starting: grant Accessibility to the terminal (System Settings › Privac
 1. `make run` ends with a line `designated => identifier "io.doubleloop.downtab" and ...` and `running: ...`. The requirement ends with `certificate leaf[subject.OU] = "49CP6UC6KC"` where the login keychain holds the Developer ID, `certificate leaf = H"..."` elsewhere.
 2. A Downtab icon (stacked rectangles) appears in the menu bar.
 3. No Downtab icon appears in the Dock, and Downtab is not listed in ⌘Tab.
-4. Click the menu bar icon: the menu shows `About Downtab`, `Preferences…` and `Quit Downtab`, in this order.
+4. Click the menu bar icon: the menu shows `About Downtab`, `Check for Updates…`, `Preferences…` and `Quit Downtab`, in this order.
 5. Click `About Downtab`: the standard About panel opens in front of other windows, with the Downtab name and icon, and a version and build matching `defaults read "$PWD/build/Downtab.app/Contents/Info" CFBundleShortVersionString` and `CFBundleVersion`. Close it.
 6. Click `Quit Downtab`: the icon disappears.
 7. Run `make run` again, then `make stop`: it prints `stopped` and the icon disappears.
@@ -312,14 +312,30 @@ Before starting: `make run`, Accessibility granted to Downtab. In the Preference
 6. Record App shortcut ⌥⌘Tab. Hold ⌥⌘, press Tab: the Switcher opens. Release only ⌘ (keep ⌥): it confirms. Repeat releasing only ⌥: it confirms. Press `Restore Defaults` afterwards.
 7. Kill the release tap (`pkill -USR1 -x Downtab`), then repeat step 2: releasing ⌃ still confirms, within a moment (fallback check); `log show --last 1m --predicate 'subsystem == "io.doubleloop.downtab"'` shows `modifier release confirmed by fallback check`. Relaunch with `make run` afterwards.
 
-## Update check
+## Updates
 
-Downtab asks GitHub for the latest release about 10 seconds after launch, then every 24 hours, never more than once per hour (relaunches included). Before each step: `defaults delete io.doubleloop.downtab lastUpdateCheck` (ignore "does not exist") unless the step says otherwise. In a second terminal run `log stream --level info --predicate 'subsystem == "io.doubleloop.downtab" AND category == "update"'` and keep it open.
+Sparkle checks the Appcast at launch when the last check is a day old, then every 24 hours; it downloads an Update in the background and installs it on quit. These steps use a local Appcast that offers a copy of the build as 9.9.9 (release Mac only: it needs the Developer ID and the Sparkle key).
 
-1. Newer release: `echo 0.1.0 > VERSION && make run && git checkout VERSION`. Within about 10 seconds the log shows `checking https://api.github.com/repos/doubleloop-io/downtab/releases/latest` and `latest release is X.Y.Z`. The menu bar menu starts with `Update Available: X.Y.Z…` (X.Y.Z = the latest release on github.com/doubleloop-io/downtab/releases). Clicking it opens `https://downtab.doubleloop.io/` in the default browser. No dialog, notification or badge on the menu bar icon.
-2. No newer release: `make run` (VERSION = the latest release). The log shows `latest release is X.Y.Z`; the menu has no `Update Available` item.
-3. Offline: turn Wi-Fi off, `make run`. The log shows `update check failed: ...`; the menu has no `Update Available` item and the Switcher works as usual. Turn Wi-Fi back on.
-4. At most one request per hour: without deleting `lastUpdateCheck`, `make run` again. The log shows `last update check less than an hour ago: next one in Ns` and no `checking` line. `log show --last 1h --predicate 'subsystem == "io.doubleloop.downtab" AND category == "update"' | grep -c checking` never grows by more than one per hour.
+Before starting:
+
+- Quit every Downtab, the installed one too: `make stop`.
+- `make bundle`, then `scripts/update-fixture.sh build/Downtab.app` (allow `sign_update` to use the key if macOS asks): it ends with `fixture ok`. It writes the copy to update, `/tmp/downtab-update/Downtab.app`, and the Appcast with its DMG in `/tmp/downtab-update/feed`.
+- In a second terminal: `python3 -m http.server 8000 --directory /tmp/downtab-update/feed`, kept open: it logs each request.
+- In a third terminal: `log stream --level info --predicate 'subsystem == "io.doubleloop.downtab" AND category == "update"'`, kept open.
+- `defaults write io.doubleloop.downtab SUFeedURL http://localhost:8000/appcast.xml`.
+- Before each step, unless it says otherwise, reset the Update state: `for k in SULastCheckTime updateFirstSignalled updateLastReminded updateSignalledBuild; do defaults delete io.doubleloop.downtab $k 2>/dev/null; done`. Steps that say "fresh copy" first run `rm -rf /tmp/downtab-update/Downtab.app && ditto build/Downtab.app /tmp/downtab-update/Downtab.app`.
+
+1. Signal: `open /tmp/downtab-update/Downtab.app --args -registerLoginItem NO`. Within a few seconds the server logs `GET /appcast.xml` and `GET /Downtab.dmg`, and the log shows `update 9.9.9 downloaded, installs on quit`. No window, popup or notification appears. The menu bar icon gets a small dot at its top right, readable with the menu bar light and dark (System Settings › Appearance). The menu starts with `Restart to Update 9.9.9`. `defaults read io.doubleloop.downtab updateFirstSignalled` prints today. With VoiceOver on, the icon reads `Downtab: update available`.
+2. `Check for Updates…` with an Update waiting: a `Downtab Update` window opens in front of the other apps' windows, titled `Downtab 9.9.9 is ready to install`, with `You have X.Y.Z` (the build's version) and the notes: `Added` and `Fixed` bold, bullet lines, `Bold` in bold, a clickable `link`, `code` in monospace, `italics` in italics. `Later`: the window closes, the dot and the menu item stay. Reopen it and close it with its close button: the same.
+3. The missing permission wins: turn Downtab off in System Settings › Privacy & Security › Accessibility. The icon becomes the triangle, and the menu shows both `Accessibility Permission Missing…` and `Restart to Update 9.9.9`. Turn it back on: the dotted icon is back.
+4. `Restart to Update 9.9.9`: Downtab quits and is back within a few seconds, with no `Downtab is already running` alert. `About Downtab` shows 9.9.9. No dot and no `Restart to Update` item. `defaults read io.doubleloop.downtab updateFirstSignalled` says it does not exist. No `Accessibility Permission Missing…`; ⌥Tab opens the Switcher; `make restore-status` shows `off` only for the shortcuts recorded as Downtab's (all `on` with the defaults).
+5. `Check for Updates…` with nothing newer (still 9.9.9 from step 4, no reset): Sparkle's window says you're up to date, in front of the other apps' windows. Close it. `make stop`.
+6. Quit with an Update waiting: fresh copy, reset, open it as in step 1 and wait for the dot. Menu bar icon › `Quit Downtab`: Downtab does not come back. `make restore-status`: all `on`. Within a few seconds `defaults read /tmp/downtab-update/Downtab.app/Contents/Info CFBundleShortVersionString` prints `9.9.9`. Open it again: 9.9.9 runs, no dot. `make stop`.
+7. Update reminder: fresh copy, reset, then `defaults write io.doubleloop.downtab updateFirstSignalled -date "$(/bin/date -u -v-8d '+%Y-%m-%d %H:%M:%S +0000')"` (the first signal 8 days ago). Open it as in step 1: as soon as the log shows `downloaded`, it shows `showing the reminder` and the `Downtab Update` window opens in front, once, with the notes. `Later`: the dot stays; `defaults read io.doubleloop.downtab updateLastReminded` prints today; the window does not reopen (one `showing the reminder` in the log). `Check for Updates…`, then `Restart to Update` in the window: Downtab relaunches as 9.9.9, as in step 4. `make stop`.
+8. Offline: fresh copy, reset, stop the server (Ctrl-C). Open it as in step 1: the log shows `update check failed: ...`; no dot, no window, and the Switcher works. `make stop`, then start the server again.
+9. Development launches never check on their own: reset, `make run`. The log shows `updater started, automatic checks off` and the server logs no request. `make stop`.
+
+Afterwards: `for k in SUFeedURL SULastCheckTime updateFirstSignalled updateLastReminded updateSignalledBuild; do defaults delete io.doubleloop.downtab $k 2>/dev/null; done`, stop the server, `rm -rf /tmp/downtab-update`, and open the installed Downtab again. The login item after an Update is checked with a real release in `/Applications`, in the end-to-end acceptance of #67.
 
 ## Launch at login
 

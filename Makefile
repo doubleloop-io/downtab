@@ -21,10 +21,14 @@ HAS_DEVELOPER_ID := $(shell security find-identity -v -p codesigning 2>/dev/null
 SIGN_WITH ?= $(if $(HAS_DEVELOPER_ID),developer-id,self-signed)
 ifeq ($(SIGN_WITH),developer-id)
 SIGN = codesign --force --options runtime --timestamp -s "$(DEVELOPER_ID)"
+SIGN_APP = $(SIGN)
 else
 SIGN = codesign --force --options runtime --timestamp --keychain "$(KEYCHAIN)" \
 	-s "$$(openssl x509 -in $(SIGNING_DIR)/cert.crt -noout -fingerprint -sha1 | cut -d= -f2 | tr -d :)"
+# Library validation refuses Sparkle.framework when the certificate has no Team ID, as the self-signed one has none.
+SIGN_APP = $(SIGN) --entitlements App/SelfSigned.entitlements
 endif
+SPARKLE := $(APP)/Contents/Frameworks/Sparkle.framework
 
 # Workaround: with Swift 6.4's default build system, any `swift build` before `swift test` drops the
 # Swift Testing macro plugin path ("plugin for module 'TestingMacros' not found"). Passing it explicitly
@@ -99,20 +103,27 @@ bundle:
 	mkdir -p build
 	cp "$$(swift build -c release --show-bin-path)/EmergencyRestore" "$(RESTORE)"
 	rm -rf "$(APP)"
-	mkdir -p "$(APP)/Contents/MacOS" "$(APP)/Contents/Resources"
+	mkdir -p "$(APP)/Contents/MacOS" "$(APP)/Contents/Resources" "$(APP)/Contents/Frameworks"
 	cp "$$(swift build -c release --show-bin-path)/$(EXE)" "$(APP)/Contents/MacOS/$(EXE)"
+	ditto "$$(swift build -c release --show-bin-path)/Sparkle.framework" "$(SPARKLE)"
+	@# Downtab is not sandboxed: Sparkle needs no XPC services, and dropping them leaves less to sign.
+	rm -rf "$(SPARKLE)/Versions/B/XPCServices" "$(SPARKLE)/XPCServices"
 	cp App/Info.plist "$(APP)/Contents/Info.plist"
 	@scripts/stamp-version.sh "$(APP)/Contents/Info.plist"
 	cp App/AppIcon.icns "$(APP)/Contents/Resources/AppIcon.icns"
 	@test "$(SIGN_WITH)" = developer-id || security unlock-keychain -p $(KEYCHAIN_PASSWORD) "$(KEYCHAIN)"
-	$(SIGN) "$(APP)"
+	@# Inside out, never --deep: each nested executable and bundle is signed before what contains it.
+	$(SIGN) "$(SPARKLE)/Versions/B/Autoupdate"
+	$(SIGN) "$(SPARKLE)/Versions/B/Updater.app"
+	$(SIGN) "$(SPARKLE)"
+	$(SIGN_APP) "$(APP)"
 	$(SIGN) "$(RESTORE)"
 	@codesign --verify "$(APP)" && codesign -d -r- "$(APP)" 2>&1 | grep designated
 
 # Quit first: `open` would reactivate a still-exiting instance instead of launching the new build.
 run: stop bundle
 	@# Launch through LaunchServices so macOS attributes permissions to the bundle, not to the terminal.
-	@open "$(APP)" --args -registerLoginItem NO
+	@open "$(APP)" --args -registerLoginItem NO -SUEnableAutomaticChecks NO
 	@echo "running: look for the Downtab icon in the menu bar"
 
 stop:
