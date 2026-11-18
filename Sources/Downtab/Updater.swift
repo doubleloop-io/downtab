@@ -11,6 +11,8 @@ final class Updater: NSObject, SPUUpdaterDelegate, SPUStandardUserDriverDelegate
     /// While an Update waits, Sparkle runs no further checks, so the reminder needs its own clock. Wall-clock dates,
     /// compared on each tick: a sleeping Mac catches up on the first tick after waking.
     private static let reminderTick: Duration = .seconds(60 * 60)
+    private static let sparkleAlertPolls = 50
+    private static let sparkleAlertPollInterval: Duration = .milliseconds(100)
 
     private let logger = Logger(subsystem: "io.doubleloop.downtab", category: "update")
     private let store = UpdateReminderStore()
@@ -83,11 +85,21 @@ final class Updater: NSObject, SPUUpdaterDelegate, SPUStandardUserDriverDelegate
         guard handleShowingUpdate, !state.userInitiated else { return }
         let version = update.displayVersionString
         logger.notice("update \(version, privacy: .public) needs Sparkle's alert: showing it in front")
-        // Sparkle opens the alert after this call returns.
-        Task {
-            NSApp.activate()
-            for window in Self.sparkleWindows { window.orderFrontRegardless() }
+        // Sparkle opens the alert after this call returns, and tells its delegate nothing once it is on screen.
+        Task { await bringSparkleAlertForward() }
+    }
+
+    private func bringSparkleAlertForward() async {
+        for _ in 0..<Self.sparkleAlertPolls {
+            let windows = Self.sparkleWindows
+            if !windows.isEmpty {
+                NSApp.activate()
+                for window in windows { window.orderFrontRegardless() }
+                return
+            }
+            try? await Task.sleep(for: Self.sparkleAlertPollInterval)
         }
+        logger.error("Sparkle's alert did not appear: left where Sparkle put it")
     }
 
     private static var sparkleWindows: [NSWindow] {
