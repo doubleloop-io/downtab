@@ -10,7 +10,7 @@ User-facing changes to Downtab. Format: [Keep a Changelog](https://keepachangelo
 
 ### Changed
 
-- EmergencyRestore is inside Downtab.app, so it updates with it: the DMG holds only Downtab.app. If Downtab doesn't start after a crash and native ⌘Tab stays off, run `/Applications/Downtab.app/Contents/MacOS/EmergencyRestore` in Terminal.
+- EmergencyRestore is now `restore-native-shortcuts`, inside Downtab.app, so it updates with it: the DMG holds only Downtab.app. After a crash or a forced quit, if native ⌘Tab stays off, open Downtab and quit it from the menu bar; if Downtab doesn't start, run `/Applications/Downtab.app/Contents/MacOS/restore-native-shortcuts` in Terminal.
 
 ### Removed
 

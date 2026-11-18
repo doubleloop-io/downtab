@@ -57,7 +57,7 @@ listing=$(ls "$mounted" | tr '\n' ' ')
 [ "$listing" = "Applications Downtab.app LICENSE " ] || fail "unexpected DMG layout: $listing"
 [ "$(readlink "$mounted/Applications")" = /Applications ] || fail "the DMG Applications link does not point to /Applications"
 codesign --verify --strict "$mounted/Downtab.app" || fail "Downtab.app signature broken in the DMG"
-codesign --verify --strict "$mounted/Downtab.app/Contents/MacOS/EmergencyRestore" \
-  || fail "EmergencyRestore signature broken in the DMG"
+codesign --verify --strict "$mounted/Downtab.app/Contents/MacOS/restore-native-shortcuts" \
+  || fail "restore-native-shortcuts signature broken in the DMG"
 expect_notarized -t exec "$mounted/Downtab.app"
 echo "notarized $dmg"

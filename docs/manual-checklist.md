@@ -364,8 +364,8 @@ Downtab turns native ⌘Tab (with ⌘⇧Tab) and ⌘`` ` `` off only while one o
 **Emergency restore, first.** Run this before anything else in the section, and whenever native ⌘Tab stops working:
 
 - `make restore-status` changes nothing and prints three lines, `commandTab id=1 keyCode=48 modifiers=0x100000: on`, `commandTab id=2 keyCode=48 modifiers=0x120000: on`, `commandGrave id=27 keyCode=50 modifiers=0x100000: on`. A different `keyCode` or `modifiers` means macOS renumbered the shortcuts: stop here, the takeover would turn off the wrong ones.
-- `make restore` turns all three on, prints `... -> on` for each and ``restore ok: native ⌘Tab and ⌘` are on``. `make bundle` leaves a prebuilt copy in `build/EmergencyRestore`, so it runs without compiling; it also works as `build/EmergencyRestore` from any terminal.
-- The copy shipped in the bundle: `build/Downtab.app/Contents/MacOS/EmergencyRestore --status` prints the same three lines, and `build/Downtab.app/Contents/MacOS/EmergencyRestore` turns them on with the same output as `make restore`.
+- `make restore` turns all three on, prints `... -> on` for each and ``restore ok: native ⌘Tab and ⌘` are on``. `make bundle` leaves a prebuilt copy in `build/restore-native-shortcuts`, so it runs without compiling; it also works as `build/restore-native-shortcuts` from any terminal.
+- The copy shipped in the bundle: `build/Downtab.app/Contents/MacOS/restore-native-shortcuts --status` prints the same three lines, and `build/Downtab.app/Contents/MacOS/restore-native-shortcuts` turns them on with the same output as `make restore`.
 - Last resort if both fail: log out and back in.
 
 Before starting: `make run`, Accessibility granted to Downtab, TextEdit, Safari and Notes open, Preferences open, default shortcuts (`Restore Defaults`).

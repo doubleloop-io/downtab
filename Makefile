@@ -5,7 +5,8 @@
 
 EXE := Downtab
 APP := build/$(EXE).app
-RESTORE := build/EmergencyRestore
+RESTORE_EXE := restore-native-shortcuts
+RESTORE := build/$(RESTORE_EXE)
 DMG := build/$(EXE).dmg
 APPCAST := build/appcast.xml
 # Signing material lives in the main checkout, shared by its worktrees: one certificate, one Accessibility grant.
@@ -31,7 +32,7 @@ SIGN_APP = $(SIGN) --entitlements App/SelfSigned.entitlements
 endif
 SPARKLE := $(APP)/Contents/Frameworks/Sparkle.framework
 # Inside the bundle so it updates with the app and is always where the app is.
-BUNDLED_RESTORE := $(APP)/Contents/MacOS/EmergencyRestore
+BUNDLED_RESTORE := $(APP)/Contents/MacOS/$(RESTORE_EXE)
 
 # Workaround: with Swift 6.4's default build system, any `swift build` before `swift test` drops the
 # Swift Testing macro plugin path ("plugin for module 'TestingMacros' not found"). Passing it explicitly
@@ -104,11 +105,11 @@ bundle:
 	@test "$(SIGN_WITH)" = developer-id || test -f "$(KEYCHAIN)" || { echo "signing missing: run make setup-signing"; exit 1; }
 	@bash -c 'source scripts/lib/version.sh && read_version >/dev/null && build_number >/dev/null'
 	swift build -c release --product $(EXE) $(SWIFT_FLAGS)
-	swift build -c release --product EmergencyRestore $(SWIFT_FLAGS)
+	swift build -c release --product $(RESTORE_EXE) $(SWIFT_FLAGS)
 	rm -rf "$(APP)"
 	mkdir -p "$(APP)/Contents/MacOS" "$(APP)/Contents/Resources" "$(APP)/Contents/Frameworks"
 	cp "$$(swift build -c release --show-bin-path)/$(EXE)" "$(APP)/Contents/MacOS/$(EXE)"
-	cp "$$(swift build -c release --show-bin-path)/EmergencyRestore" "$(BUNDLED_RESTORE)"
+	cp "$$(swift build -c release --show-bin-path)/$(RESTORE_EXE)" "$(BUNDLED_RESTORE)"
 	ditto "$$(swift build -c release --show-bin-path)/Sparkle.framework" "$(SPARKLE)"
 	@# Downtab is not sandboxed: Sparkle needs no XPC services, and dropping them leaves less to sign.
 	rm -rf "$(SPARKLE)/Versions/B/XPCServices" "$(SPARKLE)/XPCServices"
@@ -138,9 +139,9 @@ stop:
 
 # Prefers the copy `make bundle` left: in an emergency it runs at once, without compiling.
 $(RESTORE):
-	swift build --product EmergencyRestore $(SWIFT_FLAGS)
+	swift build --product $(RESTORE_EXE) $(SWIFT_FLAGS)
 	mkdir -p build
-	cp "$$(swift build --show-bin-path)/EmergencyRestore" "$(RESTORE)"
+	cp "$$(swift build --show-bin-path)/$(RESTORE_EXE)" "$(RESTORE)"
 
 restore: $(RESTORE)
 	@"$(RESTORE)"
