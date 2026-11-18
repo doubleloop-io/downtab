@@ -16,8 +16,10 @@ failed() { echo "FAIL: $1"; failures=$((failures + 1)); }
 # `gh api` prints $GH_PUSH (default true) as the push permission. `make <target>` appends the target to
 # $ROOT/make-calls and exits with $MAKE_TEST_EXIT, $MAKE_SMOKE_EXIT, $MAKE_NOTARIZE_EXIT or $MAKE_RELEASE_EXIT.
 # `security find-identity` lists $SIGNING_IDENTITY (default the release one); `xcrun notarytool` exits with
-# $NOTARY_EXIT.
-mkdir -p "$ROOT/bin"
+# $NOTARY_EXIT. Sparkle's `generate_keys` prints $SPARKLE_KEY (default the test key) or exits with
+# $GENERATE_KEYS_EXIT; `sign_update` prints a fake signature or exits with $SIGN_EXIT, and `--verify` exits with
+# $SIGN_VERIFY_EXIT.
+mkdir -p "$ROOT/bin" "$ROOT/sparkle"
 cat >"$ROOT/bin/gh" <<STUB
 #!/usr/bin/env bash
 [ "\$1" = auth ] && exit "\${GH_AUTH_EXIT:-0}"
@@ -49,16 +51,33 @@ cat >"$ROOT/bin/xcrun" <<STUB
 #!/usr/bin/env bash
 [ "\${NOTARY_EXIT:-0}" = 0 ] || { echo "No Keychain password item found"; exit "\$NOTARY_EXIT"; }
 STUB
-chmod +x "$ROOT/bin/gh" "$ROOT/bin/make" "$ROOT/bin/security" "$ROOT/bin/xcrun"
-export PATH="$ROOT/bin:$PATH"
+TEST_KEY=test-public-key
+SIGNATURE=fake-signature
+cat >"$ROOT/sparkle/generate_keys" <<STUB
+#!/usr/bin/env bash
+[ "\${GENERATE_KEYS_EXIT:-0}" = 0 ] || { echo "no key"; exit "\$GENERATE_KEYS_EXIT"; }
+echo "\${SPARKLE_KEY-$TEST_KEY}"
+STUB
+cat >"$ROOT/sparkle/sign_update" <<STUB
+#!/usr/bin/env bash
+[[ " \$* " == *" --verify "* ]] && exit "\${SIGN_VERIFY_EXIT:-0}"
+[ "\${SIGN_EXIT:-0}" = 0 ] || { echo "no key"; exit "\$SIGN_EXIT"; }
+echo $SIGNATURE
+STUB
+chmod +x "$ROOT/bin/gh" "$ROOT/bin/make" "$ROOT/bin/security" "$ROOT/bin/xcrun" "$ROOT/sparkle/generate_keys" \
+  "$ROOT/sparkle/sign_update"
+export PATH="$ROOT/bin:$PATH" SPARKLE_BIN="$ROOT/sparkle"
 
-# A repo on main at VERSION 0.1.0, released as v0.1.0, with one Unreleased entry; everything committed.
+# A repo on main at VERSION 0.1.0, released as v0.1.0, with one Unreleased entry and the app's Info.plist holding the
+# test key; everything committed.
 new_repo() {
   local repo
   repo=$(mktemp -d "$ROOT/repo.XXXX")
   cd "$repo" || exit 1
   git init -q -b main
   echo 0.1.0 >VERSION
+  mkdir App
+  plutil -create xml1 App/Info.plist && plutil -insert SUPublicEDKey -string "$TEST_KEY" App/Info.plist
   printf '# Changelog\n\n## [Unreleased]\n\n### Added\n\n- New thing\n\n## [0.1.0] - 2026-01-01\n\n### Added\n\n- First thing\n' >CHANGELOG.md
   git add . && git commit -qm init && git tag v0.1.0
 }
@@ -174,16 +193,63 @@ printf '# Changelog\n\n## [Unreleased]\n\n## [0.2.0] - 2026-02-01\n\n### Added\n
 notes=$(source "$SCRIPTS/lib/version.sh" && changelog_section 0.2.0)
 [ "$notes" = "$(printf '### Added\n\n- New thing\n\n### Fixed\n\n- Old bug')" ] || failed "changelog section: $notes"
 
-# release publishing: tags, pushes the tag, creates the release with the DMG and the notes
+# appcast: a built app at the bumped version, its DMG signed for Sparkle
+# fake_app <version> <build>: a bundle with just the Info.plist keys appcast.sh reads.
+fake_app() {
+  local app=$ROOT/app.$RANDOM/Downtab.app
+  mkdir -p "$app/Contents"
+  plutil -create xml1 "$app/Contents/Info.plist"
+  plutil -insert CFBundleShortVersionString -string "$1" "$app/Contents/Info.plist"
+  plutil -insert CFBundleVersion -string "$2" "$app/Contents/Info.plist"
+  plutil -insert LSMinimumSystemVersion -string 15.0 "$app/Contents/Info.plist"
+  plutil -insert SUPublicEDKey -string "$TEST_KEY" "$app/Contents/Info.plist"
+  echo "$app"
+}
+
+new_repo
+"$SCRIPTS/bump-version.sh" 0.2.0 >/dev/null && commit_all
+app=$(fake_app 0.2.0 42)
+printf 'twelve bytes' >"$ROOT/Downtab.dmg"
+expect_success "appcast" "$SCRIPTS/appcast.sh" "$app" "$ROOT/Downtab.dmg" "$ROOT/appcast.xml"
+appcast_item() { appcast_value "$ROOT/appcast.xml" "//*[local-name()=\"item\"]/$1"; }
+appcast_value() { xmllint --xpath "string($2)" "$1"; }
+[ "$(appcast_item '*[local-name()="version"]')" = 42 ] || failed "appcast build: $(appcast_item '*[local-name()="version"]')"
+[ "$(appcast_item '*[local-name()="shortVersionString"]')" = 0.2.0 ] || failed "appcast version"
+[ "$(appcast_item '*[local-name()="minimumSystemVersion"]')" = 15.0 ] || failed "appcast minimum system"
+[ "$(appcast_item '*[local-name()="hardwareRequirements"]')" = arm64 ] || failed "appcast hardware requirements"
+[ "$(appcast_item 'description/@*[local-name()="format"]')" = markdown ] || failed "appcast notes format"
+[ "$(appcast_item description)" = "$(printf '### Added\n\n- New thing\n')" ] || failed "appcast notes: $(appcast_item description)"
+[ "$(appcast_item enclosure/@url)" = https://github.com/doubleloop-io/downtab/releases/download/v0.2.0/Downtab.dmg ] \
+  || failed "appcast url: $(appcast_item enclosure/@url)"
+[ "$(appcast_item enclosure/@length)" = 12 ] || failed "appcast length: $(appcast_item enclosure/@length)"
+[ "$(appcast_item 'enclosure/@*[local-name()="edSignature"]')" = "$SIGNATURE" ] || failed "appcast signature"
+
+rm "$ROOT/appcast.xml"
+expect_refusal "appcast for an app of another version" "is 0.1.0, VERSION is 0.2.0" \
+  "$SCRIPTS/appcast.sh" "$(fake_app 0.1.0 41)" "$ROOT/Downtab.dmg" "$ROOT/appcast.xml"
+SPARKLE_KEY=other-key expect_refusal "appcast with a key not matching the app" "not $app's SUPublicEDKey" \
+  "$SCRIPTS/appcast.sh" "$app" "$ROOT/Downtab.dmg" "$ROOT/appcast.xml"
+SIGN_VERIFY_EXIT=1 expect_refusal "appcast with a signature that does not verify" "does not verify" \
+  "$SCRIPTS/appcast.sh" "$app" "$ROOT/Downtab.dmg" "$ROOT/appcast.xml"
+[ ! -e "$ROOT/appcast.xml" ] || failed "a refused appcast was written"
+
+# release publishing: tags, pushes the tag, creates the release with the DMG, the Appcast and the notes
 new_repo
 "$SCRIPTS/bump-version.sh" 0.2.0 >/dev/null && commit_all
 origin=$(mktemp -d "$ROOT/origin.XXXX")
 git init -q --bare "$origin" && git remote add origin "$origin"
-expect_refusal "publish without DMG" "missing" "$SCRIPTS/release-publish.sh" "$ROOT/Downtab.dmg"
+rm -f "$ROOT/Downtab.dmg" "$ROOT/appcast.xml"
+expect_refusal "publish without DMG" "Downtab.dmg missing" "$SCRIPTS/release-publish.sh" "$ROOT/Downtab.dmg" "$ROOT/appcast.xml"
 touch "$ROOT/Downtab.dmg"
-expect_success "publish" "$SCRIPTS/release-publish.sh" "$ROOT/Downtab.dmg"
+expect_refusal "publish without appcast" "appcast.xml missing" \
+  "$SCRIPTS/release-publish.sh" "$ROOT/Downtab.dmg" "$ROOT/appcast.xml"
+printf '<rss><channel><item><shortVersionString>0.1.0</shortVersionString></item></channel></rss>\n' >"$ROOT/appcast.xml"
+expect_refusal "publish with a stale appcast" "does not offer 0.2.0" \
+  "$SCRIPTS/release-publish.sh" "$ROOT/Downtab.dmg" "$ROOT/appcast.xml"
+"$SCRIPTS/appcast.sh" "$(fake_app 0.2.0 42)" "$ROOT/Downtab.dmg" "$ROOT/appcast.xml" >/dev/null
+expect_success "publish" "$SCRIPTS/release-publish.sh" "$ROOT/Downtab.dmg" "$ROOT/appcast.xml"
 git -C "$origin" rev-parse --quiet --verify refs/tags/v0.2.0 >/dev/null || failed "publish did not push tag v0.2.0"
-[ "$(cat "$ROOT/gh-create")" = "release create v0.2.0 $ROOT/Downtab.dmg --repo doubleloop-io/downtab --title Downtab 0.2.0 --notes-file $(sed -n 's/.*--notes-file //p' "$ROOT/gh-create")" ] \
+[ "$(cat "$ROOT/gh-create")" = "release create v0.2.0 $ROOT/Downtab.dmg $ROOT/appcast.xml --repo doubleloop-io/downtab --title Downtab 0.2.0 --notes-file $(sed -n 's/.*--notes-file //p' "$ROOT/gh-create")" ] \
   || failed "publish gh arguments: $(cat "$ROOT/gh-create")"
 [ "$(cat "$ROOT/gh-notes")" = "$(printf '### Added\n\n- New thing')" ] || failed "publish notes: $(cat "$ROOT/gh-notes")"
 
@@ -191,8 +257,8 @@ new_repo
 "$SCRIPTS/bump-version.sh" 0.2.0 >/dev/null && commit_all
 origin=$(mktemp -d "$ROOT/origin.XXXX")
 git init -q --bare "$origin" && git remote add origin "$origin"
-GH_CREATE_EXIT=1 expect_refusal "publish when gh fails" "tag v0.2.0 pushed but the release failed" \
-  "$SCRIPTS/release-publish.sh" "$ROOT/Downtab.dmg"
+GH_CREATE_EXIT=1 expect_refusal "publish when gh fails" "gh release create v0.2.0 $ROOT/Downtab.dmg $ROOT/appcast.xml" \
+  "$SCRIPTS/release-publish.sh" "$ROOT/Downtab.dmg" "$ROOT/appcast.xml"
 
 # make ship: a repo whose main matches a bare origin
 new_shipping_repo() {
@@ -254,6 +320,11 @@ SIGNING_IDENTITY="Apple Development: someone (ABCDE12345)" \
   expect_refusal "ship without the Developer ID identity" "signing identity missing" "$SCRIPTS/ship.sh" 0.2.0
 NOTARY_EXIT=69 expect_refusal "ship without notary credentials" "notary credentials unusable" "$SCRIPTS/ship.sh" 0.2.0
 GH_AUTH_EXIT=1 expect_refusal "ship with gh logged out" "gh is not authenticated" "$SCRIPTS/ship.sh" 0.2.0
+SPARKLE_BIN="$ROOT/nowhere" expect_refusal "ship without Sparkle's tools" "Sparkle tools missing" "$SCRIPTS/ship.sh" 0.2.0
+GENERATE_KEYS_EXIT=1 expect_refusal "ship without the Sparkle key" "Sparkle private key missing" "$SCRIPTS/ship.sh" 0.2.0
+SPARKLE_KEY=other-key expect_refusal "ship with a Sparkle key not matching the app" "is not SUPublicEDKey" \
+  "$SCRIPTS/ship.sh" 0.2.0
+SIGN_EXIT=1 expect_refusal "ship when sign_update cannot sign" "sign_update cannot sign" "$SCRIPTS/ship.sh" 0.2.0
 GH_PUSH=false expect_refusal "ship without push permission" "no push permission on doubleloop-io/downtab" \
   "$SCRIPTS/ship.sh" 0.2.0
 expect_untouched "ship preflight refusals"

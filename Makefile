@@ -7,6 +7,7 @@ EXE := Downtab
 APP := build/$(EXE).app
 RESTORE := build/EmergencyRestore
 DMG := build/$(EXE).dmg
+APPCAST := build/appcast.xml
 # Signing material lives in the main checkout, shared by its worktrees: one certificate, one Accessibility grant.
 MAIN_CHECKOUT := $(shell common=$$(git rev-parse --path-format=absolute --git-common-dir 2>/dev/null) \
 	&& dirname "$$common" || pwd)
@@ -47,8 +48,9 @@ help:
 	@echo "make bundle          release build, assemble and sign $(APP), copy and sign Emergency restore as $(RESTORE)"
 	@echo "                     (with $(DEVELOPER_ID) when the keychain holds it, else self-signed;"
 	@echo "                     SIGN_WITH=developer-id or SIGN_WITH=self-signed forces one)"
-	@echo "make notarize-check  bundle with Developer ID, build $(DMG), sign, notarize, staple and verify it;"
-	@echo "                     tags and publishes nothing. make release runs the same steps"
+	@echo "make notarize-check  bundle with Developer ID, build $(DMG), sign, notarize, staple and verify it,"
+	@echo "                     then sign it for Sparkle into $(APPCAST); tags and publishes nothing."
+	@echo "                     make release runs the same steps"
 	@echo "make run             bundle, then launch the app (quitting a running instance first)"
 	@echo "make stop            quit the running app"
 	@echo "make restore         Emergency restore: turn native ⌘Tab and ⌘\` back on, after a forced kill or a crash"
@@ -56,7 +58,8 @@ help:
 	@echo "make smoke           bundle, launch, post ⌥/⌥Tab/⌥⇧Tab/⌥\`/⌥⇧\`/Esc, fail on a crash; must pass before closing an issue that touches the app"
 	@echo "make version V=X.Y.Z close the [Unreleased] changelog section as X.Y.Z and write X.Y.Z to VERSION; commits nothing"
 	@echo "make release         refuse unless on a clean, full main with a bumped VERSION, its changelog section and passing tests;"
-	@echo "                     then notarize-check, tag vX.Y.Z, push the tag, publish the release with $(DMG) in doubleloop-io/downtab"
+	@echo "                     then notarize-check, tag vX.Y.Z, push the tag, publish the release with $(DMG)"
+	@echo "                     and $(APPCAST) in doubleloop-io/downtab"
 	@echo "make ship V=X.Y.Z    refuse unless on a clean main equal to origin/main with passing tests, smoke and notarize-check;"
 	@echo "                     then make version, commit and push on main, make release"
 	@echo
@@ -152,8 +155,10 @@ version:
 
 notarize-check:
 	@scripts/release-preflight.sh
+	@rm -f "$(APPCAST)"
 	@$(MAKE) --no-print-directory bundle SIGN_WITH=developer-id
 	@scripts/notarize.sh "$(APP)" "$(RESTORE)" "$(DMG)"
+	@scripts/appcast.sh "$(APP)" "$(DMG)" "$(APPCAST)"
 
 ship:
 	@scripts/ship.sh "$(V)"
@@ -161,4 +166,4 @@ ship:
 release:
 	@scripts/release-check.sh
 	@$(MAKE) --no-print-directory notarize-check
-	@scripts/release-publish.sh "$(DMG)"
+	@scripts/release-publish.sh "$(DMG)" "$(APPCAST)"
