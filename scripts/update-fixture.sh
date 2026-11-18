@@ -6,7 +6,6 @@ set -euo pipefail
 source "$(dirname "$0")/lib/version.sh"
 APP=${1:?usage: update-fixture.sh path/to/Downtab.app}
 DIR=/tmp/downtab-update
-SPARKLE_BIN=.build/artifacts/sparkle/Sparkle/bin
 VERSION=9.9.9
 BUILD=99999
 
@@ -20,7 +19,7 @@ ditto "$APP" "$DIR/dmg/Downtab.app"
   "$DIR/dmg/Downtab.app/Contents/Info.plist"
 codesign --force --options runtime --timestamp -s "$DEVELOPER_ID" "$DIR/dmg/Downtab.app"
 hdiutil create -quiet -volname Downtab -srcfolder "$DIR/dmg" -format UDZO "$DIR/feed/Downtab.dmg"
-signature=$("$SPARKLE_BIN/sign_update" --account io.doubleloop.downtab "$DIR/feed/Downtab.dmg")
+signature=$("$SPARKLE_BIN/sign_update" --account "$SPARKLE_ACCOUNT" "$DIR/feed/Downtab.dmg")
 
 cat >"$DIR/feed/appcast.xml" <<EOF
 <?xml version="1.0" encoding="utf-8"?>

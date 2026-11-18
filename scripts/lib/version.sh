@@ -7,9 +7,17 @@ RELEASE_REPO=doubleloop-io/downtab
 # notarytool credentials in a keychain profile.
 DEVELOPER_ID="Developer ID Application: doubleloop srl (49CP6UC6KC)"
 NOTARY_PROFILE=downtab-notary
+# Sparkle's tools ship in its SwiftPM artifact. The EdDSA private key that signs updates lives in the release Mac's
+# login keychain; the app checks updates against the public key in its Info.plist.
+SPARKLE_BIN=${SPARKLE_BIN:-.build/artifacts/sparkle/Sparkle/bin}
+SPARKLE_ACCOUNT=io.doubleloop.downtab
+APP_INFO_PLIST=App/Info.plist
 SEMVER_PATTERN='^(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)$'
 
 fail() { echo "$*" >&2; exit 1; }
+
+# plist_value <plist> <key>
+plist_value() { /usr/libexec/PlistBuddy -c "Print :$2" "$1" 2>/dev/null || fail "$1 has no $2"; }
 
 is_semver() { [[ $1 =~ $SEMVER_PATTERN ]]; }
 
@@ -72,3 +80,6 @@ changelog_section() {
     inside && started { blanks++ }
   ' "$CHANGELOG_FILE" 2>/dev/null
 }
+
+# appcast_value <appcast> <xpath>: namespaces are matched by local-name(), so Sparkle's prefix needs no binding.
+appcast_value() { xmllint --xpath "string($2)" "$1" 2>/dev/null; }
