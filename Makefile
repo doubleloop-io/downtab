@@ -30,6 +30,8 @@ SIGN = codesign --force --options runtime --timestamp --keychain "$(KEYCHAIN)" \
 SIGN_APP = $(SIGN) --entitlements App/SelfSigned.entitlements
 endif
 SPARKLE := $(APP)/Contents/Frameworks/Sparkle.framework
+# Inside the bundle so it updates with the app and is always where the app is.
+BUNDLED_RESTORE := $(APP)/Contents/MacOS/EmergencyRestore
 
 # Workaround: with Swift 6.4's default build system, any `swift build` before `swift test` drops the
 # Swift Testing macro plugin path ("plugin for module 'TestingMacros' not found"). Passing it explicitly
@@ -45,7 +47,7 @@ help:
 	@echo "make lint            swift-format check (.swift-format) and SwiftLint (.swiftlint.yml); any violation fails"
 	@echo "make format          rewrite sources with swift-format"
 	@echo "make icon            render App/Icon/*.svg into App/AppIcon.icns (needs rsvg-convert)"
-	@echo "make bundle          release build, assemble and sign $(APP), copy and sign Emergency restore as $(RESTORE)"
+	@echo "make bundle          release build, assemble and sign $(APP) with Emergency restore inside, copied to $(RESTORE)"
 	@echo "                     (with $(DEVELOPER_ID) when the keychain holds it, else self-signed;"
 	@echo "                     SIGN_WITH=developer-id or SIGN_WITH=self-signed forces one)"
 	@echo "make notarize-check  bundle with Developer ID, build $(DMG), sign, notarize, staple and verify it,"
@@ -103,11 +105,10 @@ bundle:
 	@bash -c 'source scripts/lib/version.sh && read_version >/dev/null && build_number >/dev/null'
 	swift build -c release --product $(EXE) $(SWIFT_FLAGS)
 	swift build -c release --product EmergencyRestore $(SWIFT_FLAGS)
-	mkdir -p build
-	cp "$$(swift build -c release --show-bin-path)/EmergencyRestore" "$(RESTORE)"
 	rm -rf "$(APP)"
 	mkdir -p "$(APP)/Contents/MacOS" "$(APP)/Contents/Resources" "$(APP)/Contents/Frameworks"
 	cp "$$(swift build -c release --show-bin-path)/$(EXE)" "$(APP)/Contents/MacOS/$(EXE)"
+	cp "$$(swift build -c release --show-bin-path)/EmergencyRestore" "$(BUNDLED_RESTORE)"
 	ditto "$$(swift build -c release --show-bin-path)/Sparkle.framework" "$(SPARKLE)"
 	@# Downtab is not sandboxed: Sparkle needs no XPC services, and dropping them leaves less to sign.
 	rm -rf "$(SPARKLE)/Versions/B/XPCServices" "$(SPARKLE)/XPCServices"
@@ -119,8 +120,9 @@ bundle:
 	$(SIGN) "$(SPARKLE)/Versions/B/Autoupdate"
 	$(SIGN) "$(SPARKLE)/Versions/B/Updater.app"
 	$(SIGN) "$(SPARKLE)"
+	$(SIGN) "$(BUNDLED_RESTORE)"
 	$(SIGN_APP) "$(APP)"
-	$(SIGN) "$(RESTORE)"
+	cp "$(BUNDLED_RESTORE)" "$(RESTORE)"
 	@codesign --verify "$(APP)" && codesign -d -r- "$(APP)" 2>&1 | grep designated
 
 # Quit first: `open` would reactivate a still-exiting instance instead of launching the new build.
@@ -157,7 +159,7 @@ notarize-check:
 	@scripts/release-preflight.sh
 	@rm -f "$(APPCAST)"
 	@$(MAKE) --no-print-directory bundle SIGN_WITH=developer-id
-	@scripts/notarize.sh "$(APP)" "$(RESTORE)" "$(DMG)"
+	@scripts/notarize.sh "$(APP)" "$(DMG)"
 	@scripts/appcast.sh "$(APP)" "$(DMG)" "$(APPCAST)"
 
 ship:

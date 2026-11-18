@@ -8,6 +8,10 @@ User-facing changes to Downtab. Format: [Keep a Changelog](https://keepachangelo
 
 - Downtab updates itself: it checks for a new version every day, downloads it in the background and installs it when Downtab quits. Meanwhile a dot on the menu bar icon and `Restart to Update X.Y.Z` at the top of its menu install it at once. If the update is still waiting after 7 days, a window with the release notes reminds you, then again every 7 days. `Check for Updates…` is in the menu, below `About Downtab`.
 
+### Changed
+
+- EmergencyRestore is inside Downtab.app, so it updates with it: the DMG holds only Downtab.app. If Downtab doesn't start after a crash and native ⌘Tab stays off, run `/Applications/Downtab.app/Contents/MacOS/EmergencyRestore` in Terminal.
+
 ### Removed
 
 - The `Update Available: X.Y.Z…` menu item that opened the website: updates now install from the menu.
