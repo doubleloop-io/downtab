@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
-# Packs the Developer ID signed app, Emergency restore, the license and an /Applications link into a DMG, signs,
-# notarizes and staples it, then verifies it as Gatekeeper judges a download. A DMG, not a zip: only a disk image
-# carries a stapled ticket for EmergencyRestore, a bare Mach-O cannot be stapled, so both open offline.
+# Packs the Developer ID signed app (Restore ⌘Tab inside), the license and an /Applications link into a DMG,
+# signs, notarizes and staples it, then verifies it as Gatekeeper judges a download. A DMG, not a zip, for the
+# drag-to-Applications window.
 set -euo pipefail
 source "$(dirname "$0")/lib/version.sh"
-app=$1 restore=$2 dmg=$3
+app=$1 dmg=$2
 STAPLE_ATTEMPTS=5
 
 stage=$(mktemp -d)
@@ -17,7 +17,6 @@ trap cleanup EXIT
 
 mkdir "$stage/Downtab"
 ditto "$app" "$stage/Downtab/$(basename "$app")"
-ditto "$restore" "$stage/Downtab/EmergencyRestore"
 # The GPL requires the license text to travel with the binary.
 cp LICENSE "$stage/Downtab/LICENSE"
 ln -s /Applications "$stage/Downtab/Applications"
@@ -55,9 +54,10 @@ mkdir "$stage/mount"
 hdiutil attach -quiet -nobrowse -readonly -noautoopen -mountpoint "$stage/mount" "$dmg"
 mounted="$stage/mount"
 listing=$(ls "$mounted" | tr '\n' ' ')
-[ "$listing" = "Applications Downtab.app EmergencyRestore LICENSE " ] || fail "unexpected DMG layout: $listing"
+[ "$listing" = "Applications Downtab.app LICENSE " ] || fail "unexpected DMG layout: $listing"
 [ "$(readlink "$mounted/Applications")" = /Applications ] || fail "the DMG Applications link does not point to /Applications"
 codesign --verify --strict "$mounted/Downtab.app" || fail "Downtab.app signature broken in the DMG"
-codesign --verify --strict "$mounted/EmergencyRestore" || fail "EmergencyRestore signature broken in the DMG"
+codesign --verify --strict "$mounted/Downtab.app/Contents/MacOS/RestoreCommandTab" \
+  || fail "RestoreCommandTab signature broken in the DMG"
 expect_notarized -t exec "$mounted/Downtab.app"
 echo "notarized $dmg"

@@ -35,7 +35,7 @@ let package = Package(
         ),
         // Separate from the app: it must work when Downtab was killed with native ⌘Tab and ⌘` off.
         .executableTarget(
-            name: "EmergencyRestore", dependencies: ["SwitcherCore", "BackgroundAdapters"],
+            name: "RestoreCommandTab", dependencies: ["SwitcherCore", "BackgroundAdapters"],
             swiftSettings: strictSettings),
         .testTarget(name: "SwitcherCoreTests", dependencies: ["SwitcherCore"], swiftSettings: strictSettings),
         .testTarget(

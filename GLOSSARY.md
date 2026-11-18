@@ -56,8 +56,9 @@ _Avoid_: dismiss, abort
 **Native shortcut**:
 macOS's own ⌘Tab (with ⌘⇧Tab) or ⌘`, which Downtab turns off while one of its shortcuts is exactly that combination.
 
-**Emergency restore**:
-The separate executable (`make restore`) that turns the Native shortcuts back on when Downtab could not, after a forced kill or a crash.
+**Restore ⌘Tab**:
+The separate executable that turns the Native shortcuts (⌘Tab, ⌘⇧Tab, ⌘`) back on when Downtab could not, after a forced kill or a crash. Shipped inside `Downtab.app` as `Contents/MacOS/RestoreCommandTab`; `make restore` in development.
+_Avoid_: Emergency restore, EmergencyRestore
 
 ### Context
 
