@@ -4,6 +4,8 @@ User-facing changes to Downtab. Format: [Keep a Changelog](https://keepachangelo
 
 ## [Unreleased]
 
+## [0.5.0] - 2026-11-18
+
 ### Changed
 
 - Downtab ships as `Downtab.dmg`, signed with Developer ID and notarized by Apple: Downtab.app and EmergencyRestore open without clearing the quarantine. Open the DMG and drag Downtab.app to Applications.
