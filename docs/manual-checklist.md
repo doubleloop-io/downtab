@@ -19,7 +19,7 @@ Before starting: grant Accessibility to the terminal (System Settings › Privac
 
 ## App launch
 
-1. `make run` ends with a line `designated => identifier "io.doubleloop.downtab" and certificate leaf = H"..."` and `running: ...`.
+1. `make run` ends with a line `designated => identifier "io.doubleloop.downtab" and ...` and `running: ...`. The requirement ends with `certificate leaf[subject.OU] = "49CP6UC6KC"` where the login keychain holds the Developer ID, `certificate leaf = H"..."` elsewhere.
 2. A Downtab icon (stacked rectangles) appears in the menu bar.
 3. No Downtab icon appears in the Dock, and Downtab is not listed in ⌘Tab.
 4. Click the menu bar icon: the menu shows `About Downtab`, `Preferences…` and `Quit Downtab`, in this order.

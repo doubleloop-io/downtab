@@ -13,10 +13,12 @@ MAIN_CHECKOUT := $(shell common=$$(git rev-parse --path-format=absolute --git-co
 SIGNING_DIR := $(MAIN_CHECKOUT)/.signing
 KEYCHAIN := $(SIGNING_DIR)/downtab.keychain-db
 KEYCHAIN_PASSWORD := downtab
-# Releases sign with Developer ID from the login keychain; everything else with the self-signed identity, so
+# Every build signs with Developer ID when the login keychain holds it, so `make run` and the installed release share
+# one Accessibility grant: TCC keeps one requirement per bundle id. Without it, the self-signed identity, so
 # contributors need no Apple account. Both use the hardened runtime: smoke runs under the release's conditions.
 DEVELOPER_ID := $(shell bash -c '. scripts/lib/version.sh && echo "$$DEVELOPER_ID"')
-SIGN_WITH ?= self-signed
+HAS_DEVELOPER_ID := $(shell security find-identity -v -p codesigning 2>/dev/null | grep -qF '"$(DEVELOPER_ID)"' && echo yes)
+SIGN_WITH ?= $(if $(HAS_DEVELOPER_ID),developer-id,self-signed)
 ifeq ($(SIGN_WITH),developer-id)
 SIGN = codesign --force --options runtime --timestamp -s "$(DEVELOPER_ID)"
 else
@@ -39,7 +41,8 @@ help:
 	@echo "make format          rewrite sources with swift-format"
 	@echo "make icon            render App/Icon/*.svg into App/AppIcon.icns (needs rsvg-convert)"
 	@echo "make bundle          release build, assemble and sign $(APP), copy and sign Emergency restore as $(RESTORE)"
-	@echo "                     (self-signed; SIGN_WITH=developer-id signs with $(DEVELOPER_ID))"
+	@echo "                     (with $(DEVELOPER_ID) when the keychain holds it, else self-signed;"
+	@echo "                     SIGN_WITH=developer-id or SIGN_WITH=self-signed forces one)"
 	@echo "make notarize-check  bundle with Developer ID, build $(DMG), sign, notarize, staple and verify it;"
 	@echo "                     tags and publishes nothing. make release runs the same steps"
 	@echo "make run             bundle, then launch the app (quitting a running instance first)"

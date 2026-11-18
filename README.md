@@ -35,7 +35,7 @@ All commands go through `make` (run it with no target for the list). Prefer it o
 | `make lint` | Format check with swift-format (`.swift-format`), then SwiftLint (pinned in `Package.swift`, rules in `.swiftlint.yml`). Any violation fails. |
 | `make format` | Rewrites sources with swift-format. |
 | `make icon` | Renders `App/Icon/*.svg` into `App/AppIcon.icns` (needs `rsvg-convert`). The `.icns` is committed; rerun only after editing an SVG. |
-| `make bundle` | Release build, assembles `build/Downtab.app`, stamps the version (see Versioning) and signs it and `build/EmergencyRestore` with the local certificate and the hardened runtime. `SIGN_WITH=developer-id` signs with the Developer ID instead. |
+| `make bundle` | Release build, assembles `build/Downtab.app`, stamps the version (see Versioning) and signs it and `build/EmergencyRestore` with the hardened runtime: with the Developer ID when the login keychain holds it, otherwise with the local certificate. `SIGN_WITH=developer-id` or `SIGN_WITH=self-signed` forces one. |
 | `make notarize-check` | Release Mac only. Checks the release preflight (see Distribution), bundles with the Developer ID, packs `Downtab.app`, `EmergencyRestore`, `LICENSE` and an `/Applications` link into `build/Downtab.dmg`, signs, notarizes and staples it, then verifies it with `stapler validate` and `spctl` (`Notarized Developer ID`). Tags and publishes nothing; `make release` runs the same steps. |
 | `make run` | Quits a running instance, bundles, then launches the app. |
 | `make stop` | Quits the running app. |
@@ -64,7 +64,7 @@ Users download from this repo:
 
 - The download page is its GitHub Pages site, deployed by `.github/workflows/pages.yml` on every push to `main` that touches `website/`: it publishes `website/downtab-landing.html` as `index.html`, next to the demo video `downtab-demo.mp4`, its cover `downtab-demo-cover.jpg` and the social preview `downtab-og.jpg`. URL: `https://downtab.doubleloop.io/`.
 - Its releases carry `Downtab.dmg`, published by `make release` with the version's `CHANGELOG.md` section as notes. Stable link: `https://github.com/doubleloop-io/downtab/releases/latest/download/Downtab.dmg`. Releases up to 0.4.2 carry `Downtab.zip` instead.
-- Apple Silicon only. Releases are signed with `Developer ID Application: doubleloop srl (49CP6UC6KC)`, notarized and stapled: the DMG, not a zip, because a bare Mach-O like EmergencyRestore cannot be stapled, while the disk image covers it offline. `make run` and `make smoke` keep the self-signed certificate, so contributors need no Apple account.
+- Apple Silicon only. Releases are signed with `Developer ID Application: doubleloop srl (49CP6UC6KC)`, notarized and stapled: the DMG, not a zip, because a bare Mach-O like EmergencyRestore cannot be stapled, while the disk image covers it offline. `make run` and `make smoke` sign with the Developer ID too where the login keychain holds it (see Signing and permissions), and with the self-signed certificate elsewhere, so contributors need no Apple account.
 - The release Mac holds the identity in the login keychain and the notarytool credentials in the keychain profile `downtab-notary`. The release preflight, run by `make ship` before anything changes and by `make notarize-check`, checks both, and that `gh` is authenticated with push permission on this repo.
 - If `make release` fails after pushing the tag, it prints the `gh release create` command to finish by hand. Notarization runs before the tag, so it never leaves a tag without a release.
 
@@ -81,7 +81,10 @@ Users download from this repo:
 
 ## Signing and permissions
 
-The bundle is signed with the same certificate on every build, so the Accessibility permission survives rebuilds. Deleting `.signing/` (or a fresh clone) creates a new certificate: run `setup-signing` again and re-grant Accessibility.
+The bundle is signed with the same identity on every build, so the Accessibility permission survives rebuilds. macOS keeps one Accessibility grant per bundle id, tied to the signature's designated requirement: a build signed differently from the granted one does nothing until granted again, and that grant drops the other's.
+
+- Where the login keychain holds the Developer ID (the release Mac), every build signs with it: `make run` and the installed release share one grant (requirement on the Team ID).
+- Elsewhere, builds sign with the self-signed certificate of `make setup-signing`. Deleting `.signing/` (or a fresh clone) creates a new certificate: run `setup-signing` again and re-grant Accessibility. Running a release there too means re-granting at each switch.
 
 CI (`.github/workflows/ci.yml`) only builds and tests; it never signs or bundles. It uses the runner's default Xcode, which can be older than the local toolchain (no hosted runner ships Swift 6.4 / the macOS 27 SDK yet); the `Versions` step logs what it ran with. Code must therefore also build with that older toolchain.
 
