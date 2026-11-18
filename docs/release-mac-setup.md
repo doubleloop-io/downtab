@@ -1,7 +1,7 @@
 # Release Mac setup
 
 How to prepare a Mac to release Downtab: sign with Developer ID, notarize, sign updates for Sparkle and publish on
-GitHub. The release itself (`make ship`, `make release`) is described in the README.
+GitHub. The release itself (`make ship`, `make release`) is described in [`releasing.md`](releasing.md).
 
 The team is already enrolled in the Apple Developer Program (doubleloop srl, Team ID `49CP6UC6KC`), and the Sparkle
 key and the notary key already exist (#58, #68). This guide is for a developer setting up another Mac.
