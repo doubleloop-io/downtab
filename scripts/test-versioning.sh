@@ -12,11 +12,16 @@ TODAY=$(date +%F)
 failed() { echo "FAIL: $1"; failures=$((failures + 1)); }
 
 # Stubs: `gh release view` answers from $GH_RELEASES; `gh release create` logs its arguments to $ROOT/gh-create
-# and its notes to $ROOT/gh-notes, then exits with $GH_CREATE_EXIT; `make <target>` appends the target to
-# $ROOT/make-calls and exits with $MAKE_TEST_EXIT, $MAKE_SMOKE_EXIT or $MAKE_RELEASE_EXIT.
+# and its notes to $ROOT/gh-notes, then exits with $GH_CREATE_EXIT; `gh auth status` exits with $GH_AUTH_EXIT;
+# `gh api` prints $GH_PUSH (default true) as the push permission. `make <target>` appends the target to
+# $ROOT/make-calls and exits with $MAKE_TEST_EXIT, $MAKE_SMOKE_EXIT, $MAKE_NOTARIZE_EXIT or $MAKE_RELEASE_EXIT.
+# `security find-identity` lists $SIGNING_IDENTITY (default the release one); `xcrun notarytool` exits with
+# $NOTARY_EXIT.
 mkdir -p "$ROOT/bin"
 cat >"$ROOT/bin/gh" <<STUB
 #!/usr/bin/env bash
+[ "\$1" = auth ] && exit "\${GH_AUTH_EXIT:-0}"
+[ "\$1" = api ] && { echo "\${GH_PUSH:-true}"; exit 0; }
 if [ "\$2" = create ]; then
   echo "\$*" >"$ROOT/gh-create"
   while [ \$# -gt 0 ]; do [ "\$1" = --notes-file ] && cat "\$2" >"$ROOT/gh-notes"; shift; done
@@ -30,11 +35,21 @@ cat >"$ROOT/bin/make" <<STUB
 echo "\$1" >>"$ROOT/make-calls"
 case "\$1" in
   smoke) exit "\${MAKE_SMOKE_EXIT:-0}" ;;
+  notarize-check) exit "\${MAKE_NOTARIZE_EXIT:-0}" ;;
   release) exit "\${MAKE_RELEASE_EXIT:-0}" ;;
   *) exit "\${MAKE_TEST_EXIT:-0}" ;;
 esac
 STUB
-chmod +x "$ROOT/bin/gh" "$ROOT/bin/make"
+RELEASE_IDENTITY=$(source "$SCRIPTS/lib/version.sh" && echo "$DEVELOPER_ID")
+cat >"$ROOT/bin/security" <<STUB
+#!/usr/bin/env bash
+echo "  1) 0123456789ABCDEF \"\${SIGNING_IDENTITY-$RELEASE_IDENTITY}\""
+STUB
+cat >"$ROOT/bin/xcrun" <<STUB
+#!/usr/bin/env bash
+[ "\${NOTARY_EXIT:-0}" = 0 ] || { echo "No Keychain password item found"; exit "\$NOTARY_EXIT"; }
+STUB
+chmod +x "$ROOT/bin/gh" "$ROOT/bin/make" "$ROOT/bin/security" "$ROOT/bin/xcrun"
 export PATH="$ROOT/bin:$PATH"
 
 # A repo on main at VERSION 0.1.0, released as v0.1.0, with one Unreleased entry; everything committed.
@@ -159,16 +174,16 @@ printf '# Changelog\n\n## [Unreleased]\n\n## [0.2.0] - 2026-02-01\n\n### Added\n
 notes=$(source "$SCRIPTS/lib/version.sh" && changelog_section 0.2.0)
 [ "$notes" = "$(printf '### Added\n\n- New thing\n\n### Fixed\n\n- Old bug')" ] || failed "changelog section: $notes"
 
-# release publishing: tags, pushes the tag, creates the release with the zip and the notes
+# release publishing: tags, pushes the tag, creates the release with the DMG and the notes
 new_repo
 "$SCRIPTS/bump-version.sh" 0.2.0 >/dev/null && commit_all
 origin=$(mktemp -d "$ROOT/origin.XXXX")
 git init -q --bare "$origin" && git remote add origin "$origin"
-expect_refusal "publish without zip" "missing" "$SCRIPTS/release-publish.sh" "$ROOT/Downtab.zip"
-touch "$ROOT/Downtab.zip"
-expect_success "publish" "$SCRIPTS/release-publish.sh" "$ROOT/Downtab.zip"
+expect_refusal "publish without DMG" "missing" "$SCRIPTS/release-publish.sh" "$ROOT/Downtab.dmg"
+touch "$ROOT/Downtab.dmg"
+expect_success "publish" "$SCRIPTS/release-publish.sh" "$ROOT/Downtab.dmg"
 git -C "$origin" rev-parse --quiet --verify refs/tags/v0.2.0 >/dev/null || failed "publish did not push tag v0.2.0"
-[ "$(cat "$ROOT/gh-create")" = "release create v0.2.0 $ROOT/Downtab.zip --repo doubleloop-io/downtab --title Downtab 0.2.0 --notes-file $(sed -n 's/.*--notes-file //p' "$ROOT/gh-create")" ] \
+[ "$(cat "$ROOT/gh-create")" = "release create v0.2.0 $ROOT/Downtab.dmg --repo doubleloop-io/downtab --title Downtab 0.2.0 --notes-file $(sed -n 's/.*--notes-file //p' "$ROOT/gh-create")" ] \
   || failed "publish gh arguments: $(cat "$ROOT/gh-create")"
 [ "$(cat "$ROOT/gh-notes")" = "$(printf '### Added\n\n- New thing')" ] || failed "publish notes: $(cat "$ROOT/gh-notes")"
 
@@ -177,7 +192,7 @@ new_repo
 origin=$(mktemp -d "$ROOT/origin.XXXX")
 git init -q --bare "$origin" && git remote add origin "$origin"
 GH_CREATE_EXIT=1 expect_refusal "publish when gh fails" "tag v0.2.0 pushed but the release failed" \
-  "$SCRIPTS/release-publish.sh" "$ROOT/Downtab.zip"
+  "$SCRIPTS/release-publish.sh" "$ROOT/Downtab.dmg"
 
 # make ship: a repo whose main matches a bare origin
 new_shipping_repo() {
@@ -230,6 +245,25 @@ MAKE_SMOKE_EXIT=1 expect_refusal "ship make smoke fails" "make smoke failed" "$S
 expect_untouched "ship make smoke fails" "test smoke "
 
 new_shipping_repo
+MAKE_NOTARIZE_EXIT=1 expect_refusal "ship notarize-check fails" "make notarize-check failed" "$SCRIPTS/ship.sh" 0.2.0
+expect_untouched "ship notarize-check fails" "test smoke notarize-check "
+
+# release preflight: checked by ship before anything runs or changes
+new_shipping_repo
+SIGNING_IDENTITY="Apple Development: someone (ABCDE12345)" \
+  expect_refusal "ship without the Developer ID identity" "signing identity missing" "$SCRIPTS/ship.sh" 0.2.0
+NOTARY_EXIT=69 expect_refusal "ship without notary credentials" "notary credentials unusable" "$SCRIPTS/ship.sh" 0.2.0
+GH_AUTH_EXIT=1 expect_refusal "ship with gh logged out" "gh is not authenticated" "$SCRIPTS/ship.sh" 0.2.0
+GH_PUSH=false expect_refusal "ship without push permission" "no push permission on doubleloop-io/downtab" \
+  "$SCRIPTS/ship.sh" 0.2.0
+expect_untouched "ship preflight refusals"
+
+new_shipping_repo
+MAKE_RELEASE_EXIT=1 expect_refusal "ship release fails after the push" "fix the cause, then make release" \
+  "$SCRIPTS/ship.sh" 0.2.0
+[ "$(git -C "$origin" rev-parse main)" = "$(git rev-parse HEAD)" ] || failed "ship release fails: main not pushed"
+
+new_shipping_repo
 expect_success "ship" "$SCRIPTS/ship.sh" 0.2.0
 [ "$(cat VERSION)" = 0.2.0 ] || failed "ship VERSION: $(cat VERSION)"
 [ -z "$(git status --porcelain)" ] || failed "ship left changes: $(git status --porcelain)"
@@ -237,7 +271,7 @@ expect_success "ship" "$SCRIPTS/ship.sh" 0.2.0
 [ "$(git show --name-only --format= HEAD | sort | tr '\n' ' ')" = "CHANGELOG.md VERSION " ] \
   || failed "ship committed: $(git show --name-only --format= HEAD)"
 [ "$(git -C "$origin" rev-parse main)" = "$(git rev-parse HEAD)" ] || failed "ship did not push main"
-[ "$(tr '\n' ' ' <"$ROOT/make-calls")" = "test smoke release " ] || failed "ship make calls: $(cat "$ROOT/make-calls")"
+[ "$(tr '\n' ' ' <"$ROOT/make-calls")" = "test smoke notarize-check release " ] || failed "ship make calls: $(cat "$ROOT/make-calls")"
 
 if [ "$failures" -gt 0 ]; then echo "versioning: $failures failed"; exit 1; fi
 echo "versioning ok"

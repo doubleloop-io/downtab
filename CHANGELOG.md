@@ -4,6 +4,11 @@ User-facing changes to Downtab. Format: [Keep a Changelog](https://keepachangelo
 
 ## [Unreleased]
 
+### Changed
+
+- Downtab ships as `Downtab.dmg`, signed with Developer ID and notarized by Apple: Downtab.app and EmergencyRestore open without clearing the quarantine. Open the DMG and drag Downtab.app to Applications.
+- Grant Accessibility to Downtab once more after updating: the new signature no longer matches the previous grant. If Downtab doesn't react with Accessibility on, remove the old entry with `tccutil reset Accessibility io.doubleloop.downtab` and grant it again.
+
 ## [0.4.2] - 2026-11-12
 
 ### Fixed

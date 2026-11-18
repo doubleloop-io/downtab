@@ -20,14 +20,17 @@ fi
 git fetch --quiet origin main || fail "cannot fetch origin main"
 [ "$(git rev-parse HEAD)" = "$(git rev-parse origin/main)" ] \
   || fail "main differs from origin/main: pull or push first"
+"$(dirname "$0")/release-preflight.sh"
 
 make test || fail "make test failed"
-# Before the bump: it only changes the version string, so the smoked code is the released code.
+# Before the bump: it only changes the version string, so the smoked and notarized code is the released code, and
+# the released build can fail notarization only on a transient error.
 make smoke || fail "make smoke failed"
+make notarize-check || fail "make notarize-check failed"
 
 "$(dirname "$0")/bump-version.sh" "$next" >/dev/null
 echo "version $current -> $next"
 git add "$VERSION_FILE" "$CHANGELOG_FILE"
 git commit --quiet -m "Release v$next"
 git push --quiet origin main || fail "push failed: the Release v$next commit is only local; push it, then make release"
-make release
+make release || fail "make release failed after pushing the Release v$next commit: fix the cause, then make release"
