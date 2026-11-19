@@ -3,10 +3,12 @@ import BackgroundAdapters
 import SwitcherCore
 
 /// Turns the mouse and the trackpad on the Switcher into Switcher events, and takes the clicks outside it.
-/// The panels hand it their pointer events, each with the item under the pointer.
+/// The panels hand it their pointer events, each with the item under the pointer; mouse moves it follows itself.
 final class PointerInput {
     private let onEvent: (SwitcherEvent) -> Void
     private let outsideClicks = OutsideClickTap()
+    private weak var panel: PointerPanel?
+    private var moveMonitors: [Any] = []
     /// The last item the pointer was on: only moving onto another one changes the selection, so neither a still
     /// pointer nor jitter inside an item overrides a selection made with the keyboard.
     private var hovered: PointerTarget?
@@ -19,6 +21,12 @@ final class PointerInput {
 
     init(onEvent: @escaping (SwitcherEvent) -> Void) {
         self.onEvent = onEvent
+    }
+
+    /// `panel` and its child panels hand their pointer events here, and mouse moves are hit-tested on them.
+    func attach(to panel: PointerPanel) {
+        self.panel = panel
+        panel.attach(self)
     }
 
     /// Clicks outside are taken only once the Accessibility permission is granted; calling again is harmless.
@@ -34,9 +42,11 @@ final class PointerInput {
             hovered = nil
             pressed = nil
             scrollStepper = ScrollStepper()
+            stopFollowingMoves()
             outsideClicks.setCapturing(outside: nil)
             return
         }
+        followMoves()
         outsideClicks.setCapturing(outside: Self.windowServerFrames(frames))
     }
 
@@ -67,6 +77,29 @@ final class PointerInput {
         default:
             break
         }
+    }
+
+    /// Downtab is never the active app, so its panels get no mouse moved events, not even through a tracking area:
+    /// they go to the Frontmost app, where only a global monitor sees them.
+    private func followMoves() {
+        guard moveMonitors.isEmpty else { return }
+        let global = NSEvent.addGlobalMonitorForEvents(matching: .mouseMoved) { [weak self] event in
+            self?.pointerMoved(event)
+        }
+        let local = NSEvent.addLocalMonitorForEvents(matching: .mouseMoved) { [weak self] event in
+            self?.pointerMoved(event)
+            return event
+        }
+        moveMonitors = [global, local].compactMap { $0 }
+    }
+
+    private func stopFollowingMoves() {
+        moveMonitors.forEach(NSEvent.removeMonitor)
+        moveMonitors = []
+    }
+
+    private func pointerMoved(_ event: NSEvent) {
+        receive(event, over: panel?.pointerTarget(atScreen: NSEvent.mouseLocation))
     }
 
     private func enter(_ target: PointerTarget?) {

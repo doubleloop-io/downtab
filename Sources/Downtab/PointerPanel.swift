@@ -15,8 +15,11 @@ class PointerPanel: NSPanel {
         nil
     }
 
-    /// The item under `point`, in screen coordinates; nil outside the panel or between items.
+    /// The item under `point`, in screen coordinates; nil outside the panel or between items. Child panels come
+    /// first: they are ordered above their parent.
     func pointerTarget(atScreen point: NSPoint) -> PointerTarget? {
+        let children = (childWindows ?? []).compactMap { $0 as? PointerPanel }
+        if let target = children.lazy.compactMap({ $0.pointerTarget(atScreen: point) }).first { return target }
         guard isVisible, frame.contains(point) else { return nil }
         return pointerTarget(at: convertPoint(fromScreen: point))
     }
