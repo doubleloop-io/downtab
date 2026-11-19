@@ -3,6 +3,9 @@ VERSION_FILE=VERSION
 CHANGELOG_FILE=CHANGELOG.md
 # Hosts the releases: this repo.
 RELEASE_REPO=doubleloop-io/downtab
+# The Homebrew tap `doubleloop-io/tap`: every release points its cask at the new DMG.
+TAP_REPO=doubleloop-io/homebrew-tap
+CASK_PATH=Casks/downtab.rb
 # Release signing and notarization, set up on the release Mac: the identity in the login keychain, the
 # notarytool credentials in a keychain profile.
 DEVELOPER_ID="Developer ID Application: doubleloop srl (49CP6UC6KC)"

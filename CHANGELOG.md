@@ -4,6 +4,10 @@ User-facing changes to Downtab. Format: [Keep a Changelog](https://keepachangelo
 
 ## [Unreleased]
 
+### Added
+
+- Install Downtab with Homebrew: `brew install --cask doubleloop-io/tap/downtab`. It still updates itself; `brew uninstall` quits it and turns native ⌘Tab back on.
+
 ## [0.6.0] - 2026-11-18
 
 ### Added

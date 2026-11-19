@@ -62,7 +62,7 @@ help:
 	@echo "make version V=X.Y.Z close the [Unreleased] changelog section as X.Y.Z and write X.Y.Z to VERSION; commits nothing"
 	@echo "make release         refuse unless on a clean, full main with a bumped VERSION, its changelog section and passing tests;"
 	@echo "                     then notarize-check, tag vX.Y.Z, push the tag, publish the release with $(DMG)"
-	@echo "                     and $(APPCAST) in doubleloop-io/downtab"
+	@echo "                     and $(APPCAST) in doubleloop-io/downtab, point the Homebrew cask in doubleloop-io/homebrew-tap at it"
 	@echo "make ship V=X.Y.Z    refuse unless on a clean main equal to origin/main with passing tests, smoke and notarize-check;"
 	@echo "                     then make version, commit and push on main, make release"
 	@echo

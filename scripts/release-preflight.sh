@@ -24,4 +24,6 @@ signing=$("$SPARKLE_BIN/sign_update" --account "$SPARKLE_ACCOUNT" -p "$probe" 2>
 gh auth status >/dev/null 2>&1 || fail "gh is not authenticated: run gh auth login"
 [ "$(gh api "repos/$RELEASE_REPO" --jq .permissions.push 2>/dev/null)" = true ] \
   || fail "gh cannot publish: no push permission on $RELEASE_REPO"
+[ "$(gh api "repos/$TAP_REPO" --jq .permissions.push 2>/dev/null)" = true ] \
+  || fail "gh cannot update the Homebrew cask: no push permission on $TAP_REPO"
 echo "release preflight ok"

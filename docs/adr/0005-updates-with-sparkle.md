@@ -26,3 +26,4 @@ Until 0.5.0 Downtab only asked GitHub for the latest release's tag and showed `U
 - `make bundle` copies `Sparkle.framework` into `Contents/Frameworks`, drops its XPC services (Downtab is not sandboxed) and signs inside out, never `--deep`. Self-signed builds carry `com.apple.security.cs.disable-library-validation`: their certificate has no Team ID, so library validation would refuse the framework.
 - An Info.plist without `SUPublicEDKey`, or with a wrong one, makes Sparkle refuse every Update. Losing the private key (`docs/releasing.md`, Distribution) means installed copies can never update again.
 - Installs up to 0.5.0 keep the old check and update by hand once.
+- The cask came with #78, in our own tap `doubleloop-io/homebrew-tap`: `brew install --cask doubleloop-io/tap/downtab`. It declares `auto_updates true`, so Sparkle stays the only update channel and `brew upgrade` leaves Downtab alone; `make release` bumps the cask so new installs get the latest version.
