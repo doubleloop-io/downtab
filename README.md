@@ -12,7 +12,13 @@ Entirely keyboard-driven: `⌥Tab`, `Tab`, `Tab`, `↓`, `↓`, `release`.
 - **Current Space only**: only windows on the Spaces you're looking at, on every display.
 - **Titles, no thumbnails**: no Screen Recording permission, no capture lag.
 
-macOS 15 or later · Apple Silicon only. Download, install steps and troubleshooting: **[downtab.doubleloop.io](https://downtab.doubleloop.io/)**.
+macOS 15 or later · Apple Silicon only. Download the DMG, install steps and troubleshooting: **[downtab.doubleloop.io](https://downtab.doubleloop.io/)**. Or install with [Homebrew](https://brew.sh):
+
+```sh
+brew install --cask doubleloop-io/tap/downtab
+```
+
+Either way, Downtab updates itself.
 
 ## Documentation
 
