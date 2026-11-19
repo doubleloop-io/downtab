@@ -134,7 +134,7 @@ func rightAtWindowLevelOntoAnAppWithFewerThanTwoWindowsSelectsItWithoutAWindowLi
     #expect(switcher.state.selectedWindowTitle == "N1")
 }
 
-@Test func appShortcutAtWindowLevelReturnsToAppLevelOnTheNextApp() {
+@Test func appShortcutAtWindowLevelOpensTheNextAppsWindowListLikeRight() {
     var (switcher, desktop) = atWindowLevel(on: [
         .regular("Safari", windows: [.window("S1"), .window("S2")]),
         .regular("Notes", windows: [.window("N1"), .window("N2")]),
@@ -143,21 +143,33 @@ func rightAtWindowLevelOntoAnAppWithFewerThanTwoWindowsSelectsItWithoutAWindowLi
     switcher.handle(.appShortcutPressed, desktop: desktop)
 
     #expect(switcher.state.selectedName == "Notes")
-    #expect(switcher.state.isAtAppLevel)
+    #expect(switcher.state.selectedWindowTitle == "N1")
 }
 
-@Test func appShortcutAtWindowLevelWithoutAWindowListReturnsToAppLevelOnTheNextApp() {
+@Test func shiftAppShortcutAtWindowLevelOpensThePreviousAppsWindowListLikeLeft() {
     var (switcher, desktop) = atWindowLevel(on: [
         .regular("Safari", windows: [.window("S1"), .window("S2")]),
-        .regular("Notes"),
-        .regular("Mail", windows: [.window("M1"), .window("M2")]),
+        .regular("Notes", windows: [.window("N1"), .window("N2")]),
     ])
     switcher.handle(.rightPressed, desktop: desktop)
 
+    switcher.handle(.shiftAppShortcutPressed, desktop: desktop)
+
+    #expect(switcher.state.selectedName == "Safari")
+    #expect(switcher.state.selectedWindowTitle == "S1")
+}
+
+@Test func appShortcutAtWindowLevelOntoAnAppWithoutAWindowListStaysAtWindowLevel() {
+    var (switcher, desktop) = atWindowLevel(on: [
+        .regular("Safari", windows: [.window("S1"), .window("S2")]),
+        .regular("Notes"),
+    ])
+
     switcher.handle(.appShortcutPressed, desktop: desktop)
 
-    #expect(switcher.state.selectedName == "Mail")
-    #expect(switcher.state.isAtAppLevel)
+    #expect(switcher.state.selectedName == "Notes")
+    #expect(switcher.state.windowListTitles == nil)
+    #expect(!switcher.state.isAtAppLevel)
 }
 
 @Test(arguments: [SwitcherEvent.modifierReleased, .enterPressed])

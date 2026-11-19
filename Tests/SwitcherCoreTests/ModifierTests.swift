@@ -75,7 +75,6 @@ private func opened(
 
     switcher.handle(.keyPressed(shortcut(KeyCode.tab, [.control])), desktop: desktop)
 
-    #expect(switcher.state.isAtAppLevel)
     #expect(switcher.state.selectedName == "Notes")
 }
 

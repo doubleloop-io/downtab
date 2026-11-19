@@ -8,6 +8,10 @@ User-facing changes to Downtab. Format: [Keep a Changelog](https://keepachangelo
 
 - Install Downtab with Homebrew: `brew install --cask doubleloop-io/tap/downtab`. It still updates itself; `brew uninstall` quits it and turns native ⌘Tab back on.
 
+### Changed
+
+- Switcher: with a Window list open, the App shortcut (⌥Tab by default, ⇧ to go back) now moves to the next app like `→`: it stays at Window level and opens that app's Window list, instead of closing the list and going back to App level.
+
 ## [0.6.0] - 2026-11-18
 
 ### Added

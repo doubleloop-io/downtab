@@ -190,7 +190,7 @@ Before starting: `make run`, Accessibility granted to Downtab. Open TextEdit wit
 4. Hold ⌥, select TextEdit, `↓`, `↓` to the second window, release ⌥: only that window comes to the front and gets the keyboard focus (type a few letters: they land in it). TextEdit's other two windows stay behind the windows of other apps that covered them before.
 5. Repeat step 4 with `Enter` instead of releasing ⌥: same result, and releasing ⌥ afterwards does nothing more.
 6. In TextEdit (now frontmost), hold ⌥, press Tab then ⇧Tab to come back to TextEdit, press `↓`: the second window is highlighted, not the one you are in. Release ⌥: that window comes to the front.
-7. With the Window list open, press Tab: the list closes and the next app is selected. Press `Esc`: nothing changes.
+7. With TextEdit's Window list open, press Tab: like `→`, the next app is selected and the Switcher stays at Window level: the app's Window list opens if it has 2 or more windows, otherwise it is selected without one. Press `Esc`: nothing changes.
 8. Minimize a TextEdit window (⌘M), wait one second, select it in the Window list and release ⌥: it comes back from the Dock and to the front. More in "Switcher: minimized and hidden windows".
 9. Click TextEdit's back window (the last one in its Window list) to raise it, wait one second. Hold ⌥, select TextEdit, `↓`: that window is now first in the list, the one in front before it second. Press `Esc`.
 10. `log stream --predicate 'subsystem == "io.doubleloop.downtab" AND category == "focus"'` shows a `raise pid=... wid=... private=true ax=0` line for each window confirmed. `private=false` means a private API is missing: the window still comes forward, but with all of the app's windows, and `log show --last 1h --predicate 'subsystem == "io.doubleloop.downtab" AND category == "private-api"'` shows one `private symbol missing: <name>, its feature is off` line per missing symbol; the app keeps running.
@@ -205,7 +205,7 @@ Before starting: `make run`, Accessibility granted to Downtab. Open TextEdit wit
 4. Hold ⌥ and ⇧, press `` ` ``: the Switcher opens on TextEdit's last window (`three`). Press `Esc`.
 5. Press `` ⌥` `` once and release both keys quickly: only `two` comes to the front and gets the keyboard focus (type a few letters: they land in it); TextEdit's other windows stay where they were. Pressing it again brings `one` back.
 6. Hold ⌥, press `` ` ``, then `↓`: `three` is highlighted. Press `↑` three times: the Window list closes and TextEdit is selected at App level. Press `` ` ``: the Window list reopens with `two` highlighted, like `↓`. Press Tab: Safari is selected. Press `` ` ``: nothing happens, Safari has one window. Press `Esc`.
-7. Hold ⌥, press `` ` ``, then Tab: the Window list closes and Safari is selected. Release ⌥: Safari comes to the front.
+7. Hold ⌥, press `` ` ``, then Tab: TextEdit's Window list closes and Safari (one window) is selected without one, like `→`. Release ⌥: Safari comes to the front.
 8. Click TextEdit's `one` window. Hold ⌥, press `` ` ``, then `→`: TextEdit's list closes and Safari (one window) is selected without a Window list. Press `←`: TextEdit's Window list reopens. Press `Esc`.
 9. Click the Safari window (one window) and press `` ⌥` ``: no Switcher appears and nothing changes. Same with `` ⌥⇧` ``, and in an app with no windows (close all TextEdit windows with ⌘W, then press `` ⌥` `` in TextEdit).
 10. Rapid presses: close the `three` window (⌘W), so TextEdit has 2 windows. Press `` ⌥` `` and release it 10 times in a row, less than a second apart: the 2 windows alternate in front every time, with no press that changes nothing.
@@ -239,7 +239,7 @@ Before starting: `make run`, Accessibility granted to Downtab. Open TextEdit wit
 3. Press `→` again: TextEdit's Window list opens under its icon, first window highlighted. Press `→` again: it wraps to Finder (one window), selected without a list. Press `←`: TextEdit's Window list reopens.
 4. With TextEdit's Window list open, press `←` twice: Safari (no list), then Notes' Window list opens on its first window. Release ⌥: only that Notes window comes to the front.
 5. Hold ⌥, press Tab, `↓`, `→` (Safari, no list), release ⌥: Safari comes to the front.
-6. Hold ⌥, press Tab, `↓`, `→` (Safari, no list), press Tab: the Switcher is at App level on TextEdit, no Window list. Press `↓`: TextEdit's Window list opens. Press Tab: the list closes and Finder is selected at App level. Press `Esc`: nothing changes.
+6. Hold ⌥, press Tab, `↓`, `→` (Safari, no list), press Tab: like `→`, TextEdit's Window list opens on its first window. Press Tab again: it wraps to Finder (one window), selected without a list. Press ⇧Tab: TextEdit's Window list reopens. Press `Esc`: nothing changes.
 7. Hold ⌥, press Tab, `↓`, `→` (Safari, no list), press `↑`: Safari is selected at App level. Press `↓`: nothing happens. Press `Esc`.
 
 ## Switcher: mouse and trackpad

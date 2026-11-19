@@ -146,9 +146,10 @@ public struct DisplayedState: Equatable, Sendable {
         }
     }
 
-    /// `←` / `→`: at Window level, change app and stay at Window level, opening its Window list if it has one.
-    func movingAcrossApps(by step: Int) -> DisplayedState {
-        let moved = movingSelection(by: step)
+    /// `←` / `→` and the App shortcut key: at Window level, change app and stay at Window level, opening its
+    /// Window list if it has one.
+    func movingAcrossApps(by step: Int, atEnds: EndBehavior = .wrap) -> DisplayedState {
+        let moved = movingSelection(by: step, atEnds: atEnds)
         switch level {
         case .app: return moved
         case .window, .windowWithoutList: return moved.at(moved.windowListOpening ?? .windowWithoutList)
@@ -328,7 +329,7 @@ public struct Switcher: Sendable {
         guard case .open(let displayed) = state, let press = shortcutPress(of: combination) else { return }
         let step = press.isReversed ? -1 : 1
         switch press.slot {
-        case .app: state = .open(displayed.movingSelection(by: step, atEnds: .stop))
+        case .app: state = .open(displayed.movingAcrossApps(by: step, atEnds: .stop))
         case .window: state = .open(displayed.movingWindowSelection(by: step, atEnds: .stop))
         }
     }
@@ -382,7 +383,7 @@ public struct Switcher: Sendable {
     private mutating func moveSelection(by step: Int, desktop: DesktopSnapshot, modifier: Set<ShortcutModifier>) {
         switch state {
         case .open(let displayed):
-            state = .open(displayed.movingSelection(by: step))
+            state = .open(displayed.movingAcrossApps(by: step))
         case .closed:
             // The App row is fixed at opening: it never moves while the Switcher is open.
             let appRow = desktop.appRow()

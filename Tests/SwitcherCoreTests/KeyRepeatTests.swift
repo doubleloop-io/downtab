@@ -42,6 +42,22 @@ private func desktopWithFrontmostSafari(windows titles: [String]) -> DesktopSnap
     #expect(switcher.state.selectedName == "Mail")
 }
 
+@Test func heldAppShortcutAtWindowLevelStopsOnTheLastAppsWindowList() {
+    let desktop = DesktopSnapshot.with(apps: [
+        .regular("Frontmost"),
+        .regular("Safari", windows: [.window("S1"), .window("S2")]),
+        .regular("Notes", windows: [.window("N1"), .window("N2")]),
+    ])
+    var switcher = opened(on: desktop)
+    switcher.handle(.downPressed, desktop: desktop)
+    switcher.handle(.appShortcutRepeated, desktop: desktop)
+
+    switcher.handle(.appShortcutRepeated, desktop: desktop)
+
+    #expect(switcher.state.selectedName == "Notes")
+    #expect(switcher.state.selectedWindowTitle == "N1")
+}
+
 @Test func appShortcutPressedAfterStoppingOnTheLastAppStillWraps() {
     let desktop = DesktopSnapshot.with(mru: ["Mail", "Safari", "Notes"])
     var switcher = opened(on: desktop)
