@@ -5,7 +5,7 @@ import Testing
 
 @Test func hoveringAnAppSelectsItAtAppLevel() {
     let desktop = DesktopSnapshot.with(mru: ["Mail", "Safari", "Notes"])
-    var switcher = opened(on: desktop)
+    var switcher = shown(on: desktop)
 
     switcher.handle(.pointer(.entered(.app(2))), desktop: desktop)
 
@@ -14,7 +14,7 @@ import Testing
 }
 
 @Test func hoveringAnotherAppAtWindowLevelClosesTheWindowList() {
-    var (switcher, desktop) = atWindowLevel(on: [
+    var (switcher, desktop) = shownAtWindowLevel(on: [
         .regular("Safari", windows: [.window("S1"), .window("S2")]),
         .regular("Notes", windows: [.window("N1"), .window("N2")]),
     ])
@@ -26,7 +26,7 @@ import Testing
 }
 
 @Test func hoveringTheAppWhoseWindowListIsOpenChangesNothing() {
-    var (switcher, desktop) = atWindowLevel(on: [.regular("Safari", windows: [.window("S1"), .window("S2")])])
+    var (switcher, desktop) = shownAtWindowLevel(on: [.regular("Safari", windows: [.window("S1"), .window("S2")])])
     switcher.handle(.downPressed, desktop: desktop)
     let before = switcher.state
 
@@ -37,7 +37,7 @@ import Testing
 
 @Test func hoveringAWindowSelectsIt() {
     let safari = DesktopApp.regular("Safari", windows: [.window("S1"), .window("S2"), .window("S3")])
-    var (switcher, desktop) = atWindowLevel(on: [safari])
+    var (switcher, desktop) = shownAtWindowLevel(on: [safari])
 
     switcher.handle(.pointer(.entered(.window(2))), desktop: desktop)
 
@@ -45,7 +45,7 @@ import Testing
 }
 
 @Test func hoveringAWindowAtAppLevelChangesNothing() {
-    var (switcher, desktop) = openedOn(.regular("Safari", windows: [.window("S1"), .window("S2")]))
+    var (switcher, desktop) = shownOn(.regular("Safari", windows: [.window("S1"), .window("S2")]))
     let before = switcher.state
 
     switcher.handle(.pointer(.entered(.window(1))), desktop: desktop)
@@ -69,7 +69,7 @@ func pointerWhileClosedLeavesTheSwitcherClosed(pointer: PointerEvent) {
 
 @Test func clickingAnAppWithoutAWindowCountBadgeConfirmsIt() {
     let desktop = DesktopSnapshot.with(mru: ["Mail", "Safari", "Notes"])
-    var switcher = opened(on: desktop)
+    var switcher = shown(on: desktop)
 
     let effect = switcher.handle(.pointer(.clicked(.app(2))), desktop: desktop)
 
@@ -81,7 +81,7 @@ func pointerWhileClosedLeavesTheSwitcherClosed(pointer: PointerEvent) {
     let desktop = DesktopSnapshot.with(apps: [
         .regular("Frontmost"), .regular("Mail"), .regular("Safari", windows: [.window("S1"), .window("S2")]),
     ])
-    var switcher = opened(on: desktop)
+    var switcher = shown(on: desktop)
 
     let effect = switcher.handle(.pointer(.clicked(.app(2))), desktop: desktop)
 
@@ -95,7 +95,7 @@ func pointerWhileClosedLeavesTheSwitcherClosed(pointer: PointerEvent) {
     let desktop = DesktopSnapshot.with(apps: [
         .regular("Frontmost", windows: [.window("Current"), .window("Behind")]), .regular("Safari"),
     ])
-    var switcher = opened(on: desktop)
+    var switcher = shown(on: desktop)
 
     switcher.handle(.pointer(.clicked(.app(0))), desktop: desktop)
 
@@ -103,7 +103,7 @@ func pointerWhileClosedLeavesTheSwitcherClosed(pointer: PointerEvent) {
 }
 
 @Test func clickingTheAppWhoseWindowListIsOpenKeepsTheSelectedWindow() {
-    var (switcher, desktop) = atWindowLevel(on: [.regular("Safari", windows: [.window("S1"), .window("S2")])])
+    var (switcher, desktop) = shownAtWindowLevel(on: [.regular("Safari", windows: [.window("S1"), .window("S2")])])
     switcher.handle(.downPressed, desktop: desktop)
 
     let effect = switcher.handle(.pointer(.clicked(.app(1))), desktop: desktop)
@@ -114,7 +114,7 @@ func pointerWhileClosedLeavesTheSwitcherClosed(pointer: PointerEvent) {
 
 @Test func clickingAWindowConfirmsIt() throws {
     let second = DesktopWindow.window("S2")
-    var (switcher, desktop) = atWindowLevel(on: [.regular("Safari", windows: [.window("S1"), second])])
+    var (switcher, desktop) = shownAtWindowLevel(on: [.regular("Safari", windows: [.window("S1"), second])])
 
     let effect = switcher.handle(.pointer(.clicked(.window(1))), desktop: desktop)
 
@@ -123,7 +123,7 @@ func pointerWhileClosedLeavesTheSwitcherClosed(pointer: PointerEvent) {
 }
 
 @Test func clickingAWindowAtAppLevelChangesNothing() {
-    var (switcher, desktop) = openedOn(.regular("Safari", windows: [.window("S1"), .window("S2")]))
+    var (switcher, desktop) = shownOn(.regular("Safari", windows: [.window("S1"), .window("S2")]))
     let before = switcher.state
 
     let effect = switcher.handle(.pointer(.clicked(.window(0))), desktop: desktop)
@@ -133,7 +133,7 @@ func pointerWhileClosedLeavesTheSwitcherClosed(pointer: PointerEvent) {
 }
 
 @Test func clickingOutsideCancels() {
-    var (switcher, desktop) = atWindowLevel(on: [.regular("Safari", windows: [.window("S1"), .window("S2")])])
+    var (switcher, desktop) = shownAtWindowLevel(on: [.regular("Safari", windows: [.window("S1"), .window("S2")])])
 
     let effect = switcher.handle(.pointer(.clickedOutside), desktop: desktop)
 
@@ -143,7 +143,7 @@ func pointerWhileClosedLeavesTheSwitcherClosed(pointer: PointerEvent) {
 
 @Test func releasingTheModifierConfirmsTheSelectionMadeWithThePointer() throws {
     let second = DesktopWindow.window("S2")
-    var (switcher, desktop) = atWindowLevel(on: [.regular("Safari", windows: [.window("S1"), second])])
+    var (switcher, desktop) = shownAtWindowLevel(on: [.regular("Safari", windows: [.window("S1"), second])])
     switcher.handle(.pointer(.entered(.window(1))), desktop: desktop)
 
     let effect = switcher.handle(.modifierReleased, desktop: desktop)
@@ -157,7 +157,7 @@ func pointerWhileClosedLeavesTheSwitcherClosed(pointer: PointerEvent) {
     let desktop = DesktopSnapshot.with(apps: [
         .regular("Frontmost"), .regular("Mail"), .regular("Safari", windows: [.window("S1"), .window("S2")]),
     ])
-    var switcher = opened(on: desktop)
+    var switcher = shown(on: desktop)
 
     switcher.handle(.pointer(.scrolled(.down, over: .app(2))), desktop: desktop)
 
@@ -169,7 +169,7 @@ func pointerWhileClosedLeavesTheSwitcherClosed(pointer: PointerEvent) {
     let desktop = DesktopSnapshot.with(apps: [
         .regular("Frontmost"), .regular("Mail"), .regular("Safari", windows: [.window("S1"), .window("S2")]),
     ])
-    var switcher = opened(on: desktop)
+    var switcher = shown(on: desktop)
 
     switcher.handle(.pointer(.scrolled(.up, over: .app(2))), desktop: desktop)
 
@@ -180,7 +180,7 @@ func pointerWhileClosedLeavesTheSwitcherClosed(pointer: PointerEvent) {
 @Test(arguments: [ScrollDirection.down, .up])
 func scrollingOverAnAppWithoutAWindowListOnlySelectsIt(direction: ScrollDirection) {
     let desktop = DesktopSnapshot.with(mru: ["Mail", "Safari", "Notes"])
-    var switcher = opened(on: desktop)
+    var switcher = shown(on: desktop)
 
     switcher.handle(.pointer(.scrolled(direction, over: .app(2))), desktop: desktop)
 
@@ -189,7 +189,7 @@ func scrollingOverAnAppWithoutAWindowListOnlySelectsIt(direction: ScrollDirectio
 }
 
 @Test func scrollingDownAtWindowLevelStopsAtTheLastWindow() {
-    var (switcher, desktop) = atWindowLevel(on: [.regular("Safari", windows: [.window("S1"), .window("S2")])])
+    var (switcher, desktop) = shownAtWindowLevel(on: [.regular("Safari", windows: [.window("S1"), .window("S2")])])
 
     switcher.handle(.pointer(.scrolled(.down, over: .window(0))), desktop: desktop)
     switcher.handle(.pointer(.scrolled(.down, over: .window(1))), desktop: desktop)
@@ -198,7 +198,7 @@ func scrollingOverAnAppWithoutAWindowListOnlySelectsIt(direction: ScrollDirectio
 }
 
 @Test func scrollingUpFromTheFirstWindowGoesBackToAppLevelOnThatApp() {
-    var (switcher, desktop) = atWindowLevel(on: [.regular("Safari", windows: [.window("S1"), .window("S2")])])
+    var (switcher, desktop) = shownAtWindowLevel(on: [.regular("Safari", windows: [.window("S1"), .window("S2")])])
 
     switcher.handle(.pointer(.scrolled(.up, over: .window(0))), desktop: desktop)
 
@@ -207,7 +207,7 @@ func scrollingOverAnAppWithoutAWindowListOnlySelectsIt(direction: ScrollDirectio
 }
 
 @Test func scrollingOverTheIconOfTheOpenWindowListWalksTheList() {
-    var (switcher, desktop) = atWindowLevel(on: [.regular("Safari", windows: [.window("S1"), .window("S2")])])
+    var (switcher, desktop) = shownAtWindowLevel(on: [.regular("Safari", windows: [.window("S1"), .window("S2")])])
 
     switcher.handle(.pointer(.scrolled(.down, over: .app(1))), desktop: desktop)
 
@@ -215,7 +215,7 @@ func scrollingOverAnAppWithoutAWindowListOnlySelectsIt(direction: ScrollDirectio
 }
 
 @Test func scrollingBetweenItemsWalksTheOpenWindowList() {
-    var (switcher, desktop) = atWindowLevel(on: [.regular("Safari", windows: [.window("S1"), .window("S2")])])
+    var (switcher, desktop) = shownAtWindowLevel(on: [.regular("Safari", windows: [.window("S1"), .window("S2")])])
 
     switcher.handle(.pointer(.scrolled(.down, over: nil)), desktop: desktop)
 
@@ -223,10 +223,45 @@ func scrollingOverAnAppWithoutAWindowListOnlySelectsIt(direction: ScrollDirectio
 }
 
 @Test func scrollingBetweenItemsAtAppLevelChangesNothing() {
-    var (switcher, desktop) = openedOn(.regular("Safari", windows: [.window("S1"), .window("S2")]))
+    var (switcher, desktop) = shownOn(.regular("Safari", windows: [.window("S1"), .window("S2")]))
     let before = switcher.state
 
     switcher.handle(.pointer(.scrolled(.down, over: nil)), desktop: desktop)
 
     #expect(switcher.state == before)
+}
+
+// Before the show delay
+
+@Test(arguments: [
+    PointerEvent.entered(.app(2)), .clicked(.app(2)), .clickedOutside, .scrolled(.down, over: .app(2)),
+])
+func pointerBeforeTheShowDelayChangesNothing(pointer: PointerEvent) {
+    let desktop = DesktopSnapshot.with(mru: ["Mail", "Safari", "Notes"])
+    var switcher = opened(on: desktop)
+    let before = switcher.state
+
+    let effect = switcher.handle(.pointer(pointer), desktop: desktop)
+
+    #expect(effect == nil)
+    #expect(switcher.state == before)
+}
+
+/// The pointer acts only on a Switcher that shows.
+private func shown(on desktop: DesktopSnapshot) -> Switcher {
+    var switcher = opened(on: desktop)
+    switcher.handle(.showDelayElapsed, desktop: desktop)
+    return switcher
+}
+
+private func shownOn(_ app: DesktopApp) -> (Switcher, DesktopSnapshot) {
+    var (switcher, desktop) = openedOn(app)
+    switcher.handle(.showDelayElapsed, desktop: desktop)
+    return (switcher, desktop)
+}
+
+private func shownAtWindowLevel(on apps: [DesktopApp]) -> (Switcher, DesktopSnapshot) {
+    var (switcher, desktop) = atWindowLevel(on: apps)
+    switcher.handle(.showDelayElapsed, desktop: desktop)
+    return (switcher, desktop)
 }
