@@ -11,13 +11,15 @@ final class SwitcherController {
     private let logger = Logger(subsystem: "io.doubleloop.downtab", category: "keyboard")
     private var missedReleaseCheck: Task<Void, Never>?
     private var showDelay: Task<Void, Never>?
+    /// Chosen at opening: moving the selection never moves the Switcher to another display.
+    private var screen: NSScreen?
     private(set) lazy var keyboard = KeyboardInput { [weak self] event in self?.handle(event) }
     private(set) lazy var pointer = PointerInput { [weak self] event in self?.handle(event) }
 
     func start() {
         tracker.start()
         keyboard.start()
-        panel.attach(pointer)
+        pointer.attach(to: panel)
     }
 
     private func handle(_ event: SwitcherEvent) {
@@ -25,9 +27,8 @@ final class SwitcherController {
         switcher.shortcuts = keyboard.shortcuts
         let desktop = tracker.snapshot(freshWindowOrder: mayOpen(previous, event))
         let effect = switcher.handle(event, desktop: desktop)
-        // Re-showing an unchanged state would choose the display again, e.g. move the panel to the pointer's.
         if switcher.state != previous {
-            let pointerFrames = render()
+            let pointerFrames = render(after: previous)
             keyboard.captureSwitcherKeys(switcher.state != .closed)
             pointer.switcherChanged(frames: pointerFrames)
             updateMissedReleaseCheck()
@@ -46,13 +47,17 @@ final class SwitcherController {
     }
 
     /// Returns where the pointer reaches the Switcher: nil while it does not show.
-    private func render() -> [NSRect]? {
+    private func render(after previous: SwitcherState) -> [NSRect]? {
         switch switcher.state {
         case .closed:
+            screen = nil
             panel.hide()
             return nil
         case .open(let displayed):
-            let frames = panel.show(displayed, icon: tracker.icon(for:))
+            if previous == .closed {
+                screen = SwitcherScreen.forOpening(frontmostApp: displayed.frontmostApp)
+            }
+            let frames = panel.show(displayed, on: screen, icon: tracker.icon(for:))
             return displayed.isVisible ? frames : nil
         }
     }
