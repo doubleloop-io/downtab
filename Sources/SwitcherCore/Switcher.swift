@@ -293,8 +293,9 @@ public struct Switcher: Sendable {
         return nil
     }
 
+    /// Before the show delay the Switcher does not show: there is nothing to point at.
     private mutating func respond(to pointer: PointerEvent) -> FinalEffect? {
-        guard case .open(let displayed) = state else { return nil }
+        guard case .open(let displayed) = state, displayed.isVisible else { return nil }
         switch pointer {
         case .entered(let target):
             state = .open(displayed.hovering(target))

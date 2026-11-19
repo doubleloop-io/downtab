@@ -31,8 +31,6 @@ class PointerPanel: NSPanel {
     }
 
     func receivePointer(_ event: NSEvent, over target: PointerTarget?) {
-        // Before the show delay the Switcher is transparent: there is nothing to point at.
-        guard alphaValue > 0 else { return }
         pointer?.receive(event, over: target)
     }
 }

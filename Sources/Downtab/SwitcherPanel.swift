@@ -44,13 +44,8 @@ final class SwitcherPanel: PointerPanel {
         tiles.firstIndex { $0.bounds.contains($0.convert(location, from: nil)) }.map(PointerTarget.app)
     }
 
-    /// Where a click reaches the Switcher: none while it is closed or still transparent.
-    var pointerFrames: [NSRect] {
-        guard isVisible, alphaValue > 0 else { return [] }
-        return windowList.isVisible ? [frame, windowList.frame] : [frame]
-    }
-
-    func show(_ displayed: DisplayedState, icon: (AppID) -> NSImage?) {
+    /// Returns the frames of the Switcher and its Window list, where a click reaches them.
+    func show(_ displayed: DisplayedState, icon: (AppID) -> NSImage?) -> [NSRect] {
         // The display is chosen at opening: moving the selection never moves the panel to another display.
         let target = isVisible ? screen : SwitcherScreen.forOpening(frontmostApp: displayed.frontmostApp)
         let iconSize = Metrics.iconSize(screenWidth: target?.frame.width, tileCount: displayed.appRow.count)
@@ -83,6 +78,7 @@ final class SwitcherPanel: PointerPanel {
         makeKeyAndOrderFront(nil)
         followPointer()
         showWindowList(of: displayed, under: views.first(where: \.isSelected), icon: icon)
+        return windowList.isVisible ? [frame, windowList.frame] : [frame]
     }
 
     func hide() {

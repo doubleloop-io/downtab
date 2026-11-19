@@ -27,9 +27,9 @@ final class SwitcherController {
         let effect = switcher.handle(event, desktop: desktop)
         // Re-showing an unchanged state would choose the display again, e.g. move the panel to the pointer's.
         if switcher.state != previous {
-            render()
+            let pointerFrames = render()
             keyboard.captureSwitcherKeys(switcher.state != .closed)
-            pointer.switcherChanged(frames: switcher.state == .closed ? nil : panel.pointerFrames)
+            pointer.switcherChanged(frames: pointerFrames)
             updateMissedReleaseCheck()
             updateShowDelay()
         }
@@ -45,12 +45,15 @@ final class SwitcherController {
         return true
     }
 
-    private func render() {
+    /// Returns where the pointer reaches the Switcher: nil while it does not show.
+    private func render() -> [NSRect]? {
         switch switcher.state {
         case .closed:
             panel.hide()
+            return nil
         case .open(let displayed):
-            panel.show(displayed, icon: tracker.icon(for:))
+            let frames = panel.show(displayed, icon: tracker.icon(for:))
+            return displayed.isVisible ? frames : nil
         }
     }
 

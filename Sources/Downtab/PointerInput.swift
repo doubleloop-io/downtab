@@ -13,6 +13,9 @@ final class PointerInput {
     /// The item under a mouse down: a click acts on mouse up over the same item.
     private var pressed: PointerTarget?
     private var scrollStepper = ScrollStepper()
+    /// Hover and press are tracked only while the Switcher shows: a pointer already on a tile when it appears
+    /// selects that tile at its first move.
+    private var isTracking = false
 
     init(onEvent: @escaping (SwitcherEvent) -> Void) {
         self.onEvent = onEvent
@@ -24,8 +27,9 @@ final class PointerInput {
     }
 
     /// Call whenever the Switcher changes. `frames` are the AppKit frames of the Switcher and its Window list
-    /// while they show; nil once closed.
+    /// while they show; nil while closed or before the show delay.
     func switcherChanged(frames: [NSRect]?) {
+        isTracking = frames != nil
         guard let frames else {
             hovered = nil
             pressed = nil
@@ -48,6 +52,7 @@ final class PointerInput {
 
     /// `target` is the item under the pointer when the event happened, nil between items.
     func receive(_ event: NSEvent, over target: PointerTarget?) {
+        guard isTracking else { return }
         switch event.type {
         case .mouseMoved, .leftMouseDragged:
             enter(target)
