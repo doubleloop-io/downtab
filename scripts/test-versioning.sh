@@ -13,17 +13,32 @@ failed() { echo "FAIL: $1"; failures=$((failures + 1)); }
 
 # Stubs: `gh release view` answers from $GH_RELEASES; `gh release create` logs its arguments to $ROOT/gh-create
 # and its notes to $ROOT/gh-notes, then exits with $GH_CREATE_EXIT; `gh auth status` exits with $GH_AUTH_EXIT;
-# `gh api` prints $GH_PUSH (default true) as the push permission. `make <target>` appends the target to
-# $ROOT/make-calls and exits with $MAKE_TEST_EXIT, $MAKE_SMOKE_EXIT, $MAKE_NOTARIZE_EXIT or $MAKE_RELEASE_EXIT.
+# `gh api repos/<repo>` prints $GH_PUSH (default true) as the push permission, $GH_TAP_PUSH for the tap. The tap's
+# cask is $ROOT/tap-cask: `gh api` on its contents prints it, raw, or $TAP_BLOB as its blob sha; the PUT logs its
+# arguments to $ROOT/gh-cask-put and exits with $GH_CASK_PUT_EXIT, or writes the decoded content to $ROOT/tap-cask.
+# `make <target>` appends the target to $ROOT/make-calls and exits with $MAKE_TEST_EXIT, $MAKE_SMOKE_EXIT, $MAKE_NOTARIZE_EXIT or $MAKE_RELEASE_EXIT.
 # `security find-identity` lists $SIGNING_IDENTITY (default the release one); `xcrun notarytool` exits with
 # $NOTARY_EXIT. Sparkle's `generate_keys` prints $SPARKLE_KEY (default the test key) or exits with
 # $GENERATE_KEYS_EXIT; `sign_update` prints a fake signature or exits with $SIGN_EXIT, and `--verify` exits with
 # $SIGN_VERIFY_EXIT.
+TAP_BLOB=tap-blob-sha
 mkdir -p "$ROOT/bin" "$ROOT/sparkle"
 cat >"$ROOT/bin/gh" <<STUB
 #!/usr/bin/env bash
 [ "\$1" = auth ] && exit "\${GH_AUTH_EXIT:-0}"
-[ "\$1" = api ] && { echo "\${GH_PUSH:-true}"; exit 0; }
+if [ "\$1" = api ]; then
+  case "\$*" in
+    *"--method PUT"*)
+      echo "\$*" >"$ROOT/gh-cask-put"
+      [ "\${GH_CASK_PUT_EXIT:-0}" = 0 ] || exit "\$GH_CASK_PUT_EXIT"
+      for arg in "\$@"; do [[ \$arg == content=* ]] && base64 --decode <<<"\${arg#content=}" >"$ROOT/tap-cask"; done ;;
+    *contents*"--jq .sha") echo "$TAP_BLOB" ;;
+    *contents*) cat "$ROOT/tap-cask" ;;
+    *homebrew-tap*) echo "\${GH_TAP_PUSH:-true}" ;;
+    *) echo "\${GH_PUSH:-true}" ;;
+  esac
+  exit 0
+fi
 [ "\$1" = workflow ] && { echo "\$*" >"$ROOT/gh-workflow"; exit 0; }
 if [ "\$2" = create ]; then
   echo "\$*" >"$ROOT/gh-create"
@@ -234,7 +249,12 @@ SIGN_VERIFY_EXIT=1 expect_refusal "appcast with a signature that does not verify
   "$SCRIPTS/appcast.sh" "$app" "$ROOT/Downtab.dmg" "$ROOT/appcast.xml"
 [ ! -e "$ROOT/appcast.xml" ] || failed "a refused appcast was written"
 
-# release publishing: tags, pushes the tag, creates the release with the DMG, the Appcast and the notes
+# tap_cask <version> <sha256>: the cask's lines bump-cask.sh rewrites, between two it keeps.
+tap_cask() { printf 'cask "downtab" do\n  version "%s"\n  sha256 "%s"\n\n  app "Downtab.app"\nend\n' "$1" "$2"; }
+
+# release publishing: tags, pushes the tag, creates the release with the DMG, the Appcast and the notes, then points
+# the cask at the DMG
+tap_cask 0.1.0 old-sha256 >"$ROOT/tap-cask"
 new_repo
 "$SCRIPTS/bump-version.sh" 0.2.0 >/dev/null && commit_all
 origin=$(mktemp -d "$ROOT/origin.XXXX")
@@ -255,6 +275,10 @@ git -C "$origin" rev-parse --quiet --verify refs/tags/v0.2.0 >/dev/null || faile
 [ "$(cat "$ROOT/gh-notes")" = "$(printf '### Added\n\n- New thing')" ] || failed "publish notes: $(cat "$ROOT/gh-notes")"
 [ "$(cat "$ROOT/gh-workflow")" = "workflow run pages.yml --repo doubleloop-io/downtab --ref main" ] \
   || failed "publish did not redeploy the website: $(cat "$ROOT/gh-workflow" 2>/dev/null)"
+dmg_sha256=$(shasum -a 256 "$ROOT/Downtab.dmg" | cut -d ' ' -f 1)
+[ "$(cat "$ROOT/tap-cask")" = "$(tap_cask 0.2.0 "$dmg_sha256")" ] || failed "publish cask: $(cat "$ROOT/tap-cask")"
+[[ $(cat "$ROOT/gh-cask-put") == *"message=Update downtab to 0.2.0"*"sha=$TAP_BLOB" ]] \
+  || failed "publish cask commit: $(cat "$ROOT/gh-cask-put")"
 
 new_repo
 "$SCRIPTS/bump-version.sh" 0.2.0 >/dev/null && commit_all
@@ -262,6 +286,27 @@ origin=$(mktemp -d "$ROOT/origin.XXXX")
 git init -q --bare "$origin" && git remote add origin "$origin"
 GH_CREATE_EXIT=1 expect_refusal "publish when gh fails" "gh release create v0.2.0 $ROOT/Downtab.dmg $ROOT/appcast.xml" \
   "$SCRIPTS/release-publish.sh" "$ROOT/Downtab.dmg" "$ROOT/appcast.xml"
+
+new_repo
+"$SCRIPTS/bump-version.sh" 0.2.0 >/dev/null && commit_all
+origin=$(mktemp -d "$ROOT/origin.XXXX")
+git init -q --bare "$origin" && git remote add origin "$origin"
+rm -f "$ROOT/gh-create"
+tap_cask 0.1.0 old-sha256 >"$ROOT/tap-cask"
+GH_CASK_PUT_EXIT=1 expect_refusal "publish when the cask update fails" "scripts/bump-cask.sh 0.2.0 $ROOT/Downtab.dmg" \
+  "$SCRIPTS/release-publish.sh" "$ROOT/Downtab.dmg" "$ROOT/appcast.xml"
+[ -s "$ROOT/gh-create" ] || failed "publish when the cask update fails: no release created"
+[ "$(cat "$ROOT/tap-cask")" = "$(tap_cask 0.1.0 old-sha256)" ] || failed "a failed cask update changed the cask"
+
+# cask bump on its own, as the recovery command runs it
+tap_cask 0.2.0 "$dmg_sha256" >"$ROOT/tap-cask"
+rm -f "$ROOT/gh-cask-put"
+expect_success "cask bump already done" "$SCRIPTS/bump-cask.sh" 0.2.0 "$ROOT/Downtab.dmg"
+[ ! -e "$ROOT/gh-cask-put" ] || failed "a cask already at the version was committed again"
+printf 'cask "downtab" do\nend\n' >"$ROOT/tap-cask"
+expect_refusal "cask bump without version and sha256 lines" "no version or sha256 line" \
+  "$SCRIPTS/bump-cask.sh" 0.2.0 "$ROOT/Downtab.dmg"
+expect_refusal "cask bump with a malformed version" "not X.Y.Z" "$SCRIPTS/bump-cask.sh" 0.2 "$ROOT/Downtab.dmg"
 
 # make ship: a repo whose main matches a bare origin
 new_shipping_repo() {
@@ -330,6 +375,8 @@ SPARKLE_KEY=other-key expect_refusal "ship with a Sparkle key not matching the a
 SIGN_EXIT=1 expect_refusal "ship when sign_update cannot sign" "sign_update cannot sign" "$SCRIPTS/ship.sh" 0.2.0
 GH_PUSH=false expect_refusal "ship without push permission" "no push permission on doubleloop-io/downtab" \
   "$SCRIPTS/ship.sh" 0.2.0
+GH_TAP_PUSH=false expect_refusal "ship without push permission on the tap" \
+  "no push permission on doubleloop-io/homebrew-tap" "$SCRIPTS/ship.sh" 0.2.0
 expect_untouched "ship preflight refusals"
 
 new_shipping_repo
